@@ -13,6 +13,7 @@ import {
   MapPin,
   DollarSign
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-wellness.jpg";
 
 const Index = () => {
@@ -22,42 +23,48 @@ const Index = () => {
       title: "Wellness AI Chat",
       description: "AI-powered wellness conversations with emotional check-ins",
       color: "wellness-primary",
-      emoji: "💬"
+      emoji: "💬",
+      link: "/wellness-chat"
     },
     {
       icon: Package,
       title: "WHOSENXT DELIVERY",
       description: "Delivery system with voice confirmation for clothing, food, appliances & devices",
       color: "wellness-secondary",
-      emoji: "📦"
+      emoji: "📦",
+      link: "/delivery"
     },
     {
       icon: Briefcase,
       title: "WHOSENXT JOB",
       description: "Worker dashboard with integrated payouts system",
       color: "wellness-accent",
-      emoji: "🧰"
+      emoji: "🧰",
+      link: "#"
     },
     {
       icon: ShoppingBag,
       title: "WHOSENXT MARKETPLACE",
       description: "Buy and sell furniture, clothes, and more",
       color: "wellness-warm",
-      emoji: "🛍️"
+      emoji: "🛍️",
+      link: "/marketplace"
     },
     {
       icon: Wrench,
       title: "WHOSENXT GIG",
       description: "Post or apply for help gigs in your community",
       color: "wellness-primary",
-      emoji: "🛠️"
+      emoji: "🛠️",
+      link: "/gig-browse"
     },
     {
       icon: Users,
       title: "Family Group Chat",
       description: "Stay connected with real-time location sharing",
       color: "wellness-secondary",
-      emoji: "👨‍👩‍👧"
+      emoji: "👨‍👩‍👧",
+      link: "#"
     }
   ];
 
@@ -114,22 +121,36 @@ const Index = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardHeader className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
-                      <feature.icon className="h-6 w-6 text-primary" />
+              <Link key={index} to={feature.link} className={feature.link === "#" ? "pointer-events-none" : ""}>
+                <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-wellness-calm/30 cursor-pointer h-full">
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                        <feature.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="text-2xl">{feature.emoji}</span>
                     </div>
-                    <span className="text-2xl">{feature.emoji}</span>
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+                    <CardTitle className="text-xl group-hover:text-wellness-primary transition-colors">
+                      {feature.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-base leading-relaxed">
+                      {feature.description}
+                    </CardDescription>
+                    {feature.link !== "#" && (
+                      <Button variant="outline" size="sm" className="mt-4 border-wellness-primary/20 hover:bg-wellness-primary/5">
+                        Explore →
+                      </Button>
+                    )}
+                    {feature.link === "#" && (
+                      <Badge variant="outline" className="mt-4 border-muted-foreground/20 text-muted-foreground">
+                        Coming Soon
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
