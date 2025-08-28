@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, FileText, Shield, User, Phone, MapPin, Car, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CameraCapture } from "@/components/CameraCapture";
 
 const DeliveryDriverApplication = () => {
   const { toast } = useToast();
@@ -41,6 +42,12 @@ const DeliveryDriverApplication = () => {
     secondaryId: null
   });
 
+  const [cameraState, setCameraState] = useState({
+    isOpen: false,
+    type: null as 'driversLicense' | 'secondaryId' | null,
+    title: ''
+  });
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -62,6 +69,18 @@ const DeliveryDriverApplication = () => {
     } else {
       console.error('File input not found:', inputId);
     }
+  };
+
+  const openCamera = (type: 'driversLicense' | 'secondaryId') => {
+    const title = type === 'driversLicense' ? 'Take Driver\'s License Photo' : 'Take Secondary ID Photo';
+    setCameraState({ isOpen: true, type, title });
+  };
+
+  const handleCameraCapture = (file: File) => {
+    if (cameraState.type) {
+      handleFileUpload(cameraState.type, file);
+    }
+    setCameraState({ isOpen: false, type: null, title: '' });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -297,22 +316,11 @@ const DeliveryDriverApplication = () => {
                       </div>
                       
                       <div>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('driversLicense', file);
-                          }}
-                          className="hidden"
-                          id="driversLicense-camera"
-                        />
                         <Button 
                           type="button" 
                           variant="outline" 
                           className="gap-2"
-                          onClick={() => triggerFileInput('driversLicense-camera')}
+                          onClick={() => openCamera('driversLicense')}
                         >
                           <Camera className="h-4 w-4" />
                           Take Picture
@@ -368,22 +376,11 @@ const DeliveryDriverApplication = () => {
                       </div>
                       
                       <div>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('secondaryId', file);
-                          }}
-                          className="hidden"
-                          id="secondaryId-camera"
-                        />
                         <Button 
                           type="button" 
                           variant="outline" 
                           className="gap-2"
-                          onClick={() => triggerFileInput('secondaryId-camera')}
+                          onClick={() => openCamera('secondaryId')}
                         >
                           <Camera className="h-4 w-4" />
                           Take Picture
@@ -573,6 +570,13 @@ const DeliveryDriverApplication = () => {
             </p>
           </div>
         </form>
+
+        <CameraCapture
+          isOpen={cameraState.isOpen}
+          onClose={() => setCameraState({ isOpen: false, type: null, title: '' })}
+          onCapture={handleCameraCapture}
+          title={cameraState.title}
+        />
       </div>
     </div>
   );
