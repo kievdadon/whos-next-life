@@ -12,12 +12,17 @@ import {
   Heart,
   Smartphone,
   MapPin,
-  DollarSign
+  DollarSign,
+  LogIn,
+  Crown,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-community.avif";
 
 const Index = () => {
+  const { user, signOut, subscribed, subscriptionTier } = useAuth();
   const features = [
     {
       icon: MessageCircle,
@@ -89,14 +94,46 @@ const Index = () => {
                 </p>
               </div>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90 shadow-lg">
-                  Get Started
-                  <Heart className="ml-2 h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
-                  Learn More
-                </Button>
+                {user ? (
+                  <>
+                    <Button asChild size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90 shadow-lg">
+                      <Link to="/subscription-plans">
+                        <Crown className="mr-2 h-4 w-4" />
+                        {subscribed ? `Manage ${subscriptionTier?.charAt(0).toUpperCase()}${subscriptionTier?.slice(1)} Plan` : 'Subscribe Now'}
+                      </Link>
+                    </Button>
+                    <Button 
+                      onClick={signOut}
+                      variant="outline" 
+                      size="lg" 
+                      className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90 shadow-lg">
+                      <Link to="/auth">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Get Started
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                      <Link to="/subscription-plans">
+                        <Crown className="mr-2 h-4 w-4" />
+                        View Plans
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
+              {subscribed && (
+                <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20 text-sm">
+                  ✨ {subscriptionTier?.charAt(0).toUpperCase()}{subscriptionTier?.slice(1)} Member - Enjoy your delivery benefits!
+                </Badge>
+              )}
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-wellness-primary/20 to-wellness-secondary/20 rounded-3xl blur-3xl" />
