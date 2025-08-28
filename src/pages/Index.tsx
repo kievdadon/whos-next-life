@@ -15,7 +15,8 @@ import {
   DollarSign,
   LogIn,
   Crown,
-  LogOut
+  LogOut,
+  Handshake
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +72,14 @@ const Index = () => {
       color: "wellness-secondary",
       emoji: "👨‍👩‍👧",
       link: "/family-chat"
+    },
+    {
+      icon: Handshake,
+      title: "Brand Partnership",
+      description: "Represent your brand and grow with our community",
+      color: "wellness-primary",
+      emoji: "🤝",
+      link: "/brand-partnership"
     }
   ];
 
@@ -151,7 +160,7 @@ const Index = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Six Powerful Features</h2>
+            <h2 className="text-4xl font-bold mb-4">Seven Powerful Features</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Everything you need for modern life - wellness, work, shopping, and family connection.
             </p>
