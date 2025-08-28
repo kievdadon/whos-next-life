@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Building, 
   Users, 
@@ -99,7 +100,7 @@ const BrandPartnership = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -112,29 +113,52 @@ const BrandPartnership = () => {
       return;
     }
 
-    // Here you would typically send the data to your backend
-    toast({
-      title: "Application Submitted!",
-      description: "We'll review your application and get back to you within 2-3 business days.",
-    });
+    try {
+      // Send application via edge function
+      const { data, error } = await supabase.functions.invoke('send-brand-application', {
+        body: formData
+      });
 
-    // Reset form
-    setFormData({
-      companyName: '',
-      contactName: '',
-      email: '',
-      phone: '',
-      website: '',
-      industry: '',
-      description: '',
-      socialMedia: {
-        instagram: '',
-        facebook: '',
-        twitter: ''
-      },
-      partnershipType: '',
-      experience: ''
-    });
+      if (error) {
+        console.error('Error submitting application:', error);
+        toast({
+          title: "Submission Failed",
+          description: "There was an error submitting your application. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Application Submitted!",
+        description: "We'll review your application and get back to you within 2-3 business days. Check your email for confirmation.",
+      });
+
+      // Reset form
+      setFormData({
+        companyName: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        website: '',
+        industry: '',
+        description: '',
+        socialMedia: {
+          instagram: '',
+          facebook: '',
+          twitter: ''
+        },
+        partnershipType: '',
+        experience: ''
+      });
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your application. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
