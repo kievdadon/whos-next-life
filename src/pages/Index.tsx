@@ -15,7 +15,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/hero-wellness.jpg";
+import heroImage from "@/assets/hero-community.avif";
 
 const Index = () => {
   const features = [
