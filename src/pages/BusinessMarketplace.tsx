@@ -7,6 +7,29 @@ import { Input } from '@/components/ui/input';
 import { Search, Store, Shirt, Scissors, UtensilsCrossed, Star, MapPin, Clock } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url: string;
+  stock_quantity: number;
+  is_active: boolean;
+  delivery_available: boolean;
+  delivery_radius: number;
+  business_id: string;
+}
+
+interface Business {
+  id: string;
+  business_name: string;
+  business_type: string;
+  description: string;
+  address: string;
+  products?: Product[];
+}
+
 const BusinessMarketplace = () => {
   const { user, subscribed, subscriptionTier } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');

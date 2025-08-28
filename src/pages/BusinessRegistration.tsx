@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Navigate } from 'react-router-dom';
 import { Store, Building, Utensils, ShoppingCart, User, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const BusinessRegistration = () => {
   const { user } = useAuth();
@@ -49,8 +50,28 @@ const BusinessRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Save to database
+      const { data, error } = await supabase
+        .from('business_applications')
+        .insert({
+          business_name: formData.businessName,
+          business_type: formData.businessType,
+          contact_name: formData.ownerName,
+          email: formData.contactEmail,
+          phone: formData.contactPhone,
+          address: formData.address,
+          description: formData.description
+        });
+
+      if (error) {
+        console.error('Error submitting application:', error);
+        toast({
+          title: "Submission Failed",
+          description: "There was an error submitting your application. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       setIsSubmitted(true);
       toast({
@@ -58,6 +79,7 @@ const BusinessRegistration = () => {
         description: "Your business registration has been submitted for review. We'll contact you within 2-3 business days.",
       });
     } catch (error) {
+      console.error('Error submitting application:', error);
       toast({
         title: "Submission Failed",
         description: "There was an error submitting your application. Please try again.",
