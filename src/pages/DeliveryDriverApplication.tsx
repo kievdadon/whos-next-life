@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileText, Shield, User, Phone, MapPin, Car } from "lucide-react";
+import { Upload, FileText, Shield, User, Phone, MapPin, Car, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const DeliveryDriverApplication = () => {
@@ -258,20 +258,51 @@ const DeliveryDriverApplication = () => {
                 <div className="mt-2 p-4 border-2 border-dashed border-border rounded-lg bg-muted/30">
                   <div className="text-center">
                     <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Upload a clear photo of your valid driver's license
                     </p>
-                    <Input
-                      type="file"
-                      accept="image/*,.pdf"
-                      capture="environment"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload('driversLicense', file);
-                      }}
-                      className="w-full"
-                      id="driversLicense"
-                    />
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('driversLicense', file);
+                          }}
+                          className="hidden"
+                          id="driversLicense-upload"
+                        />
+                        <Label htmlFor="driversLicense-upload" className="cursor-pointer">
+                          <Button type="button" variant="outline" className="gap-2">
+                            <Upload className="h-4 w-4" />
+                            Choose from Files
+                          </Button>
+                        </Label>
+                      </div>
+                      
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('driversLicense', file);
+                          }}
+                          className="hidden"
+                          id="driversLicense-camera"
+                        />
+                        <Label htmlFor="driversLicense-camera" className="cursor-pointer">
+                          <Button type="button" variant="outline" className="gap-2">
+                            <Camera className="h-4 w-4" />
+                            Take Picture
+                          </Button>
+                        </Label>
+                      </div>
+                    </div>
+                    
                     {uploadedFiles.driversLicense && (
                       <p className="text-sm text-wellness-primary mt-2">
                         ✓ {uploadedFiles.driversLicense.name}
@@ -292,20 +323,51 @@ const DeliveryDriverApplication = () => {
                 <div className="mt-2 p-4 border-2 border-dashed border-border rounded-lg bg-muted/30">
                   <div className="text-center">
                     <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Upload birth certificate or social security card
                     </p>
-                    <Input
-                      type="file"
-                      accept="image/*,.pdf"
-                      capture="environment"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload('secondaryId', file);
-                      }}
-                      className="w-full"
-                      id="secondaryId"
-                    />
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('secondaryId', file);
+                          }}
+                          className="hidden"
+                          id="secondaryId-upload"
+                        />
+                        <Label htmlFor="secondaryId-upload" className="cursor-pointer">
+                          <Button type="button" variant="outline" className="gap-2">
+                            <Upload className="h-4 w-4" />
+                            Choose from Files
+                          </Button>
+                        </Label>
+                      </div>
+                      
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('secondaryId', file);
+                          }}
+                          className="hidden"
+                          id="secondaryId-camera"
+                        />
+                        <Label htmlFor="secondaryId-camera" className="cursor-pointer">
+                          <Button type="button" variant="outline" className="gap-2">
+                            <Camera className="h-4 w-4" />
+                            Take Picture
+                          </Button>
+                        </Label>
+                      </div>
+                    </div>
+                    
                     {uploadedFiles.secondaryId && (
                       <p className="text-sm text-wellness-primary mt-2">
                         ✓ {uploadedFiles.secondaryId.name}
