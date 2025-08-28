@@ -17,6 +17,7 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import BusinessMarketplace from "./pages/BusinessMarketplace";
 import BusinessRegistration from "./pages/BusinessRegistration";
 import BusinessDashboard from "./pages/BusinessDashboard";
+import DriverDashboard from "./pages/DriverDashboard";
 import BrandPartnership from "./pages/BrandPartnership";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/gig-browse" element={<GigBrowse />} />
               <Route path="/family-chat" element={<FamilyGroupChat />} />
               <Route path="/driver-application" element={<DeliveryDriverApplication />} />
+              <Route path="/driver-dashboard" element={<DriverDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

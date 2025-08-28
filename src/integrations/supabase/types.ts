@@ -59,6 +59,170 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_orders: {
+        Row: {
+          assigned_at: string | null
+          company_commission: number
+          created_at: string
+          customer_address: string
+          delivery_fee: number
+          delivery_time: string | null
+          distance_miles: number | null
+          driver_earning: number
+          driver_id: string | null
+          id: string
+          order_id: string | null
+          pickup_time: string | null
+          restaurant_address: string
+          status: string | null
+          tips: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          company_commission: number
+          created_at?: string
+          customer_address: string
+          delivery_fee: number
+          delivery_time?: string | null
+          distance_miles?: number | null
+          driver_earning: number
+          driver_id?: string | null
+          id?: string
+          order_id?: string | null
+          pickup_time?: string | null
+          restaurant_address: string
+          status?: string | null
+          tips?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          company_commission?: number
+          created_at?: string
+          customer_address?: string
+          delivery_fee?: number
+          delivery_time?: string | null
+          distance_miles?: number | null
+          driver_earning?: number
+          driver_id?: string | null
+          id?: string
+          order_id?: string | null
+          pickup_time?: string | null
+          restaurant_address?: string
+          status?: string | null
+          tips?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_applications: {
+        Row: {
+          address: string
+          approved_at: string | null
+          availability: string | null
+          created_at: string
+          email: string
+          experience: string | null
+          full_name: string
+          id: string
+          insurance_policy: string | null
+          license_number: string
+          phone: string
+          status: string | null
+          updated_at: string
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_type: string
+          vehicle_year: string | null
+        }
+        Insert: {
+          address: string
+          approved_at?: string | null
+          availability?: string | null
+          created_at?: string
+          email: string
+          experience?: string | null
+          full_name: string
+          id?: string
+          insurance_policy?: string | null
+          license_number: string
+          phone: string
+          status?: string | null
+          updated_at?: string
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type: string
+          vehicle_year?: string | null
+        }
+        Update: {
+          address?: string
+          approved_at?: string | null
+          availability?: string | null
+          created_at?: string
+          email?: string
+          experience?: string | null
+          full_name?: string
+          id?: string
+          insurance_policy?: string | null
+          license_number?: string
+          phone?: string
+          status?: string | null
+          updated_at?: string
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type?: string
+          vehicle_year?: string | null
+        }
+        Relationships: []
+      }
+      driver_shifts: {
+        Row: {
+          clock_in_time: string
+          clock_out_time: string | null
+          created_at: string
+          driver_id: string
+          id: string
+          status: string | null
+          total_deliveries: number | null
+          total_earnings: number | null
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          clock_in_time?: string
+          clock_out_time?: string | null
+          created_at?: string
+          driver_id: string
+          id?: string
+          status?: string | null
+          total_deliveries?: number | null
+          total_earnings?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          clock_in_time?: string
+          clock_out_time?: string | null
+          created_at?: string
+          driver_id?: string
+          id?: string
+          status?: string | null
+          total_deliveries?: number | null
+          total_earnings?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           business_id: string
