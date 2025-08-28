@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_applications: {
+        Row: {
+          address: string | null
+          approved_at: string | null
+          business_name: string
+          business_type: string
+          contact_name: string
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          phone: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          approved_at?: string | null
+          business_name: string
+          business_type: string
+          contact_name: string
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          approved_at?: string | null
+          business_name?: string
+          business_type?: string
+          contact_name?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          business_id: string
+          created_at: string
+          customer_id: string | null
+          delivery_address: string | null
+          id: string
+          order_status: string | null
+          payment_status: string | null
+          product_id: string | null
+          quantity: number
+          stripe_session_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          customer_id?: string | null
+          delivery_address?: string | null
+          id?: string
+          order_status?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity?: number
+          stripe_session_id?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          customer_id?: string | null
+          delivery_address?: string | null
+          id?: string
+          order_status?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity?: number
+          stripe_session_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          business_id: string
+          category: string
+          created_at: string
+          delivery_available: boolean | null
+          delivery_radius: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price: number
+          stock_quantity: number | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category: string
+          created_at?: string
+          delivery_available?: boolean | null
+          delivery_radius?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price: number
+          stock_quantity?: number | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string
+          created_at?: string
+          delivery_available?: boolean | null
+          delivery_radius?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          stock_quantity?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
