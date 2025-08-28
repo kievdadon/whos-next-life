@@ -16,14 +16,86 @@ import {
   LogIn,
   Crown,
   LogOut,
-  Handshake
+  Handshake,
+  Car,
+  Store,
+  BarChart3
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-community.avif";
 
 const Index = () => {
   const { user, signOut, subscribed, subscriptionTier } = useAuth();
+  const [isApprovedDriver, setIsApprovedDriver] = useState(false);
+  const [isApprovedBusiness, setIsApprovedBusiness] = useState(false);
+  const [dashboardLinks, setDashboardLinks] = useState<Array<{
+    title: string;
+    description: string;
+    link: string;
+    icon: any;
+    color: string;
+  }>>([]);
+
+  useEffect(() => {
+    if (user?.email) {
+      checkUserApprovals();
+    }
+  }, [user]);
+
+  const checkUserApprovals = async () => {
+    if (!user?.email) return;
+
+    try {
+      // Check if user is an approved driver
+      const { data: driverData } = await supabase
+        .from('driver_applications')
+        .select('status')
+        .eq('email', user.email)
+        .eq('status', 'approved')
+        .single();
+
+      // Check if user is an approved business
+      const { data: businessData } = await supabase
+        .from('business_applications')
+        .select('status')
+        .eq('email', user.email)
+        .eq('status', 'approved')
+        .single();
+
+      const approvedDriver = !!driverData;
+      const approvedBusiness = !!businessData;
+
+      setIsApprovedDriver(approvedDriver);
+      setIsApprovedBusiness(approvedBusiness);
+
+      // Create dashboard links array
+      const links = [];
+      if (approvedDriver) {
+        links.push({
+          title: "Driver Dashboard",
+          description: "Manage deliveries, track earnings, and clock in/out",
+          link: "/driver-dashboard",
+          icon: Car,
+          color: "wellness-secondary"
+        });
+      }
+      if (approvedBusiness) {
+        links.push({
+          title: "Business Dashboard",
+          description: "Manage products, inventory, and orders",
+          link: "/business-dashboard", 
+          icon: Store,
+          color: "wellness-primary"
+        });
+      }
+      setDashboardLinks(links);
+    } catch (error) {
+      console.error('Error checking user approvals:', error);
+    }
+  };
   const features = [
     {
       icon: MessageCircle,
@@ -155,6 +227,51 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Dashboard Links for Approved Users */}
+      {(isApprovedDriver || isApprovedBusiness) && (
+        <section className="py-12 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-4">Your Dashboards</h2>
+              <p className="text-lg text-muted-foreground">
+                Access your approved business tools and driver features
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {dashboardLinks.map((dashboard, index) => (
+                <Link key={index} to={dashboard.link}>
+                  <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-wellness-calm/30 cursor-pointer h-full">
+                    <CardHeader className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-4 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                          <dashboard.icon className="h-8 w-8 text-primary" />
+                        </div>
+                        <Badge className="bg-green-100 text-green-800">
+                          Approved Access
+                        </Badge>
+                      </div>
+                      <CardTitle className="text-2xl group-hover:text-wellness-primary transition-colors">
+                        {dashboard.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-base leading-relaxed mb-4">
+                        {dashboard.description}
+                      </CardDescription>
+                      <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Open Dashboard
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-20">
