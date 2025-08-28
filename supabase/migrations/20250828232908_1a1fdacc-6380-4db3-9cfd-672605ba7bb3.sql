@@ -1,0 +1,20 @@
+-- Add store hours columns to business_applications table
+ALTER TABLE public.business_applications 
+ADD COLUMN monday_open TIME,
+ADD COLUMN monday_close TIME,
+ADD COLUMN tuesday_open TIME,
+ADD COLUMN tuesday_close TIME,
+ADD COLUMN wednesday_open TIME,
+ADD COLUMN wednesday_close TIME,
+ADD COLUMN thursday_open TIME,
+ADD COLUMN thursday_close TIME,
+ADD COLUMN friday_open TIME,
+ADD COLUMN friday_close TIME,
+ADD COLUMN saturday_open TIME,
+ADD COLUMN saturday_close TIME,
+ADD COLUMN sunday_open TIME,
+ADD COLUMN sunday_close TIME,
+ADD COLUMN timezone TEXT DEFAULT 'America/New_York',
+ADD COLUMN is_24_7 BOOLEAN DEFAULT false,
+ADD COLUMN temporary_closure BOOLEAN DEFAULT false,
+ADD COLUMN closure_message TEXT;

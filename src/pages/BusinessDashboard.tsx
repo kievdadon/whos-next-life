@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock } from 'lucide-react';
+import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
 
 interface Product {
   id: string;
@@ -30,6 +31,24 @@ interface BusinessApplication {
   business_name: string;
   business_type: string;
   status: string;
+  monday_open: string | null;
+  monday_close: string | null;
+  tuesday_open: string | null;
+  tuesday_close: string | null;
+  wednesday_open: string | null;
+  wednesday_close: string | null;
+  thursday_open: string | null;
+  thursday_close: string | null;
+  friday_open: string | null;
+  friday_close: string | null;
+  saturday_open: string | null;
+  saturday_close: string | null;
+  sunday_open: string | null;
+  sunday_close: string | null;
+  timezone: string;
+  is_24_7: boolean;
+  temporary_closure: boolean;
+  closure_message: string | null;
 }
 
 const BusinessDashboard = () => {
@@ -39,6 +58,7 @@ const BusinessDashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showStoreHours, setShowStoreHours] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -49,6 +69,18 @@ const BusinessDashboard = () => {
     stock_quantity: '',
     delivery_available: true,
     delivery_radius: '10'
+  });
+  const [storeHoursForm, setStoreHoursForm] = useState({
+    monday_open: '', monday_close: '',
+    tuesday_open: '', tuesday_close: '',
+    wednesday_open: '', wednesday_close: '',
+    thursday_open: '', thursday_close: '',
+    friday_open: '', friday_close: '',
+    saturday_open: '', saturday_close: '',
+    sunday_open: '', sunday_close: '',
+    is_24_7: false,
+    temporary_closure: false,
+    closure_message: ''
   });
 
   const categories = [
@@ -91,6 +123,27 @@ const BusinessDashboard = () => {
 
       if (businessData) {
         setBusiness(businessData);
+        // Initialize store hours form with existing data
+        setStoreHoursForm({
+          monday_open: businessData.monday_open || '',
+          monday_close: businessData.monday_close || '',
+          tuesday_open: businessData.tuesday_open || '',
+          tuesday_close: businessData.tuesday_close || '',
+          wednesday_open: businessData.wednesday_open || '',
+          wednesday_close: businessData.wednesday_close || '',
+          thursday_open: businessData.thursday_open || '',
+          thursday_close: businessData.thursday_close || '',
+          friday_open: businessData.friday_open || '',
+          friday_close: businessData.friday_close || '',
+          saturday_open: businessData.saturday_open || '',
+          saturday_close: businessData.saturday_close || '',
+          sunday_open: businessData.sunday_open || '',
+          sunday_close: businessData.sunday_close || '',
+          is_24_7: businessData.is_24_7 || false,
+          temporary_closure: businessData.temporary_closure || false,
+          closure_message: businessData.closure_message || ''
+        });
+        
         // Load products for this business
         const { data: productsData, error: productsError } = await supabase
           .from('products')
@@ -177,6 +230,61 @@ const BusinessDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to save product. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStoreHoursSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!business) return;
+
+    try {
+      const { error } = await supabase
+        .from('business_applications')
+        .update({
+          monday_open: storeHoursForm.monday_open || null,
+          monday_close: storeHoursForm.monday_close || null,
+          tuesday_open: storeHoursForm.tuesday_open || null,
+          tuesday_close: storeHoursForm.tuesday_close || null,
+          wednesday_open: storeHoursForm.wednesday_open || null,
+          wednesday_close: storeHoursForm.wednesday_close || null,
+          thursday_open: storeHoursForm.thursday_open || null,
+          thursday_close: storeHoursForm.thursday_close || null,
+          friday_open: storeHoursForm.friday_open || null,
+          friday_close: storeHoursForm.friday_close || null,
+          saturday_open: storeHoursForm.saturday_open || null,
+          saturday_close: storeHoursForm.saturday_close || null,
+          sunday_open: storeHoursForm.sunday_open || null,
+          sunday_close: storeHoursForm.sunday_close || null,
+          is_24_7: storeHoursForm.is_24_7,
+          temporary_closure: storeHoursForm.temporary_closure,
+          closure_message: storeHoursForm.closure_message || null
+        })
+        .eq('id', business.id);
+
+      if (error) {
+        console.error('Error updating store hours:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update store hours. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Store hours updated successfully!",
+      });
+
+      setShowStoreHours(false);
+      loadBusinessData();
+    } catch (error) {
+      console.error('Error updating store hours:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update store hours. Please try again.",
         variant: "destructive",
       });
     }
@@ -291,12 +399,133 @@ const BusinessDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">{business.business_name}</h1>
-            <p className="text-muted-foreground">Business Dashboard</p>
+            <div className="flex items-center gap-4 mt-2">
+              <p className="text-muted-foreground">Business Dashboard</p>
+              {business && (
+                <Badge className={
+                  business.temporary_closure 
+                    ? 'bg-red-100 text-red-800' 
+                    : isStoreCurrentlyOpen(business as StoreHours).isOpen 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                }>
+                  {business.temporary_closure 
+                    ? business.closure_message || 'Temporarily Closed'
+                    : isStoreCurrentlyOpen(business as StoreHours).status}
+                </Badge>
+              )}
+            </div>
           </div>
-          <Badge className="bg-green-100 text-green-800">
-            Approved Business
-          </Badge>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowStoreHours(true)}
+              variant="outline"
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Store Hours
+            </Button>
+            <Badge className="bg-green-100 text-green-800">
+              Approved Business
+            </Badge>
+          </div>
         </div>
+
+        {showStoreHours && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Store Hours & Status</CardTitle>
+              <CardDescription>
+                Set your business hours and manage temporary closures
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleStoreHoursSubmit} className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={storeHoursForm.is_24_7}
+                      onChange={(e) => setStoreHoursForm({...storeHoursForm, is_24_7: e.target.checked})}
+                      className="rounded"
+                    />
+                    <span>Open 24/7</span>
+                  </label>
+                  
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={storeHoursForm.temporary_closure}
+                      onChange={(e) => setStoreHoursForm({...storeHoursForm, temporary_closure: e.target.checked})}
+                      className="rounded"
+                    />
+                    <span>Temporarily Closed</span>
+                  </label>
+                </div>
+
+                {storeHoursForm.temporary_closure && (
+                  <div className="space-y-2">
+                    <Label htmlFor="closureMessage">Closure Message</Label>
+                    <Input
+                      id="closureMessage"
+                      value={storeHoursForm.closure_message}
+                      onChange={(e) => setStoreHoursForm({...storeHoursForm, closure_message: e.target.value})}
+                      placeholder="e.g., Closed for renovations until next week"
+                    />
+                  </div>
+                )}
+
+                {!storeHoursForm.is_24_7 && !storeHoursForm.temporary_closure && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Weekly Hours</h3>
+                    {Object.entries(DAY_NAMES).map(([day, displayName]) => (
+                      <div key={day} className="grid grid-cols-3 gap-4 items-center">
+                        <Label className="font-medium">{displayName}</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor={`${day}_open`} className="text-sm text-muted-foreground">Open</Label>
+                          <Input
+                            id={`${day}_open`}
+                            type="time"
+                            value={storeHoursForm[`${day}_open` as keyof typeof storeHoursForm] as string}
+                            onChange={(e) => setStoreHoursForm({
+                              ...storeHoursForm, 
+                              [`${day}_open`]: e.target.value
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`${day}_close`} className="text-sm text-muted-foreground">Close</Label>
+                          <Input
+                            id={`${day}_close`}
+                            type="time"
+                            value={storeHoursForm[`${day}_close` as keyof typeof storeHoursForm] as string}
+                            onChange={(e) => setStoreHoursForm({
+                              ...storeHoursForm, 
+                              [`${day}_close`]: e.target.value
+                            })}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-wellness-primary hover:bg-wellness-primary/90">
+                    Update Store Hours
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowStoreHours(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>

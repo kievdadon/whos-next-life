@@ -20,42 +20,96 @@ export type Database = {
           approved_at: string | null
           business_name: string
           business_type: string
+          closure_message: string | null
           contact_name: string
           created_at: string
           description: string | null
           email: string
+          friday_close: string | null
+          friday_open: string | null
           id: string
+          is_24_7: boolean | null
+          monday_close: string | null
+          monday_open: string | null
           phone: string | null
+          saturday_close: string | null
+          saturday_open: string | null
           status: string | null
+          sunday_close: string | null
+          sunday_open: string | null
+          temporary_closure: boolean | null
+          thursday_close: string | null
+          thursday_open: string | null
+          timezone: string | null
+          tuesday_close: string | null
+          tuesday_open: string | null
           updated_at: string
+          wednesday_close: string | null
+          wednesday_open: string | null
         }
         Insert: {
           address?: string | null
           approved_at?: string | null
           business_name: string
           business_type: string
+          closure_message?: string | null
           contact_name: string
           created_at?: string
           description?: string | null
           email: string
+          friday_close?: string | null
+          friday_open?: string | null
           id?: string
+          is_24_7?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
           phone?: string | null
+          saturday_close?: string | null
+          saturday_open?: string | null
           status?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
+          temporary_closure?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
           updated_at?: string
+          wednesday_close?: string | null
+          wednesday_open?: string | null
         }
         Update: {
           address?: string | null
           approved_at?: string | null
           business_name?: string
           business_type?: string
+          closure_message?: string | null
           contact_name?: string
           created_at?: string
           description?: string | null
           email?: string
+          friday_close?: string | null
+          friday_open?: string | null
           id?: string
+          is_24_7?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
           phone?: string | null
+          saturday_close?: string | null
+          saturday_open?: string | null
           status?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
+          temporary_closure?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
           updated_at?: string
+          wednesday_close?: string | null
+          wednesday_open?: string | null
         }
         Relationships: []
       }
