@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
-import MarketplaceChat from "./pages/MarketplaceChat";
+import SellItem from "./pages/SellItem";
 import Delivery from "./pages/Delivery";
 import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
@@ -41,6 +41,7 @@ const App = () => (
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/marketplace/chat" element={<MarketplaceChat />} />
             <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
+            <Route path="/sell-item" element={<SellItem />} />
             <Route path="/business-marketplace" element={<BusinessMarketplace />} />
               <Route path="/business-registration" element={<BusinessRegistration />} />
               <Route path="/business-dashboard" element={<BusinessDashboard />} />

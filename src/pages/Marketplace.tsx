@@ -353,7 +353,7 @@ const Marketplace = () => {
             <p className="text-lg text-muted-foreground">
               Turn your unused items into cash. List for free and reach thousands of local buyers.
             </p>
-            <Button size="lg" className="bg-wellness-secondary hover:bg-wellness-secondary/90">
+            <Button size="lg" onClick={() => window.location.href = '/sell-item'} className="bg-wellness-secondary hover:bg-wellness-secondary/90">
               <DollarSign className="mr-2 h-5 w-5" />
               Sell Your Items
             </Button>
