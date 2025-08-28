@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +41,7 @@ const Index = () => {
       description: "Worker dashboard with integrated payouts system",
       color: "wellness-accent",
       emoji: "🧰",
-      link: "#"
+      link: "/driver-application"
     },
     {
       icon: ShoppingBag,
@@ -64,7 +65,7 @@ const Index = () => {
       description: "Stay connected with real-time location sharing",
       color: "wellness-secondary",
       emoji: "👨‍👩‍👧",
-      link: "#"
+      link: "/family-chat"
     }
   ];
 
