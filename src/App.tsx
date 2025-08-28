@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
+import MarketplaceChat from "./pages/MarketplaceChat";
 import Delivery from "./pages/Delivery";
 import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
@@ -37,8 +38,10 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/subscription-plans" element={<SubscriptionPlans />} />
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-              <Route path="/marketplace" element={<Marketplace />} />
-              <Route path="/business-marketplace" element={<BusinessMarketplace />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/marketplace/chat" element={<MarketplaceChat />} />
+            <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
+            <Route path="/business-marketplace" element={<BusinessMarketplace />} />
               <Route path="/business-registration" element={<BusinessRegistration />} />
               <Route path="/business-dashboard" element={<BusinessDashboard />} />
               <Route path="/brand-partnership" element={<BrandPartnership />} />

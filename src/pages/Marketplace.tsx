@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,15 +10,122 @@ import {
   Search, 
   Filter, 
   Heart,
-  ShoppingCart,
+  MessageSquare,
   MapPin,
   Star,
   DollarSign,
   Clock,
   User
 } from "lucide-react";
+import { Navigate } from "react-router-dom";
 
 const Marketplace = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Redirect non-authenticated users
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          business_applications!business_id (
+            business_name,
+            business_type,
+            address
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMessageSeller = async (product: any) => {
+    if (!user) return;
+
+    try {
+      // Get the seller's user ID by looking up the business owner
+      const { data: businessData, error: businessError } = await supabase
+        .from('business_applications')
+        .select('email')
+        .eq('id', product.business_id)
+        .single();
+
+      if (businessError) throw businessError;
+
+      // Get seller's user ID from auth.users
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', businessData.email) // This would need to be adjusted based on your auth setup
+        .single();
+
+      // For now, we'll create a conversation with a placeholder seller ID
+      // In a real app, you'd need to properly map business to user
+      const { data: existingConversation, error: checkError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('buyer_id', user.id)
+        .eq('product_id', product.id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      let conversationId = existingConversation?.id;
+
+      if (!conversationId) {
+        // Create a new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            buyer_id: user.id,
+            seller_id: product.business_id, // Using business_id as placeholder
+            product_id: product.id,
+            subject: `Interest in: ${product.name}`
+          })
+          .select('id')
+          .single();
+
+        if (createError) throw createError;
+        conversationId = newConversation.id;
+      }
+
+      // Navigate to the conversation
+      window.location.href = `/marketplace/chat/${conversationId}`;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation with seller",
+        variant: "destructive"
+      });
+    }
+  };
   const categories = [
     { name: "Furniture", count: 245, icon: "🪑" },
     { name: "Clothing", count: 189, icon: "👕" },
@@ -87,9 +198,9 @@ const Marketplace = () => {
                 <Heart className="h-4 w-4 mr-2" />
                 Saved
               </Button>
-              <Button size="sm" className="bg-wellness-primary hover:bg-wellness-primary/90">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Cart (3)
+              <Button size="sm" onClick={() => window.location.href = '/marketplace/chat'} className="bg-wellness-primary hover:bg-wellness-primary/90">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Messages
               </Button>
             </div>
           </div>
@@ -145,73 +256,92 @@ const Marketplace = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Featured Items</h2>
+            <h2 className="text-2xl font-bold">Marketplace Items</h2>
             <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
               View All
             </Button>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredItems.map((item) => (
-              <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden">
-                <div className="relative">
-                  <div className="aspect-square bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
-                    {item.image}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
-                  >
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                  <Badge className="absolute top-3 left-3 bg-wellness-primary/90 text-primary-foreground">
-                    {item.condition}
-                  </Badge>
-                </div>
-                
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-wellness-primary">
-                      ${item.price}
-                    </span>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {item.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {item.timePosted}
-                      </div>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <DollarSign className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No products available</h3>
+              <p className="text-muted-foreground">Check back later for new listings</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden">
+                  <div className="relative">
+                    <div className="aspect-square bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        "📦"
+                      )}
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{item.seller}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
+                    >
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                    <Badge className="absolute top-3 left-3 bg-wellness-primary/90 text-primary-foreground">
+                      {product.category}
+                    </Badge>
+                  </div>
+                  
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-wellness-primary">
+                        ${product.price}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {product.description}
+                      </p>
+                      
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs text-muted-foreground">{item.rating}</span>
+                          <MapPin className="h-3 w-3" />
+                          {product.business_applications?.address || 'Location'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          New
                         </div>
                       </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{product.business_applications?.business_name || 'Seller'}</span>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+                        onClick={() => handleMessageSeller(product)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Message Seller
+                      </Button>
                     </div>
-                    
-                    <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
