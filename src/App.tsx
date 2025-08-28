@@ -8,6 +8,8 @@ import Marketplace from "./pages/Marketplace";
 import Delivery from "./pages/Delivery";
 import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
+import FamilyGroupChat from "./pages/FamilyGroupChat";
+import DeliveryDriverApplication from "./pages/DeliveryDriverApplication";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/wellness-chat" element={<WellnessChat />} />
             <Route path="/gig-browse" element={<GigBrowse />} />
+            <Route path="/family-chat" element={<FamilyGroupChat />} />
+            <Route path="/driver-application" element={<DeliveryDriverApplication />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

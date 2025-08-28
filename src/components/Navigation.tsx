@@ -4,7 +4,9 @@ import {
   Package, 
   ShoppingBag, 
   Wrench,
-  Home
+  Home,
+  Users,
+  FileText
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
@@ -17,6 +19,8 @@ const Navigation = () => {
     { to: "/delivery", icon: Package, label: "Delivery" },
     { to: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
     { to: "/gig-browse", icon: Wrench, label: "Gigs" },
+    { to: "/family-chat", icon: Users, label: "Family" },
+    { to: "/driver-application", icon: FileText, label: "Apply" },
   ];
 
   return (
