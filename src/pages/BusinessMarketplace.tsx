@@ -143,10 +143,13 @@ const BusinessMarketplace = () => {
           <CardContent className="text-center">
             <Button 
               className="bg-wellness-secondary hover:bg-wellness-secondary/90"
-              disabled={!subscribed}
+              onClick={() => window.location.href = '/business-registration'}
             >
-              {subscribed ? 'Create Your Store' : 'Subscription Required'}
+              Apply to Join Marketplace
             </Button>
+            <p className="text-sm text-muted-foreground mt-2">
+              Simple application process for business partnerships
+            </p>
             {!subscribed && (
               <p className="text-sm text-muted-foreground mt-2">
                 Subscribe to access store creation tools
