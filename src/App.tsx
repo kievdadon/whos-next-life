@@ -39,9 +39,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/subscription-plans" element={<SubscriptionPlans />} />
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/marketplace/chat" element={<MarketplaceChat />} />
-            <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/marketplace/chat" element={<MarketplaceChat />} />
+              <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
             <Route path="/sell-item" element={<SellItem />} />
             <Route path="/business-marketplace" element={<BusinessMarketplace />} />
               <Route path="/business-registration" element={<BusinessRegistration />} />
