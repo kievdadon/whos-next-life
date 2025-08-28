@@ -46,11 +46,22 @@ const DeliveryDriverApplication = () => {
   };
 
   const handleFileUpload = (type: 'driversLicense' | 'secondaryId', file: File) => {
+    console.log('File upload triggered for:', type, 'File:', file.name);
     setUploadedFiles(prev => ({ ...prev, [type]: file }));
     toast({
       title: "File uploaded",
       description: `${file.name} has been uploaded successfully.`,
     });
+  };
+
+  const triggerFileInput = (inputId: string) => {
+    console.log('Triggering file input:', inputId);
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      input.click();
+    } else {
+      console.error('File input not found:', inputId);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -274,12 +285,15 @@ const DeliveryDriverApplication = () => {
                           className="hidden"
                           id="driversLicense-upload"
                         />
-                        <Label htmlFor="driversLicense-upload" className="cursor-pointer">
-                          <Button type="button" variant="outline" className="gap-2">
-                            <Upload className="h-4 w-4" />
-                            Choose from Files
-                          </Button>
-                        </Label>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="gap-2"
+                          onClick={() => triggerFileInput('driversLicense-upload')}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Choose from Files
+                        </Button>
                       </div>
                       
                       <div>
@@ -294,12 +308,15 @@ const DeliveryDriverApplication = () => {
                           className="hidden"
                           id="driversLicense-camera"
                         />
-                        <Label htmlFor="driversLicense-camera" className="cursor-pointer">
-                          <Button type="button" variant="outline" className="gap-2">
-                            <Camera className="h-4 w-4" />
-                            Take Picture
-                          </Button>
-                        </Label>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="gap-2"
+                          onClick={() => triggerFileInput('driversLicense-camera')}
+                        >
+                          <Camera className="h-4 w-4" />
+                          Take Picture
+                        </Button>
                       </div>
                     </div>
                     
@@ -339,12 +356,15 @@ const DeliveryDriverApplication = () => {
                           className="hidden"
                           id="secondaryId-upload"
                         />
-                        <Label htmlFor="secondaryId-upload" className="cursor-pointer">
-                          <Button type="button" variant="outline" className="gap-2">
-                            <Upload className="h-4 w-4" />
-                            Choose from Files
-                          </Button>
-                        </Label>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="gap-2"
+                          onClick={() => triggerFileInput('secondaryId-upload')}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Choose from Files
+                        </Button>
                       </div>
                       
                       <div>
@@ -359,12 +379,15 @@ const DeliveryDriverApplication = () => {
                           className="hidden"
                           id="secondaryId-camera"
                         />
-                        <Label htmlFor="secondaryId-camera" className="cursor-pointer">
-                          <Button type="button" variant="outline" className="gap-2">
-                            <Camera className="h-4 w-4" />
-                            Take Picture
-                          </Button>
-                        </Label>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="gap-2"
+                          onClick={() => triggerFileInput('secondaryId-camera')}
+                        >
+                          <Camera className="h-4 w-4" />
+                          Take Picture
+                        </Button>
                       </div>
                     </div>
                     
