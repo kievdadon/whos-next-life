@@ -264,19 +264,14 @@ const DeliveryDriverApplication = () => {
                     <Input
                       type="file"
                       accept="image/*,.pdf"
+                      capture="environment"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload('driversLicense', file);
                       }}
-                      className="hidden"
+                      className="w-full"
                       id="driversLicense"
                     />
-                    <Label htmlFor="driversLicense" className="cursor-pointer">
-                      <Button type="button" variant="outline" className="gap-2">
-                        <Upload className="h-4 w-4" />
-                        Choose File
-                      </Button>
-                    </Label>
                     {uploadedFiles.driversLicense && (
                       <p className="text-sm text-wellness-primary mt-2">
                         ✓ {uploadedFiles.driversLicense.name}
@@ -303,19 +298,14 @@ const DeliveryDriverApplication = () => {
                     <Input
                       type="file"
                       accept="image/*,.pdf"
+                      capture="environment"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload('secondaryId', file);
                       }}
-                      className="hidden"
+                      className="w-full"
                       id="secondaryId"
                     />
-                    <Label htmlFor="secondaryId" className="cursor-pointer">
-                      <Button type="button" variant="outline" className="gap-2">
-                        <Upload className="h-4 w-4" />
-                        Choose File
-                      </Button>
-                    </Label>
                     {uploadedFiles.secondaryId && (
                       <p className="text-sm text-wellness-primary mt-2">
                         ✓ {uploadedFiles.secondaryId.name}
