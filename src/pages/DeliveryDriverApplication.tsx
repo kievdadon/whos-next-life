@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, FileText, Shield, User, Phone, MapPin, Car, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CameraCapture } from "@/components/CameraCapture";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DeliveryDriverApplication = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -47,6 +50,8 @@ const DeliveryDriverApplication = () => {
     type: null as 'driversLicense' | 'secondaryId' | null,
     title: ''
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -83,44 +88,148 @@ const DeliveryDriverApplication = () => {
     setCameraState({ isOpen: false, type: null, title: '' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.firstName || !formData.lastName) {
+    if (!user) {
       toast({
-        title: "Error",
-        description: "Please fill in your first and last name.",
+        title: "Authentication Required",
+        description: "Please sign in to submit your application.",
         variant: "destructive"
       });
       return;
     }
 
-    if (!uploadedFiles.driversLicense || !uploadedFiles.secondaryId) {
-      toast({
-        title: "Error", 
-        description: "Please upload both required identification documents.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.agreedToTerms) {
-      toast({
-        title: "Error",
-        description: "Please agree to the terms and conditions.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Here would be the backend submission logic
-    console.log("Application submitted:", formData, uploadedFiles);
+    setIsSubmitting(true);
     
-    toast({
-      title: "Application Submitted!",
-      description: "We'll review your application and get back to you within 2-3 business days.",
-    });
+    try {
+      // Validation
+      if (!formData.firstName || !formData.lastName) {
+        toast({
+          title: "Error",
+          description: "Please fill in your first and last name.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!uploadedFiles.driversLicense || !uploadedFiles.secondaryId) {
+        toast({
+          title: "Error", 
+          description: "Please upload both required identification documents.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.agreedToTerms) {
+        toast({
+          title: "Error",
+          description: "Please agree to the terms and conditions.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Upload documents to storage
+      const driversLicenseFileName = `${user.id}/drivers-license-${Date.now()}.${uploadedFiles.driversLicense.name.split('.').pop()}`;
+      const secondaryIdFileName = `${user.id}/secondary-id-${Date.now()}.${uploadedFiles.secondaryId.name.split('.').pop()}`;
+
+      const [driversLicenseUpload, secondaryIdUpload] = await Promise.all([
+        supabase.storage
+          .from('driver-documents')
+          .upload(driversLicenseFileName, uploadedFiles.driversLicense),
+        supabase.storage
+          .from('driver-documents')
+          .upload(secondaryIdFileName, uploadedFiles.secondaryId)
+      ]);
+
+      if (driversLicenseUpload.error) {
+        throw new Error(`Driver's license upload failed: ${driversLicenseUpload.error.message}`);
+      }
+
+      if (secondaryIdUpload.error) {
+        throw new Error(`Secondary ID upload failed: ${secondaryIdUpload.error.message}`);
+      }
+
+      // Prepare application data
+      const applicationData = {
+        email: user.email!,
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zipCode,
+        date_of_birth: formData.dateOfBirth,
+        vehicle_type: formData.vehicleType,
+        vehicle_make: formData.vehicleMake,
+        vehicle_model: formData.vehicleModel,
+        vehicle_year: formData.vehicleYear,
+        license_number: formData.licensePlate,
+        insurance_provider: formData.insuranceProvider,
+        emergency_contact_name: formData.emergencyContact,
+        emergency_contact_phone: formData.emergencyPhone,
+        availability: Array.isArray(formData.availability) ? formData.availability.join(', ') : formData.availability,
+        experience: formData.experience,
+        drivers_license_url: driversLicenseUpload.data.path,
+        secondary_id_url: secondaryIdUpload.data.path,
+        status: 'pending'
+      };
+
+      // Submit application to database
+      const { error: insertError } = await supabase
+        .from('driver_applications')
+        .insert([applicationData]);
+
+      if (insertError) {
+        throw new Error(`Database submission failed: ${insertError.message}`);
+      }
+
+      toast({
+        title: "Application Submitted Successfully!",
+        description: "We'll review your application and get back to you within 2-3 business days. You'll receive an email notification once your application is processed.",
+      });
+
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        dateOfBirth: "",
+        vehicleType: "",
+        vehicleMake: "",
+        vehicleModel: "",
+        vehicleYear: "",
+        licensePlate: "",
+        insuranceProvider: "",
+        emergencyContact: "",
+        emergencyPhone: "",
+        availability: [],
+        experience: "",
+        agreedToTerms: false
+      });
+      
+      setUploadedFiles({
+        driversLicense: null,
+        secondaryId: null
+      });
+
+    } catch (error) {
+      console.error('Application submission error:', error);
+      toast({
+        title: "Submission Failed",
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const availabilityOptions = [
@@ -558,12 +667,12 @@ const DeliveryDriverApplication = () => {
 
           {/* Submit Button */}
           <div className="text-center">
-            <Button
-              type="submit"
-              size="lg"
-              className="bg-wellness-primary hover:bg-wellness-primary/90 text-white px-8 py-3"
+            <Button 
+              type="submit" 
+              className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+              disabled={isSubmitting}
             >
-              Submit Application
+              {isSubmitting ? "Submitting Application..." : "Submit Application"}
             </Button>
             <p className="text-sm text-muted-foreground mt-3">
               We'll review your application and contact you within 2-3 business days

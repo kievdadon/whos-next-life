@@ -183,58 +183,85 @@ export type Database = {
           address: string
           approved_at: string | null
           availability: string | null
+          city: string | null
           created_at: string
+          date_of_birth: string | null
+          drivers_license_url: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           experience: string | null
           full_name: string
           id: string
           insurance_policy: string | null
+          insurance_provider: string | null
           license_number: string
           phone: string
+          secondary_id_url: string | null
+          state: string | null
           status: string | null
           updated_at: string
           vehicle_make: string | null
           vehicle_model: string | null
           vehicle_type: string
           vehicle_year: string | null
+          zip_code: string | null
         }
         Insert: {
           address: string
           approved_at?: string | null
           availability?: string | null
+          city?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          drivers_license_url?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           experience?: string | null
           full_name: string
           id?: string
           insurance_policy?: string | null
+          insurance_provider?: string | null
           license_number: string
           phone: string
+          secondary_id_url?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string
           vehicle_make?: string | null
           vehicle_model?: string | null
           vehicle_type: string
           vehicle_year?: string | null
+          zip_code?: string | null
         }
         Update: {
           address?: string
           approved_at?: string | null
           availability?: string | null
+          city?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          drivers_license_url?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           experience?: string | null
           full_name?: string
           id?: string
           insurance_policy?: string | null
+          insurance_provider?: string | null
           license_number?: string
           phone?: string
+          secondary_id_url?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string
           vehicle_make?: string | null
           vehicle_model?: string | null
           vehicle_type?: string
           vehicle_year?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
