@@ -34,8 +34,8 @@ const SellItem = () => {
     stockQuantity: 1
   });
 
-  const [productImage, setProductImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [productImages, setProductImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
 
@@ -66,38 +66,63 @@ const SellItem = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (file: File) => {
-    setProductImage(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const handleFileUpload = (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const newImages = fileArray.slice(0, 7 - productImages.length); // Limit to 7 total images
+    
+    if (productImages.length + newImages.length > 7) {
+      toast({
+        title: "Too Many Images",
+        description: "You can upload a maximum of 7 images per product.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProductImages(prev => [...prev, ...newImages]);
+    
+    // Create previews for new images
+    newImages.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleCameraCapture = (file: File) => {
-    handleFileUpload(file);
+    handleFileUpload([file]);
     setCameraOpen(false);
   };
 
-  const uploadImageToStorage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `product-${Date.now()}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+  const removeImage = (index: number) => {
+    setProductImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file);
+  const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
+    const uploadPromises = files.map(async (file, index) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `product-${Date.now()}-${index}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
-    if (uploadError) {
-      throw uploadError;
-    }
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
+      if (uploadError) {
+        throw uploadError;
+      }
 
-    return publicUrl;
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    });
+
+    return Promise.all(uploadPromises);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,10 +140,10 @@ const SellItem = () => {
       return;
     }
 
-    if (!productImage) {
+    if (productImages.length === 0) {
       toast({
-        title: "Image Required",
-        description: "Please add a photo of your item",
+        title: "Images Required",
+        description: "Please add at least one photo of your item",
         variant: "destructive"
       });
       return;
@@ -127,8 +152,8 @@ const SellItem = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload image
-      const imageUrl = await uploadImageToStorage(productImage);
+      // Upload all images
+      const imageUrls = await uploadImagesToStorage(productImages);
 
       // Create product listing directly for the user
       const { data: newProduct, error: productError } = await supabase
@@ -138,8 +163,8 @@ const SellItem = () => {
           description: `${formData.description}\n\nCondition: ${conditions.find(c => c.value === formData.condition)?.label}${formData.location ? `\nLocation: ${formData.location}` : ''}`,
           price: parseFloat(formData.price),
           category: formData.category,
-          image_url: imageUrl,
-          user_id: user.id, // Use user_id instead of business_id
+          image_url: imageUrls[0], // Primary image
+          user_id: user.id,
           stock_quantity: formData.stockQuantity,
           delivery_available: formData.deliveryAvailable,
           is_active: true
@@ -167,8 +192,8 @@ const SellItem = () => {
         deliveryAvailable: true,
         stockQuantity: 1
       });
-      setProductImage(null);
-      setImagePreview(null);
+      setProductImages([]);
+      setImagePreviews([]);
 
       // Navigate to marketplace immediately to show the new listing
       setTimeout(() => {
@@ -222,42 +247,87 @@ const SellItem = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {imagePreview ? (
-                  <div className="relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Product preview" 
-                      className="w-full h-64 object-cover rounded-lg border-2 border-border"
-                    />
-                    <Badge className="absolute top-3 right-3 bg-wellness-primary">
-                      <Check className="h-3 w-3 mr-1" />
-                      Photo Added
-                    </Badge>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="absolute bottom-3 right-3"
-                      onClick={() => {
-                        setProductImage(null);
-                        setImagePreview(null);
-                      }}
-                    >
-                      Change Photo
-                    </Button>
+                {imagePreviews.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={preview} 
+                            alt={`Product preview ${index + 1}`} 
+                            className="w-full h-32 object-cover rounded-lg border-2 border-border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                          >
+                            ×
+                          </Button>
+                          {index === 0 && (
+                            <Badge className="absolute bottom-2 left-2 text-xs">
+                              Main Photo
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {productImages.length < 7 && (
+                      <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Add more photos ({productImages.length}/7)
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <div>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                if (files) handleFileUpload(files);
+                              }}
+                              className="hidden"
+                              id="additional-upload"
+                            />
+                            <Label htmlFor="additional-upload" className="cursor-pointer">
+                              <Button type="button" variant="outline" size="sm" className="gap-2">
+                                <Upload className="h-4 w-4" />
+                                Add More Photos
+                              </Button>
+                            </Label>
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => setCameraOpen(true)}
+                          >
+                            <Camera className="h-4 w-4" />
+                            Take Photo
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">Add photos of your item</p>
+                    <p className="text-muted-foreground mb-2">Add 1-7 photos of your item</p>
+                    <p className="text-sm text-muted-foreground mb-4">First photo will be the main display image</p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                       <div>
                         <Input
                           type="file"
                           accept="image/*"
+                          multiple
                           onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload(file);
+                            const files = e.target.files;
+                            if (files) handleFileUpload(files);
                           }}
                           className="hidden"
                           id="product-upload"
@@ -265,7 +335,7 @@ const SellItem = () => {
                         <Label htmlFor="product-upload" className="cursor-pointer">
                           <Button type="button" variant="outline" className="gap-2">
                             <Upload className="h-4 w-4" />
-                            Upload from Files
+                            Upload Photos
                           </Button>
                         </Label>
                       </div>
