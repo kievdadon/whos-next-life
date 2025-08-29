@@ -32,6 +32,7 @@ const Marketplace = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Redirect non-authenticated users only if they try to message sellers
   // Allow browsing marketplace without authentication
@@ -48,7 +49,7 @@ const Marketplace = () => {
       // Clear the state to prevent showing the message again
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, selectedCategory]);
+  }, [location.state, selectedCategory, searchQuery]);
 
   const fetchProducts = async () => {
     console.log('🔄 Fetching products from marketplace...');
@@ -61,6 +62,11 @@ const Marketplace = () => {
       // Add category filter if selected
       if (selectedCategory) {
         query = query.eq('category', selectedCategory);
+      }
+
+      // Add search filter if there's a search query
+      if (searchQuery.trim()) {
+        query = query.or(`name.ilike.%${searchQuery.trim()}%,description.ilike.%${searchQuery.trim()}%`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -323,6 +329,8 @@ const Marketplace = () => {
               <Input 
                 placeholder="Search furniture, clothes, electronics..." 
                 className="pl-10 h-12 bg-card/50 border-border/50"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex gap-3">
@@ -390,11 +398,28 @@ const Marketplace = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">
-              {selectedCategory ? `${selectedCategory} Items` : 'Marketplace Items'}
+              {searchQuery.trim() 
+                ? `Search results for "${searchQuery.trim()}"` 
+                : selectedCategory 
+                  ? `${selectedCategory} Items` 
+                  : 'Marketplace Items'
+              }
             </h2>
-            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
-              View All
-            </Button>
+            <div className="flex gap-2">
+              {searchQuery.trim() && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                >
+                  Clear Search
+                </Button>
+              )}
+              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                View All
+              </Button>
+            </div>
           </div>
           
           {isLoading ? (
