@@ -15,7 +15,11 @@ import {
   Star,
   DollarSign,
   Clock,
-  User
+  User,
+  CheckCircle,
+  X,
+  Edit3,
+  MoreVertical
 } from "lucide-react";
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 
