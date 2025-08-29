@@ -371,7 +371,11 @@ const Marketplace = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((product) => (
-                <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden">
+                <div key={product.id} className="group cursor-pointer">
+                  <Card 
+                    className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden h-full"
+                    onClick={() => navigate(`/marketplace/product/${product.id}`)}
+                  >
                   <div className="relative">
                     <div className="aspect-square bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
                       {product.image_url ? (
@@ -389,16 +393,23 @@ const Marketplace = () => {
                             size="sm"
                             variant="outline"
                             className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleMarkAsSold(product.id)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsSold(product.id);
+                          }}>
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Mark as Sold
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRemoveListing(product.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveListing(product.id);
+                          }} className="text-destructive">
                             <X className="h-4 w-4 mr-2" />
                             Remove Listing
                           </DropdownMenuItem>
@@ -474,7 +485,12 @@ const Marketplace = () => {
                              ? 'bg-muted text-muted-foreground cursor-not-allowed' 
                              : 'bg-wellness-primary hover:bg-wellness-primary/90'
                          }`}
-                         onClick={() => product.product_status !== 'sold' && handleMessageSeller(product)}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           if (product.product_status !== 'sold') {
+                             handleMessageSeller(product);
+                           }
+                         }}
                          disabled={product.product_status === 'sold'}
                        >
                          <MessageSquare className="h-4 w-4 mr-2" />
@@ -488,6 +504,7 @@ const Marketplace = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </div>
               ))}
             </div>
           )}

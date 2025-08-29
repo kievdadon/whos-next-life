@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
+import ProductDetail from "./pages/ProductDetail";
 import MarketplaceChat from "./pages/MarketplaceChat";
 import SellItem from "./pages/SellItem";
 import Delivery from "./pages/Delivery";
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/checkout/elite" element={<CheckoutElite />} />
               <Route path="/checkout/veteran" element={<CheckoutVeteran />} />
               <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/marketplace/product/:id" element={<ProductDetail />} />
               <Route path="/marketplace/chat" element={<MarketplaceChat />} />
               <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
             <Route path="/sell-item" element={<SellItem />} />
