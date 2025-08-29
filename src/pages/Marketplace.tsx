@@ -17,11 +17,12 @@ import {
   Clock,
   User
 } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const Marketplace = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -122,7 +123,7 @@ const Marketplace = () => {
       }
 
       // Navigate to the conversation
-      window.location.href = `/marketplace/chat/${conversationId}`;
+      navigate(`/marketplace/chat/${conversationId}`);
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
@@ -204,7 +205,7 @@ const Marketplace = () => {
                 <Heart className="h-4 w-4 mr-2" />
                 Saved
               </Button>
-              <Button size="sm" onClick={() => window.location.href = '/marketplace/chat'} className="bg-wellness-primary hover:bg-wellness-primary/90">
+              <Button size="sm" onClick={() => navigate('/marketplace/chat')} className="bg-wellness-primary hover:bg-wellness-primary/90">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Messages
               </Button>
@@ -280,7 +281,7 @@ const Marketplace = () => {
               <DollarSign className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No products available yet</h3>
               <p className="text-muted-foreground mb-4">Be the first to list an item!</p>
-              <Button onClick={() => window.location.href = '/sell-item'} className="bg-wellness-primary hover:bg-wellness-primary/90">
+              <Button onClick={() => navigate('/sell-item')} className="bg-wellness-primary hover:bg-wellness-primary/90">
                 <DollarSign className="mr-2 h-4 w-4" />
                 List Your First Item
               </Button>
@@ -368,7 +369,7 @@ const Marketplace = () => {
             <p className="text-lg text-muted-foreground">
               Turn your unused items into cash. List for free and reach thousands of local buyers.
             </p>
-            <Button size="lg" onClick={() => window.location.href = '/sell-item'} className="bg-wellness-secondary hover:bg-wellness-secondary/90">
+            <Button size="lg" onClick={() => navigate('/sell-item')} className="bg-wellness-secondary hover:bg-wellness-secondary/90">
               <DollarSign className="mr-2 h-5 w-5" />
               Sell Your Items
             </Button>
