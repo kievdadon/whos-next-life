@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { 
   Search, 
   Filter, 
@@ -33,6 +36,10 @@ const Marketplace = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [priceRange, setPriceRange] = useState([0, 5000]);
+  const [sortBy, setSortBy] = useState("newest");
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [locationError, setLocationError] = useState("");
 
   // Redirect non-authenticated users only if they try to message sellers
   // Allow browsing marketplace without authentication
@@ -49,7 +56,7 @@ const Marketplace = () => {
       // Clear the state to prevent showing the message again
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, selectedCategory, searchQuery]);
+  }, [location.state, selectedCategory, searchQuery, priceRange, sortBy]);
 
   const fetchProducts = async () => {
     console.log('🔄 Fetching products from marketplace...');
@@ -239,6 +246,74 @@ const Marketplace = () => {
     }
   };
 
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      setLocationError("");
+      toast({
+        title: "📍 Getting your location...",
+        description: "Please allow location access to find nearby items",
+      });
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+          toast({
+            title: "✅ Location Found!",
+            description: "Now showing items near you",
+          });
+        },
+        (error) => {
+          setLocationError("Unable to get your location. Please check your browser settings.");
+          toast({
+            title: "❌ Location Error",
+            description: "Could not access your location. Please enable location services.",
+            variant: "destructive"
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "❌ Location Not Supported",
+        description: "Your browser doesn't support geolocation.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const applyFilters = (products: any[]) => {
+    return products.filter(product => {
+      // Price range filter
+      const price = parseFloat(product.price);
+      if (price < priceRange[0] || price > priceRange[1]) {
+        return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      // Sorting
+      switch (sortBy) {
+        case 'price-low':
+          return parseFloat(a.price) - parseFloat(b.price);
+        case 'price-high':
+          return parseFloat(b.price) - parseFloat(a.price);
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  };
+
+  const resetFilters = () => {
+    setPriceRange([0, 5000]);
+    setSortBy("newest");
+    setSelectedCategory(null);
+    setSearchQuery("");
+  };
+
   const categories = [
     { name: "Furniture", count: 245, icon: "🪑" },
     { name: "Clothing", count: 189, icon: "👕" },
@@ -334,13 +409,85 @@ const Marketplace = () => {
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Filter Products</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price-range">Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
+                      <Slider
+                        id="price-range"
+                        min={0}
+                        max={5000}
+                        step={50}
+                        value={priceRange}
+                        onValueChange={setPriceRange}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="sort-by">Sort By</Label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full justify-between">
+                            {sortBy === 'newest' && 'Newest First'}
+                            {sortBy === 'oldest' && 'Oldest First'}
+                            {sortBy === 'price-low' && 'Price: Low to High'}
+                            {sortBy === 'price-high' && 'Price: High to Low'}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-full">
+                          <DropdownMenuItem onClick={() => setSortBy('newest')}>
+                            Newest First
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSortBy('oldest')}>
+                            Oldest First
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSortBy('price-low')}>
+                            Price: Low to High
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSortBy('price-high')}>
+                            Price: High to Low
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={resetFilters}
+                      >
+                        Reset
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
+                        onClick={() => fetchProducts()}
+                      >
+                        Apply Filters
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <Button 
+                variant="outline" 
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={handleGetLocation}
+              >
                 <MapPin className="h-4 w-4 mr-2" />
-                Near Me
+                {userLocation ? 'Location Found' : 'Near Me'}
               </Button>
             </div>
           </div>
@@ -441,7 +588,7 @@ const Marketplace = () => {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
+              {applyFilters(products).map((product) => (
                 <div key={product.id} className="group cursor-pointer">
                   <Card 
                     className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden h-full"
