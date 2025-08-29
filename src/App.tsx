@@ -26,6 +26,7 @@ import BusinessDashboard from "./pages/BusinessDashboard";
 import BrandPartnership from "./pages/BrandPartnership";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
+import Header from "./components/Header";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Header />
           <div className="pb-16 md:pb-0">
             <Routes>
               <Route path="/" element={<Index />} />
