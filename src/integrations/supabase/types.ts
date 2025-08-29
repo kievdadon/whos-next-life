@@ -438,7 +438,7 @@ export type Database = {
       }
       products: {
         Row: {
-          business_id: string
+          business_id: string | null
           category: string
           created_at: string
           delivery_available: boolean | null
@@ -451,9 +451,10 @@ export type Database = {
           price: number
           stock_quantity: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
-          business_id: string
+          business_id?: string | null
           category: string
           created_at?: string
           delivery_available?: boolean | null
@@ -466,9 +467,10 @@ export type Database = {
           price: number
           stock_quantity?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          business_id?: string
+          business_id?: string | null
           category?: string
           created_at?: string
           delivery_available?: boolean | null
@@ -481,6 +483,7 @@ export type Database = {
           price?: number
           stock_quantity?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

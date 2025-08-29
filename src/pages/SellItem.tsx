@@ -126,45 +126,10 @@ const SellItem = () => {
     setIsSubmitting(true);
 
     try {
-      // Get user's business application or create one
-      let businessId = null;
-      
-      // Check if user has a business application
-      const { data: businessApp, error: businessError } = await supabase
-        .from('business_applications')
-        .select('id')
-        .eq('email', user.email)
-        .single();
-
-      if (businessError && businessError.code !== 'PGRST116') {
-        throw businessError;
-      }
-
-      if (!businessApp) {
-        // Create a personal seller profile
-        const { data: newBusiness, error: createError } = await supabase
-          .from('business_applications')
-          .insert({
-            business_name: `${user.email?.split('@')[0]}'s Items`,
-            business_type: 'personal_seller',
-            contact_name: user.email?.split('@')[0] || 'Seller',
-            email: user.email!,
-            description: 'Personal seller on marketplace',
-            status: 'approved'
-          })
-          .select('id')
-          .single();
-
-        if (createError) throw createError;
-        businessId = newBusiness.id;
-      } else {
-        businessId = businessApp.id;
-      }
-
       // Upload image
       const imageUrl = await uploadImageToStorage(productImage);
 
-      // Create product listing
+      // Create product listing directly for the user
       const { error: productError } = await supabase
         .from('products')
         .insert({
@@ -173,7 +138,7 @@ const SellItem = () => {
           price: parseFloat(formData.price),
           category: formData.category,
           image_url: imageUrl,
-          business_id: businessId,
+          user_id: user.id, // Use user_id instead of business_id
           stock_quantity: formData.stockQuantity,
           delivery_available: formData.deliveryAvailable,
           is_active: true

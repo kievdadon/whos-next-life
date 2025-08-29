@@ -42,6 +42,9 @@ const Marketplace = () => {
             business_name,
             business_type,
             address
+          ),
+          profiles!user_id (
+            full_name
           )
         `)
         .eq('is_active', true)
@@ -78,24 +81,21 @@ const Marketplace = () => {
     }
 
     try {
-      // Get the seller's user ID by looking up the business owner
-      const { data: businessData, error: businessError } = await supabase
-        .from('business_applications')
-        .select('email')
-        .eq('id', product.business_id)
-        .single();
+      // Determine seller ID based on whether it's a business or individual user
+      let sellerId = null;
+      
+      if (product.user_id) {
+        // Individual user product
+        sellerId = product.user_id;
+      } else if (product.business_id) {
+        // Business product - we'll use business_id as seller_id for now
+        // This assumes conversations table can handle business IDs as seller_id
+        sellerId = product.business_id;
+      } else {
+        throw new Error("No seller information found for this product");
+      }
 
-      if (businessError) throw businessError;
-
-      // Get seller's user ID from auth.users
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', businessData.email) // This would need to be adjusted based on your auth setup
-        .single();
-
-      // For now, we'll create a conversation with a placeholder seller ID
-      // In a real app, you'd need to properly map business to user
+      // Check for existing conversation
       const { data: existingConversation, error: checkError } = await supabase
         .from('conversations')
         .select('id')
@@ -115,7 +115,7 @@ const Marketplace = () => {
           .from('conversations')
           .insert({
             buyer_id: user.id,
-            seller_id: product.business_id, // Using business_id as placeholder
+            seller_id: sellerId,
             product_id: product.id,
             subject: `Interest in: ${product.name}`
           })
@@ -340,12 +340,16 @@ const Marketplace = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{product.business_applications?.business_name || 'Seller'}</span>
-                        </div>
-                      </div>
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-2">
+                           <User className="h-4 w-4 text-muted-foreground" />
+                           <span className="text-sm">
+                             {product.business_applications?.business_name || 
+                              product.profiles?.full_name || 
+                              'Seller'}
+                           </span>
+                         </div>
+                       </div>
                       
                       <Button 
                         className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
