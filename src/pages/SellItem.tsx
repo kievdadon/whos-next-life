@@ -174,6 +174,24 @@ const SellItem = () => {
 
       if (productError) throw productError;
 
+      // Save additional images to product_images table
+      if (imageUrls.length > 1) {
+        const additionalImages = imageUrls.slice(1).map((url, index) => ({
+          product_id: newProduct.id,
+          image_url: url,
+          image_order: index + 2 // Start from 2 since main image is 1
+        }));
+
+        const { error: imagesError } = await supabase
+          .from('product_images')
+          .insert(additionalImages);
+
+        if (imagesError) {
+          console.error('Error saving additional images:', imagesError);
+          // Don't throw error here - main product was saved successfully
+        }
+      }
+
       console.log('New product created:', newProduct);
 
       toast({
