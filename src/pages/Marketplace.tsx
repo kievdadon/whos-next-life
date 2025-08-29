@@ -45,15 +45,11 @@ const Marketplace = () => {
   }, [location.state]);
 
   const fetchProducts = async () => {
+    console.log('🔄 Fetching products from marketplace...');
     try {
       const { data, error } = await supabase
         .from('products')
-        .select(`
-          *,
-          profiles!user_id (
-            full_name
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -61,10 +57,11 @@ const Marketplace = () => {
         console.error('Error fetching products:', error);
         throw error;
       }
-      console.log('Fetched products:', data);
+      console.log('✅ Successfully fetched products:', data);
+      console.log(`📦 Found ${data?.length || 0} products in marketplace`);
       setProducts(data || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ Error fetching products:', error);
       toast({
         title: "Error",
         description: "Failed to load products. Please try again later.",
@@ -355,7 +352,7 @@ const Marketplace = () => {
                          <div className="flex items-center gap-2">
                            <User className="h-4 w-4 text-muted-foreground" />
                            <span className="text-sm">
-                             {product.profiles?.full_name || 'Seller'}
+                             Seller
                            </span>
                          </div>
                        </div>
