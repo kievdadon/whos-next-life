@@ -25,10 +25,8 @@ const Marketplace = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect non-authenticated users
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Redirect non-authenticated users only if they try to message sellers
+  // Allow browsing marketplace without authentication
 
   useEffect(() => {
     fetchProducts();
@@ -49,22 +47,35 @@ const Marketplace = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+      console.log('Fetched products:', data);
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
         title: "Error",
-        description: "Failed to load products",
+        description: "Failed to load products. Please try again later.",
         variant: "destructive"
       });
+      // Set empty array so the UI can still render
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleMessageSeller = async (product: any) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to message sellers",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       // Get the seller's user ID by looking up the business owner
@@ -264,13 +275,20 @@ const Marketplace = () => {
           
           {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading products...</p>
+              <div className="flex items-center justify-center mb-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wellness-primary"></div>
+              </div>
+              <p className="text-muted-foreground">Loading marketplace...</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
               <DollarSign className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No products available</h3>
-              <p className="text-muted-foreground">Check back later for new listings</p>
+              <h3 className="text-lg font-semibold mb-2">No products available yet</h3>
+              <p className="text-muted-foreground mb-4">Be the first to list an item!</p>
+              <Button onClick={() => window.location.href = '/sell-item'} className="bg-wellness-primary hover:bg-wellness-primary/90">
+                <DollarSign className="mr-2 h-4 w-4" />
+                List Your First Item
+              </Button>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -334,7 +352,7 @@ const Marketplace = () => {
                         onClick={() => handleMessageSeller(product)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        Message Seller
+                        {user ? "Message Seller" : "Sign In to Message"}
                       </Button>
                     </div>
                   </CardContent>
