@@ -31,6 +31,7 @@ const Marketplace = () => {
   const location = useLocation();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Redirect non-authenticated users only if they try to message sellers
   // Allow browsing marketplace without authentication
@@ -47,16 +48,22 @@ const Marketplace = () => {
       // Clear the state to prevent showing the message again
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.state, selectedCategory]);
 
   const fetchProducts = async () => {
     console.log('🔄 Fetching products from marketplace...');
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
         .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+
+      // Add category filter if selected
+      if (selectedCategory) {
+        query = query.eq('category', selectedCategory);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -215,6 +222,17 @@ const Marketplace = () => {
       (product.business_id && user.email) // Check if user owns the business
     );
   };
+
+  const handleCategoryClick = (categoryName: string) => {
+    if (selectedCategory === categoryName) {
+      // If clicking the same category, clear filter
+      setSelectedCategory(null);
+    } else {
+      // Select new category
+      setSelectedCategory(categoryName);
+    }
+  };
+
   const categories = [
     { name: "Furniture", count: 245, icon: "🪑" },
     { name: "Clothing", count: 189, icon: "👕" },
@@ -324,16 +342,42 @@ const Marketplace = () => {
       {/* Categories */}
       <section className="py-8">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Browse Categories</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Browse Categories</h2>
+            {selectedCategory && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+              >
+                Clear Filter
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/20">
+              <Card 
+                key={index} 
+                className={`group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 ${
+                  selectedCategory === category.name 
+                    ? 'bg-gradient-to-br from-wellness-primary/20 to-wellness-secondary/20 border-wellness-primary shadow-lg' 
+                    : 'bg-gradient-to-br from-card to-wellness-calm/20'
+                }`}
+                onClick={() => handleCategoryClick(category.name)}
+              >
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">
                     {category.icon}
                   </div>
-                  <h3 className="font-semibold text-sm mb-1">{category.name}</h3>
-                  <p className="text-xs text-muted-foreground">{category.count} items</p>
+                  <h3 className={`font-semibold text-sm mb-1 ${
+                    selectedCategory === category.name ? 'text-wellness-primary' : ''
+                  }`}>
+                    {category.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCategory === category.name ? 'Selected' : `${category.count} items`}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -345,7 +389,9 @@ const Marketplace = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Marketplace Items</h2>
+            <h2 className="text-2xl font-bold">
+              {selectedCategory ? `${selectedCategory} Items` : 'Marketplace Items'}
+            </h2>
             <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
               View All
             </Button>
