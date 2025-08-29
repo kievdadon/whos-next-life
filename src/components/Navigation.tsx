@@ -7,7 +7,8 @@ import {
   Home,
   Users,
   FileText,
-  PlusCircle
+  PlusCircle,
+  MessageSquare
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
@@ -19,6 +20,7 @@ const Navigation = () => {
     { to: "/wellness-chat", icon: MessageCircle, label: "Wellness AI" },
     { to: "/delivery", icon: Package, label: "Delivery" },
     { to: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
+    { to: "/marketplace-chat", icon: MessageSquare, label: "Chat" },
     { to: "/sell-item", icon: PlusCircle, label: "Sell" },
     { to: "/gig-browse", icon: Wrench, label: "Gigs" },
     { to: "/family-chat", icon: Users, label: "Family" },
