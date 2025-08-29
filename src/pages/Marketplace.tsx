@@ -38,11 +38,6 @@ const Marketplace = () => {
         .from('products')
         .select(`
           *,
-          business_applications!business_id (
-            business_name,
-            business_type,
-            address
-          ),
           profiles!user_id (
             full_name
           )
@@ -332,7 +327,7 @@ const Marketplace = () => {
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {product.business_applications?.address || 'Location'}
+                          Local Area
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -344,9 +339,7 @@ const Marketplace = () => {
                          <div className="flex items-center gap-2">
                            <User className="h-4 w-4 text-muted-foreground" />
                            <span className="text-sm">
-                             {product.business_applications?.business_name || 
-                              product.profiles?.full_name || 
-                              'Seller'}
+                             {product.profiles?.full_name || 'Seller'}
                            </span>
                          </div>
                        </div>
