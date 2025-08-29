@@ -77,7 +77,12 @@ const CheckoutElite = () => {
     if (!session || !validateForm()) return;
     
     setLoading(true);
+    console.log('Starting checkout process for elite tier');
+    console.log('Session exists:', !!session);
+    console.log('Billing info:', billingInfo);
+    
     try {
+      console.log('Calling create-checkout function...');
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
           tier: 'elite',
@@ -88,8 +93,19 @@ const CheckoutElite = () => {
         },
       });
 
-      if (error) throw error;
+      console.log('Response from create-checkout:', { data, error });
 
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data?.url) {
+        console.error('No URL returned from create-checkout');
+        throw new Error('No checkout URL received');
+      }
+
+      console.log('Redirecting to Stripe checkout:', data.url);
       // Redirect to Stripe checkout in the same tab
       window.location.href = data.url;
       
