@@ -86,8 +86,8 @@ const CheckoutPro = () => {
 
       if (error) throw error;
 
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
+      // Redirect to Stripe checkout in the same tab
+      window.location.href = data.url;
       
     } catch (error) {
       console.error('Error creating checkout:', error);
