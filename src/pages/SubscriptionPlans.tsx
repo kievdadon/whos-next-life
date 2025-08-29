@@ -202,33 +202,27 @@ const SubscriptionPlans = () => {
                     ))}
                   </ul>
                   
-                  <div className="space-y-2">
+                  {!isCurrentPlan ? (
                     <Button
-                      onClick={() => handleSubscribe(plan.id)}
-                      disabled={loading === plan.id || isCurrentPlan}
+                      asChild
                       className={`w-full ${
                         plan.popular 
                           ? 'bg-wellness-primary hover:bg-wellness-primary/90' 
                           : 'bg-wellness-secondary hover:bg-wellness-secondary/90'
                       }`}
                     >
-                      {loading === plan.id ? 'Loading...' : 
-                       isCurrentPlan ? 'Current Plan' : 
-                       `Subscribe to ${plan.name}`}
+                      <Link to={`/checkout/${plan.id}`}>
+                        Choose {plan.name}
+                      </Link>
                     </Button>
-                    
-                    {!isCurrentPlan && (
-                      <Button
-                        asChild
-                        variant="outline"
-                        className="w-full border-wellness-primary/20 hover:bg-wellness-primary/5"
-                      >
-                        <Link to={`/checkout/${plan.id}`}>
-                          Learn More & Checkout
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
+                  ) : (
+                    <Button
+                      disabled
+                      className="w-full bg-muted text-muted-foreground"
+                    >
+                      Current Plan
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
