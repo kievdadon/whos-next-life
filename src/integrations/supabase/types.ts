@@ -484,6 +484,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          product_status: string | null
           stock_quantity: number | null
           updated_at: string
           user_id: string | null
@@ -500,6 +501,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: number
+          product_status?: string | null
           stock_quantity?: number | null
           updated_at?: string
           user_id?: string | null
@@ -516,6 +518,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          product_status?: string | null
           stock_quantity?: number | null
           updated_at?: string
           user_id?: string | null

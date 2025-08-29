@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Search, 
   Filter, 
@@ -144,6 +145,75 @@ const Marketplace = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleMarkAsSold = async (productId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ product_status: 'sold', updated_at: new Date().toISOString() })
+        .eq('id', productId)
+        .eq('user_id', user.id); // Only allow owners to update
+
+      if (error) throw error;
+
+      // Update local state
+      setProducts(products.map(product => 
+        product.id === productId 
+          ? { ...product, product_status: 'sold' }
+          : product
+      ));
+
+      toast({
+        title: "✅ Item Marked as Sold",
+        description: "Your item has been marked as sold. Interested buyers will be notified.",
+      });
+    } catch (error) {
+      console.error('Error marking as sold:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark item as sold. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveListing = async (productId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: false, product_status: 'removed', updated_at: new Date().toISOString() })
+        .eq('id', productId)
+        .eq('user_id', user.id); // Only allow owners to update
+
+      if (error) throw error;
+
+      // Remove from local state
+      setProducts(products.filter(product => product.id !== productId));
+
+      toast({
+        title: "🗑️ Listing Removed",
+        description: "Your item has been removed from the marketplace.",
+      });
+    } catch (error) {
+      console.error('Error removing listing:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove listing. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const isUserSeller = (product: any) => {
+    return user && (
+      (product.user_id && product.user_id === user.id) ||
+      (product.business_id && user.email) // Check if user owns the business
+    );
   };
   const categories = [
     { name: "Furniture", count: 245, icon: "🪑" },
@@ -310,16 +380,53 @@ const Marketplace = () => {
                         "📦"
                       )}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
-                    >
-                      <Heart className="h-4 w-4" />
-                    </Button>
+                    
+                    {/* Seller Controls */}
+                    {isUserSeller(product) ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleMarkAsSold(product.id)}>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Sold
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRemoveListing(product.id)} className="text-destructive">
+                            <X className="h-4 w-4 mr-2" />
+                            Remove Listing
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm border-0"
+                      >
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
                     <Badge className="absolute top-3 left-3 bg-wellness-primary/90 text-primary-foreground">
                       {product.category}
                     </Badge>
+                    
+                    {/* Status indicator */}
+                    {product.product_status === 'sold' && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                        <Badge className="bg-green-600 text-white text-lg py-2 px-4">
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          SOLD
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   
                   <CardHeader className="pb-2">
@@ -361,13 +468,23 @@ const Marketplace = () => {
                          </div>
                        </div>
                       
-                      <Button 
-                        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
-                        onClick={() => handleMessageSeller(product)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        {user ? "Message Seller" : "Sign In to Message"}
-                      </Button>
+                       <Button 
+                         className={`w-full ${
+                           product.product_status === 'sold' 
+                             ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                             : 'bg-wellness-primary hover:bg-wellness-primary/90'
+                         }`}
+                         onClick={() => product.product_status !== 'sold' && handleMessageSeller(product)}
+                         disabled={product.product_status === 'sold'}
+                       >
+                         <MessageSquare className="h-4 w-4 mr-2" />
+                         {product.product_status === 'sold' 
+                           ? 'Item Sold' 
+                           : user 
+                             ? "Message Seller" 
+                             : "Sign In to Message"
+                         }
+                       </Button>
                     </div>
                   </CardContent>
                 </Card>
