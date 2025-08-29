@@ -29,6 +29,7 @@ const SellItem = () => {
     price: '',
     category: '',
     condition: '',
+    location: '',
     deliveryAvailable: true,
     stockQuantity: 1
   });
@@ -130,11 +131,11 @@ const SellItem = () => {
       const imageUrl = await uploadImageToStorage(productImage);
 
       // Create product listing directly for the user
-      const { error: productError } = await supabase
+      const { data: newProduct, error: productError } = await supabase
         .from('products')
         .insert({
           name: formData.name,
-          description: `${formData.description}\n\nCondition: ${conditions.find(c => c.value === formData.condition)?.label}`,
+          description: `${formData.description}\n\nCondition: ${conditions.find(c => c.value === formData.condition)?.label}${formData.location ? `\nLocation: ${formData.location}` : ''}`,
           price: parseFloat(formData.price),
           category: formData.category,
           image_url: imageUrl,
@@ -142,13 +143,17 @@ const SellItem = () => {
           stock_quantity: formData.stockQuantity,
           delivery_available: formData.deliveryAvailable,
           is_active: true
-        });
+        })
+        .select()
+        .single();
 
       if (productError) throw productError;
 
+      console.log('New product created:', newProduct);
+
       toast({
         title: "Item Listed Successfully!",
-        description: "Your item is now live on the marketplace. Buyers can message you about it.",
+        description: "Your item is now live on the marketplace and visible to buyers in your area!",
       });
 
       // Reset form
@@ -158,16 +163,19 @@ const SellItem = () => {
         price: '',
         category: '',
         condition: '',
+        location: '',
         deliveryAvailable: true,
         stockQuantity: 1
       });
       setProductImage(null);
       setImagePreview(null);
 
-      // Navigate to marketplace after a brief delay
+      // Navigate to marketplace immediately to show the new listing
       setTimeout(() => {
-        navigate('/marketplace');
-      }, 2000);
+        navigate('/marketplace', { 
+          state: { newProductId: newProduct?.id, showSuccess: true }
+        });
+      }, 1500);
 
     } catch (error) {
       console.error('Error listing item:', error);
@@ -344,27 +352,40 @@ const SellItem = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
+               </div>
 
-              <div>
-                <Label htmlFor="price">Asking Price *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
-                    placeholder="0.00"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Set a competitive price. Buyers can negotiate through messages.
-                </p>
-              </div>
+               <div>
+                 <Label htmlFor="location">Your Location (City, State)</Label>
+                 <Input
+                   id="location"
+                   value={formData.location}
+                   onChange={(e) => handleInputChange('location', e.target.value)}
+                   placeholder="e.g., Cleveland, OH or Local Pickup"
+                 />
+                 <p className="text-xs text-muted-foreground mt-1">
+                   Help buyers know where the item is located for pickup/delivery.
+                 </p>
+               </div>
+
+               <div>
+                 <Label htmlFor="price">Asking Price *</Label>
+                 <div className="relative">
+                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   <Input
+                     id="price"
+                     type="number"
+                     step="0.01"
+                     value={formData.price}
+                     onChange={(e) => handleInputChange('price', e.target.value)}
+                     placeholder="0.00"
+                     className="pl-10"
+                     required
+                   />
+                 </div>
+                 <p className="text-xs text-muted-foreground mt-1">
+                   Set a competitive price. Buyers can negotiate through messages.
+                 </p>
+               </div>
             </CardContent>
           </Card>
 

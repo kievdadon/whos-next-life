@@ -17,12 +17,13 @@ import {
   Clock,
   User
 } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 
 const Marketplace = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,7 +32,17 @@ const Marketplace = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+    
+    // Show success message if user just listed an item
+    if (location.state?.showSuccess) {
+      toast({
+        title: "🎉 Item Listed Successfully!",
+        description: "Your item is now visible to buyers in the community marketplace!",
+      });
+      // Clear the state to prevent showing the message again
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const fetchProducts = async () => {
     try {
@@ -328,7 +339,11 @@ const Marketplace = () => {
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          Local Area
+                          {/* Extract location from description if available */}
+                          {product.description?.includes('Location:') 
+                            ? product.description.split('Location:')[1]?.split('\n')[0]?.trim() || 'Local Area'
+                            : 'Local Area'
+                          }
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
