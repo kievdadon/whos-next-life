@@ -86,7 +86,13 @@ const CheckoutVeteran = () => {
     
     try {
       console.log('Calling create-checkout function...');
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      
+      // Add timeout to the function call
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Function call timeout')), 30000)
+      );
+      
+      const functionCallPromise = supabase.functions.invoke('create-checkout', {
         body: { 
           tier: 'veteran',
           billingInfo: billingInfo
@@ -96,6 +102,8 @@ const CheckoutVeteran = () => {
         },
       });
 
+      const result = await Promise.race([functionCallPromise, timeoutPromise]);
+      const { data, error } = result;
       console.log('Response from create-checkout:', { data, error });
 
       if (error) {
@@ -116,7 +124,7 @@ const CheckoutVeteran = () => {
       console.error('Error creating checkout:', error);
       toast({
         title: "Error",
-        description: "Failed to create checkout session. Please try again.",
+        description: error.message || "Failed to create checkout session. Please try again.",
         variant: "destructive",
       });
     } finally {
