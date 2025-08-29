@@ -3,7 +3,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, ArrowLeft, CreditCard, Shield, Clock, Zap } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Check, Crown, ArrowLeft, CreditCard, Shield, Clock, User, Mail, MapPin, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate, Link } from 'react-router-dom';
@@ -11,6 +14,17 @@ import { Navigate, Link } from 'react-router-dom';
 const CheckoutElite = () => {
   const { user, session, subscribed, subscriptionTier } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [billingInfo, setBillingInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: user?.email || '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States'
+  });
   const { toast } = useToast();
 
   // Redirect non-authenticated users
@@ -23,25 +37,52 @@ const CheckoutElite = () => {
     return <Navigate to="/subscription-plans" replace />;
   }
 
-  const features = [
-    'Free delivery 4 days per week',
-    'Priority customer support',
-    '20% off clothing & accessories',
-    'Priority gig notifications',
-    'Early access to new gigs',
-    'Online store creation tools',
-    'Advanced wellness features',
-    'Monthly video consultations',
-    'Exclusive member events'
-  ];
+  const planDetails = {
+    name: 'Elite Plan',
+    price: 25,
+    originalPrice: 35,
+    features: [
+      'Free delivery 4 days per week',
+      'Priority customer support',
+      '20% off clothing & accessories',
+      'Priority gig notifications',
+      'Early access to new gigs',
+      'Online store creation tools',
+      'Advanced wellness features',
+      'Monthly video consultations',
+      'Exclusive member events'
+    ]
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setBillingInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    const required = ['firstName', 'lastName', 'email'];
+    for (let field of required) {
+      if (!billingInfo[field as keyof typeof billingInfo]) {
+        toast({
+          title: "Missing Information",
+          description: `Please fill in your ${field === 'firstName' ? 'first name' : field === 'lastName' ? 'last name' : field}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+    return true;
+  };
 
   const handleCheckout = async () => {
-    if (!session) return;
+    if (!session || !validateForm()) return;
     
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { tier: 'elite' },
+        body: { 
+          tier: 'elite',
+          billingInfo: billingInfo
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -66,7 +107,7 @@ const CheckoutElite = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-8">
           <Link 
@@ -76,91 +117,219 @@ const CheckoutElite = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Plans
           </Link>
-          <div className="flex justify-center mb-6">
-            <div className="p-4 rounded-full bg-wellness-primary/10 relative">
-              <Crown className="h-12 w-12 text-wellness-primary" />
-              <Badge className="absolute -top-2 -right-2 bg-wellness-primary text-white">Most Popular</Badge>
-            </div>
+          <div className="flex justify-center mb-4">
+            <Badge className="bg-wellness-primary text-white">Most Popular</Badge>
           </div>
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-wellness-primary to-wellness-secondary bg-clip-text text-transparent">
-            Elite Plan
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Great for regular users who want enhanced benefits and priority access
-          </p>
+          <h1 className="text-3xl font-bold mb-2">Complete Your Elite Subscription</h1>
+          <p className="text-muted-foreground">Join thousands of satisfied Elite members!</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Plan Details */}
+          {/* Billing Information */}
           <Card className="border-wellness-primary/20">
             <CardHeader>
-              <CardTitle className="text-2xl flex items-center gap-3">
-                <Crown className="h-6 w-6 text-wellness-primary" />
-                Elite Plan Features
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-wellness-primary" />
+                Billing Information
               </CardTitle>
               <CardDescription>
-                Enhanced benefits for the regular WHOSENXT user
+                Enter your details for billing and account setup
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-4">
-                {features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-wellness-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              {/* Value Proposition */}
-              <div className="mt-6 p-4 bg-wellness-primary/5 rounded-lg border border-wellness-primary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="h-4 w-4 text-wellness-primary" />
-                  <span className="font-semibold text-sm">Elite Value</span>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input
+                    id="firstName"
+                    value={billingInfo.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    placeholder="John"
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Save over $200/year with 20% off all purchases plus priority access to exclusive deals and events.
-                </p>
+                <div>
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    value={billingInfo.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="email">Email Address *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={billingInfo.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="john@example.com"
+                    className="pl-10"
+                    disabled={!!user?.email}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={billingInfo.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="address"
+                    value={billingInfo.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="123 Main Street"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={billingInfo.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    placeholder="New York"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={billingInfo.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    placeholder="NY"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    value={billingInfo.zipCode}
+                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                    placeholder="10001"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={billingInfo.country}
+                    onChange={(e) => handleInputChange('country', e.target.value)}
+                    disabled
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Checkout Card */}
+          {/* Order Summary */}
           <Card className="h-fit border-wellness-primary/30 shadow-lg">
-            <CardHeader className="text-center">
-              <div className="text-4xl font-bold text-wellness-primary mb-2">
-                $25<span className="text-lg text-muted-foreground">/month</span>
-              </div>
-              <CardTitle>Start Your Elite Subscription</CardTitle>
-              <CardDescription>
-                Most popular plan - Cancel anytime. Instant access.
-              </CardDescription>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-wellness-primary" />
+                Order Summary
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Comparison */}
-              <div className="bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5 p-4 rounded-lg">
-                <p className="text-sm font-medium text-center mb-2">Upgrade from Pro and get:</p>
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <div>• 2x more free delivery days (4 vs 2)</div>
-                  <div>• 2x better discount (20% vs 10%)</div>
-                  <div>• Priority support & gig access</div>
-                  <div>• Exclusive store creation tools</div>
+              {/* Plan Details */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-wellness-primary/10 relative">
+                    <Crown className="h-6 w-6 text-wellness-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{planDetails.name}</h3>
+                    <p className="text-sm text-muted-foreground">Monthly subscription</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {planDetails.features.slice(0, 5).map((feature, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <Check className="h-3 w-3 text-wellness-primary" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">+ {planDetails.features.length - 5} more elite features</p>
+                </div>
+
+                {/* Value Highlight */}
+                <div className="bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="h-3 w-3 text-wellness-primary" />
+                    <span className="text-xs font-medium">Elite Value</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Save $200+ annually with 20% off purchases plus priority benefits
+                  </p>
                 </div>
               </div>
 
-              {/* Security Features */}
+              <Separator />
+
+              {/* Pricing Breakdown */}
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Elite Plan (Monthly)</span>
+                  <div className="text-right">
+                    <span className="line-through text-muted-foreground text-sm">${planDetails.originalPrice}.00</span>
+                    <span className="ml-2">${planDetails.price}.00</span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Setup Fee</span>
+                  <span>Free</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600">Launch Discount</span>
+                  <span className="text-green-600">-$10.00</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span className="text-wellness-primary">${planDetails.price}.00/month</span>
+                </div>
+              </div>
+
+              {/* Payment Security */}
+              <div className="bg-wellness-primary/5 p-4 rounded-lg space-y-3">
+                <div className="flex items-center gap-2 text-sm">
                   <Shield className="h-4 w-4 text-wellness-primary" />
-                  <span>Secure payment powered by Stripe</span>
+                  <span className="font-medium">Secure Payment</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <CreditCard className="h-4 w-4 text-wellness-primary" />
-                  <span>Accepts all major credit and debit cards</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-wellness-primary" />
-                  <span>Instant activation after payment</span>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-3 w-3" />
+                    <span>All major credit & debit cards</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    <span>Instant activation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-3 w-3" />
+                    <span>256-bit SSL encryption</span>
+                  </div>
                 </div>
               </div>
 
@@ -171,50 +340,16 @@ const CheckoutElite = () => {
                 className="w-full bg-wellness-primary hover:bg-wellness-primary/90 text-white py-3 text-lg"
                 size="lg"
               >
-                {loading ? 'Processing...' : 'Subscribe to Elite Plan'}
+                {loading ? 'Processing...' : 'Complete Purchase'}
               </Button>
 
-              {/* Terms */}
               <p className="text-xs text-muted-foreground text-center">
-                By subscribing, you agree to our Terms of Service and Privacy Policy. 
-                Your subscription will auto-renew monthly until cancelled.
+                You'll be redirected to Stripe's secure payment page to complete your purchase. 
+                Cancel anytime from your account settings.
               </p>
             </CardContent>
           </Card>
         </div>
-
-        {/* FAQ Section */}
-        <Card className="mt-12">
-          <CardHeader>
-            <CardTitle>Elite Plan FAQs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="font-semibold mb-2">What makes Elite different from Pro?</h4>
-              <p className="text-sm text-muted-foreground">
-                Elite offers double the delivery days (4 vs 2), higher discounts (20% vs 10%), priority support, and exclusive access to advanced features like store creation tools.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">How much can I save with the 20% discount?</h4>
-              <p className="text-sm text-muted-foreground">
-                If you spend $100/month on clothing and accessories, you'll save $240/year - already covering most of your subscription cost!
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">What are the online store creation tools?</h4>
-              <p className="text-sm text-muted-foreground">
-                Elite members get access to our drag-and-drop store builder, inventory management, and basic analytics to start selling on the WHOSENXT marketplace.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Can I downgrade to Pro later?</h4>
-              <p className="text-sm text-muted-foreground">
-                Yes, you can change your plan at any time. Downgrades take effect at the start of your next billing cycle.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
