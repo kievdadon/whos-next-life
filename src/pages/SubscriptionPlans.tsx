@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Crown, Star, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 
 const SubscriptionPlans = () => {
   const { user, session, subscribed, subscriptionTier, checkSubscription } = useAuth();
@@ -202,19 +202,33 @@ const SubscriptionPlans = () => {
                     ))}
                   </ul>
                   
-                  <Button
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={loading === plan.id || isCurrentPlan}
-                    className={`w-full ${
-                      plan.popular 
-                        ? 'bg-wellness-primary hover:bg-wellness-primary/90' 
-                        : 'bg-wellness-secondary hover:bg-wellness-secondary/90'
-                    }`}
-                  >
-                    {loading === plan.id ? 'Loading...' : 
-                     isCurrentPlan ? 'Current Plan' : 
-                     `Subscribe to ${plan.name}`}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={loading === plan.id || isCurrentPlan}
+                      className={`w-full ${
+                        plan.popular 
+                          ? 'bg-wellness-primary hover:bg-wellness-primary/90' 
+                          : 'bg-wellness-secondary hover:bg-wellness-secondary/90'
+                      }`}
+                    >
+                      {loading === plan.id ? 'Loading...' : 
+                       isCurrentPlan ? 'Current Plan' : 
+                       `Subscribe to ${plan.name}`}
+                    </Button>
+                    
+                    {!isCurrentPlan && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full border-wellness-primary/20 hover:bg-wellness-primary/5"
+                      >
+                        <Link to={`/checkout/${plan.id}`}>
+                          Learn More & Checkout
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

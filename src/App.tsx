@@ -17,6 +17,9 @@ import DriverDashboard from "./pages/DriverDashboard";
 import Auth from "./pages/Auth";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import CheckoutPro from "./pages/CheckoutPro";
+import CheckoutElite from "./pages/CheckoutElite";
+import CheckoutVeteran from "./pages/CheckoutVeteran";
 import BusinessMarketplace from "./pages/BusinessMarketplace";
 import BusinessRegistration from "./pages/BusinessRegistration";
 import BusinessDashboard from "./pages/BusinessDashboard";
@@ -39,6 +42,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/subscription-plans" element={<SubscriptionPlans />} />
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+              <Route path="/checkout/pro" element={<CheckoutPro />} />
+              <Route path="/checkout/elite" element={<CheckoutElite />} />
+              <Route path="/checkout/veteran" element={<CheckoutVeteran />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/marketplace/chat" element={<MarketplaceChat />} />
               <Route path="/marketplace/chat/:conversationId" element={<MarketplaceChat />} />
