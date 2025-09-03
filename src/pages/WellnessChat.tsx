@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Send, 
   Mic,
@@ -23,6 +25,17 @@ import {
 const WellnessChat = () => {
   const [message, setMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    {
+      id: 1,
+      type: "ai",
+      message: "Good morning! How are you feeling today? I'm here to support your wellness journey.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      mood: null
+    }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const todayMood = {
     mood: "Calm",
@@ -31,45 +44,6 @@ const WellnessChat = () => {
     color: "wellness-primary"
   };
 
-  const chatHistory = [
-    {
-      id: 1,
-      type: "ai",
-      message: "Good morning! How are you feeling today? I noticed you haven't checked in since yesterday.",
-      timestamp: "9:30 AM",
-      mood: null
-    },
-    {
-      id: 2,
-      type: "user", 
-      message: "I'm feeling a bit anxious about my presentation today.",
-      timestamp: "9:32 AM",
-      mood: { emoji: "😰", level: "moderate" }
-    },
-    {
-      id: 3,
-      type: "ai",
-      message: "I understand that presentations can feel overwhelming. Let's try a quick breathing exercise. Take a deep breath in for 4 counts, hold for 4, and exhale for 6. Would you like me to guide you through this?",
-      timestamp: "9:33 AM",
-      mood: null,
-      suggestions: ["Start breathing exercise", "Tell me more", "Skip for now"]
-    },
-    {
-      id: 4,
-      type: "user",
-      message: "Yes, that would help.",
-      timestamp: "9:35 AM",
-      mood: null
-    },
-    {
-      id: 5,
-      type: "ai",
-      message: "Perfect! Let's begin. I'll guide you through a 3-minute breathing session. Ready when you are! 🧘‍♀️",
-      timestamp: "9:35 AM",
-      mood: null,
-      isExercise: true
-    }
-  ];
 
   const moodStats = [
     { day: "Mon", mood: 6.5, emoji: "😊" },
@@ -88,9 +62,46 @@ const WellnessChat = () => {
     { icon: Moon, label: "Sleep Tips", color: "wellness-accent" }
   ];
 
-  const handleSend = () => {
-    if (message.trim()) {
-      setMessage("");
+  const handleSend = async () => {
+    if (!message.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      type: "user" as const,
+      message: message.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      mood: null
+    };
+
+    setChatHistory(prev => [...prev, userMessage]);
+    setMessage("");
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('wellness-chat', {
+        body: { message: userMessage.message }
+      });
+
+      if (error) throw error;
+
+      const aiMessage = {
+        id: Date.now() + 1,
+        type: "ai" as const,
+        message: data.response,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        mood: null
+      };
+
+      setChatHistory(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -234,7 +245,7 @@ const WellnessChat = () => {
                   chat.type === 'user' 
                     ? 'bg-wellness-primary text-primary-foreground ml-12' 
                     : 'bg-card mr-12'
-                } ${chat.isExercise ? 'border-wellness-accent/50 bg-gradient-to-r from-wellness-accent/10 to-wellness-primary/10' : ''}`}>
+                }`}>
                   <CardContent className="p-4">
                     <p className="leading-relaxed">{chat.message}</p>
                     
@@ -247,34 +258,6 @@ const WellnessChat = () => {
                       </div>
                     )}
                     
-                    {chat.suggestions && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {chat.suggestions.map((suggestion, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs border-wellness-primary/30 hover:bg-wellness-primary/10"
-                          >
-                            {suggestion}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {chat.isExercise && (
-                      <div className="mt-4 p-3 bg-wellness-primary/10 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Breathing Exercise</span>
-                          <Badge className="bg-wellness-accent/20 text-wellness-accent">
-                            3 min
-                          </Badge>
-                        </div>
-                        <Button size="sm" className="w-full bg-wellness-primary hover:bg-wellness-primary/90">
-                          Start Exercise
-                        </Button>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
                 
@@ -316,10 +299,14 @@ const WellnessChat = () => {
             
             <Button 
               onClick={handleSend}
-              disabled={!message.trim()}
+              disabled={!message.trim() || isLoading}
               className="h-12 px-6 bg-wellness-primary hover:bg-wellness-primary/90"
             >
-              <Send className="h-4 w-4" />
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
           
