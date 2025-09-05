@@ -15,11 +15,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Function started, checking API key...');
+    
     if (!openAIApiKey) {
       console.error('OPENAI_API_KEY is not set');
       throw new Error('OpenAI API key is not configured');
     }
-
+    
+    console.log('API key found, parsing request body...');
     const { message } = await req.json();
 
     if (!message) {
@@ -28,43 +31,54 @@ serve(async (req) => {
 
     console.log('Wellness chat request:', { message });
 
+    const requestBody = {
+      model: 'gpt-4o-mini',
+      messages: [
+        { 
+          role: 'system', 
+          content: `You are a compassionate wellness AI assistant focused on mental health support. You provide:
+          - Empathetic responses to emotional concerns
+          - Practical stress management techniques
+          - Breathing exercises and mindfulness guidance
+          - Sleep hygiene tips
+          - Gentle encouragement and validation
+          
+          Keep responses warm, supportive, and actionable. If someone expresses serious mental health concerns, gently suggest professional help while still providing immediate support.`
+        },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 300,
+      temperature: 0.7,
+    };
+
+    console.log('Making request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: `You are a compassionate wellness AI assistant focused on mental health support. You provide:
-            - Empathetic responses to emotional concerns
-            - Practical stress management techniques
-            - Breathing exercises and mindfulness guidance
-            - Sleep hygiene tips
-            - Gentle encouragement and validation
-            
-            Keep responses warm, supportive, and actionable. If someone expresses serious mental health concerns, gently suggest professional help while still providing immediate support.`
-          },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 300,
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log('OpenAI response status:', response.status);
+
     if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error response:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response data received');
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
     const aiResponse = data.choices[0].message.content;
-
-    console.log('AI response generated successfully');
+    console.log('AI response generated successfully, length:', aiResponse?.length);
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
