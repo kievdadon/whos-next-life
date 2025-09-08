@@ -60,11 +60,7 @@ const Delivery = () => {
   };
 
   const handleStoreClick = (storeName: string) => {
-    toast({
-      title: "Store Selected",
-      description: `Opening ${storeName} menu...`,
-    });
-    navigate('/marketplace');
+    navigate(`/store/${encodeURIComponent(storeName)}`);
   };
 
   const handleViewAll = () => {

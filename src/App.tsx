@@ -25,6 +25,7 @@ import BusinessMarketplace from "./pages/BusinessMarketplace";
 import BusinessRegistration from "./pages/BusinessRegistration";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BrandPartnership from "./pages/BrandPartnership";
+import StoreMenu from "./pages/StoreMenu";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 import Header from "./components/Header";
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/business-dashboard" element={<BusinessDashboard />} />
               <Route path="/brand-partnership" element={<BrandPartnership />} />
               <Route path="/delivery" element={<Delivery />} />
+              <Route path="/store/:storeName" element={<StoreMenu />} />
               <Route path="/wellness-chat" element={<WellnessChat />} />
               <Route path="/gig-browse" element={<GigBrowse />} />
               <Route path="/family-chat" element={<FamilyGroupChat />} />
