@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { 
   Search, 
   MapPin,
@@ -18,6 +20,67 @@ import {
 } from "lucide-react";
 
 const Delivery = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLocationChange = () => {
+    toast({
+      title: "Location Update",
+      description: "Opening location picker...",
+    });
+  };
+
+  const handleTrackOrder = () => {
+    toast({
+      title: "Order Tracking",
+      description: "Redirecting to order tracking page...",
+    });
+  };
+
+  const handleCallDriver = (driverName: string) => {
+    toast({
+      title: "Calling Driver",
+      description: `Connecting you to ${driverName}...`,
+    });
+  };
+
+  const handleTrackLive = (orderId: string) => {
+    toast({
+      title: "Live Tracking",
+      description: `Opening live map for order ${orderId}...`,
+    });
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    toast({
+      title: "Category Selected",
+      description: `Browsing ${categoryName} options...`,
+    });
+    navigate('/marketplace');
+  };
+
+  const handleStoreClick = (storeName: string) => {
+    toast({
+      title: "Store Selected",
+      description: `Opening ${storeName} menu...`,
+    });
+    navigate('/marketplace');
+  };
+
+  const handleViewAll = () => {
+    toast({
+      title: "All Stores",
+      description: "Showing all available stores...",
+    });
+    navigate('/marketplace');
+  };
+
+  const handleVoiceSetup = () => {
+    toast({
+      title: "Voice Setup",
+      description: "Starting voice confirmation setup...",
+    });
+  };
   const categories = [
     { 
       name: "Food Delivery", 
@@ -157,11 +220,11 @@ const Delivery = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleLocationChange}>
                 <MapPin className="h-4 w-4 mr-2" />
                 123 Main St
               </Button>
-              <Button size="sm" className="bg-wellness-primary hover:bg-wellness-primary/90">
+              <Button size="sm" className="bg-wellness-primary hover:bg-wellness-primary/90" onClick={handleTrackOrder}>
                 <Package className="h-4 w-4 mr-2" />
                 Track Order
               </Button>
@@ -229,11 +292,11 @@ const Delivery = () => {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCallDriver(delivery.driver)}>
                           <Phone className="h-4 w-4 mr-2" />
                           Call
                         </Button>
-                        <Button size="sm" className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90">
+                        <Button size="sm" className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90" onClick={() => handleTrackLive(delivery.id)}>
                           Track Live
                         </Button>
                       </div>
@@ -252,7 +315,7 @@ const Delivery = () => {
           <h2 className="text-2xl font-bold mb-6">What do you need?</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/20">
+              <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/20" onClick={() => handleCategoryClick(category.name)}>
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
                     {category.icon}
@@ -275,14 +338,14 @@ const Delivery = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Popular Near You</h2>
-            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5" onClick={handleViewAll}>
               View All
             </Button>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {nearbyStores.map((store, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer">
+              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(store.name)}>
                 <div className="relative">
                   <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
                     {store.image}
@@ -316,7 +379,7 @@ const Delivery = () => {
                       <span className="text-muted-foreground">Delivery fee: ${store.deliveryFee}</span>
                     </div>
                     
-                    <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90">
+                    <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90" onClick={() => handleStoreClick(store.name)}>
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       Browse Menu
                     </Button>
@@ -377,7 +440,7 @@ const Delivery = () => {
               </Card>
             </div>
             
-            <Button size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90">
+            <Button size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90" onClick={handleVoiceSetup}>
               <Smartphone className="mr-2 h-5 w-5" />
               Set Up Voice Confirmation
             </Button>
