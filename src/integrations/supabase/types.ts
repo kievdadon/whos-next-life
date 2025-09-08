@@ -387,7 +387,7 @@ export type Database = {
         Row: {
           business_id: string
           created_at: string
-          customer_id: string | null
+          customer_id: string
           delivery_address: string | null
           id: string
           order_status: string | null
@@ -401,7 +401,7 @@ export type Database = {
         Insert: {
           business_id: string
           created_at?: string
-          customer_id?: string | null
+          customer_id: string
           delivery_address?: string | null
           id?: string
           order_status?: string | null
@@ -415,7 +415,7 @@ export type Database = {
         Update: {
           business_id?: string
           created_at?: string
-          customer_id?: string | null
+          customer_id?: string
           delivery_address?: string | null
           id?: string
           order_status?: string | null
