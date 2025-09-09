@@ -457,9 +457,27 @@ const StoreMenu = () => {
               size="lg" 
               className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
               onClick={() => {
-                toast({
-                  title: "Proceeding to Checkout",
-                  description: `${getTotalItems()} items - $${getTotalPrice().toFixed(2)}`,
+                const cartItems = Object.entries(cart).map(([itemId, quantity]) => {
+                  const item = currentMenu.find(item => item.id === itemId);
+                  return {
+                    id: itemId,
+                    name: item?.name || "",
+                    price: item?.price || 0,
+                    quantity,
+                    image: item?.image || ""
+                  };
+                });
+                
+                navigate('/order-checkout', {
+                  state: {
+                    cartItems,
+                    storeInfo: {
+                      name: currentStore.name,
+                      deliveryFee: currentStore.deliveryFee,
+                      deliveryTime: currentStore.deliveryTime
+                    },
+                    totalPrice: getTotalPrice()
+                  }
                 });
               }}
             >
