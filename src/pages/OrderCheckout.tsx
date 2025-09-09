@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, MapPin, Clock, CreditCard } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartItem {
   id: string;
@@ -34,16 +35,11 @@ const OrderCheckout = () => {
   };
 
   const [deliveryInfo, setDeliveryInfo] = useState({
+    name: "",
+    email: "",
     address: "",
     phone: "",
     instructions: ""
-  });
-
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    nameOnCard: ""
   });
 
   const subtotal = totalPrice;
@@ -51,34 +47,56 @@ const OrderCheckout = () => {
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + deliveryFee + tax;
 
-  const handlePlaceOrder = () => {
-    if (!deliveryInfo.address || !deliveryInfo.phone) {
+  const handlePlaceOrder = async () => {
+    // Validate delivery info
+    if (!deliveryInfo.name || !deliveryInfo.phone || !deliveryInfo.address || !deliveryInfo.email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all delivery details",
-        variant: "destructive"
+        description: "Please fill in all delivery details.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (!paymentInfo.cardNumber || !paymentInfo.expiryDate || !paymentInfo.cvv) {
+    try {
+      // Create payment session with Stripe
+      const { data, error } = await supabase.functions.invoke('create-order-payment', {
+        body: {
+          deliveryInfo,
+          cartItems,
+          storeInfo,
+          totals: {
+            subtotal,
+            deliveryFee,
+            tax,
+            total
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Payment error:', error);
+        toast({
+          title: "Payment Error",
+          description: "Failed to process payment. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+
+    } catch (error) {
+      console.error('Order error:', error);
       toast({
-        title: "Missing Payment Info",
-        description: "Please fill in all payment details",
-        variant: "destructive"
+        title: "Order Error",
+        description: "Failed to place order. Please try again.",
+        variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Order Placed Successfully!",
-      description: `Your order from ${storeInfo.name} has been confirmed. Estimated delivery: ${storeInfo.deliveryTime}`,
-    });
-
-    // Navigate to a confirmation page or back to delivery
-    setTimeout(() => {
-      navigate('/delivery');
-    }, 2000);
   };
 
   if (cartItems.length === 0) {
@@ -139,6 +157,27 @@ const OrderCheckout = () => {
                 <CardTitle>Delivery Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Your full name"
+                      value={deliveryInfo.name}
+                      onChange={(e) => setDeliveryInfo(prev => ({...prev, name: e.target.value}))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={deliveryInfo.email}
+                      onChange={(e) => setDeliveryInfo(prev => ({...prev, email: e.target.value}))}
+                    />
+                  </div>
+                </div>
                 <div>
                   <Label htmlFor="address">Delivery Address</Label>
                   <Input
@@ -178,44 +217,9 @@ const OrderCheckout = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    value={paymentInfo.cardNumber}
-                    onChange={(e) => setPaymentInfo(prev => ({...prev, cardNumber: e.target.value}))}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                    <Input
-                      id="expiryDate"
-                      placeholder="MM/YY"
-                      value={paymentInfo.expiryDate}
-                      onChange={(e) => setPaymentInfo(prev => ({...prev, expiryDate: e.target.value}))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input
-                      id="cvv"
-                      placeholder="123"
-                      value={paymentInfo.cvv}
-                      onChange={(e) => setPaymentInfo(prev => ({...prev, cvv: e.target.value}))}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="nameOnCard">Name on Card</Label>
-                  <Input
-                    id="nameOnCard"
-                    placeholder="John Doe"
-                    value={paymentInfo.nameOnCard}
-                    onChange={(e) => setPaymentInfo(prev => ({...prev, nameOnCard: e.target.value}))}
-                  />
-                </div>
+                <p className="text-muted-foreground">
+                  Payment will be processed securely through Stripe when you place your order.
+                </p>
               </CardContent>
             </Card>
           </div>
