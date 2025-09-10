@@ -52,7 +52,8 @@ serve(async (req) => {
         product_data: {
           name: `${item.name} - ${storeInfo.name}`,
           description: item.description,
-          images: item.image ? [item.image] : [],
+          // Only include images if they are valid URLs (not emojis)
+          ...(item.image && item.image.startsWith('http') ? { images: [item.image] } : {}),
         },
         unit_amount: Math.round(item.price * 100), // Convert to cents
       },
