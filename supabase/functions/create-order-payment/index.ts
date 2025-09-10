@@ -22,6 +22,18 @@ serve(async (req) => {
       totals 
     } = await req.json();
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!deliveryInfo.email || !emailRegex.test(deliveryInfo.email)) {
+      console.error("❌ Invalid email format:", deliveryInfo.email);
+      return new Response(JSON.stringify({ 
+        error: "Invalid email address format" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
     // Create Supabase client with service role for secure operations
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",

@@ -58,6 +58,17 @@ const OrderCheckout = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(deliveryInfo.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Create payment session with Stripe
       const { data, error } = await supabase.functions.invoke('create-order-payment', {

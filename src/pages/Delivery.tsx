@@ -52,11 +52,7 @@ const Delivery = () => {
   };
 
   const handleCategoryClick = (categoryName: string) => {
-    toast({
-      title: "Category Selected",
-      description: `Browsing ${categoryName} options...`,
-    });
-    navigate('/marketplace');
+    navigate(`/marketplace?category=${encodeURIComponent(categoryName)}`);
   };
 
   const handleStoreClick = (storeName: string) => {
