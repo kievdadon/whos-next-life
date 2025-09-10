@@ -70,6 +70,12 @@ const OrderCheckout = () => {
     }
 
     try {
+      console.log('Starting order payment process...');
+      console.log('Delivery info:', deliveryInfo);
+      console.log('Cart items:', cartItems);
+      console.log('Store info:', storeInfo);
+      console.log('Totals:', { subtotal, deliveryFee, tax, total });
+
       // Create payment session with Stripe
       const { data, error } = await supabase.functions.invoke('create-order-payment', {
         body: {
@@ -85,11 +91,23 @@ const OrderCheckout = () => {
         }
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
         console.error('Payment error:', error);
         toast({
           title: "Payment Error",
-          description: "Failed to process payment. Please try again.",
+          description: error.message || "Failed to process payment. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data) {
+        console.error('No data returned from payment function');
+        toast({
+          title: "Payment Error",
+          description: "No response from payment system. Please try again.",
           variant: "destructive",
         });
         return;
@@ -97,7 +115,15 @@ const OrderCheckout = () => {
 
       // Redirect to Stripe Checkout
       if (data.url) {
+        console.log('Redirecting to Stripe:', data.url);
         window.location.href = data.url;
+      } else {
+        console.error('No URL returned from payment function');
+        toast({
+          title: "Payment Error",
+          description: "Invalid payment response. Please try again.",
+          variant: "destructive",
+        });
       }
 
     } catch (error) {
