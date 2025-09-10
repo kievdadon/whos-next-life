@@ -157,56 +157,98 @@ export type Database = {
       delivery_orders: {
         Row: {
           assigned_at: string | null
+          cart_items: Json | null
           company_commission: number
           created_at: string
           customer_address: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_address: string | null
           delivery_fee: number
           delivery_time: string | null
           distance_miles: number | null
           driver_earning: number
           driver_id: string | null
+          estimated_delivery_time: string | null
           id: string
           order_id: string | null
+          order_status: string | null
+          payment_status: string | null
           pickup_time: string | null
           restaurant_address: string
           status: string | null
+          store_name: string | null
+          stripe_session_id: string | null
+          subtotal: number | null
+          tax: number | null
           tips: number | null
+          total_amount: number | null
           updated_at: string
         }
         Insert: {
           assigned_at?: string | null
+          cart_items?: Json | null
           company_commission: number
           created_at?: string
           customer_address: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
           delivery_fee: number
           delivery_time?: string | null
           distance_miles?: number | null
           driver_earning: number
           driver_id?: string | null
+          estimated_delivery_time?: string | null
           id?: string
           order_id?: string | null
+          order_status?: string | null
+          payment_status?: string | null
           pickup_time?: string | null
           restaurant_address: string
           status?: string | null
+          store_name?: string | null
+          stripe_session_id?: string | null
+          subtotal?: number | null
+          tax?: number | null
           tips?: number | null
+          total_amount?: number | null
           updated_at?: string
         }
         Update: {
           assigned_at?: string | null
+          cart_items?: Json | null
           company_commission?: number
           created_at?: string
           customer_address?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
           delivery_fee?: number
           delivery_time?: string | null
           distance_miles?: number | null
           driver_earning?: number
           driver_id?: string | null
+          estimated_delivery_time?: string | null
           id?: string
           order_id?: string | null
+          order_status?: string | null
+          payment_status?: string | null
           pickup_time?: string | null
           restaurant_address?: string
           status?: string | null
+          store_name?: string | null
+          stripe_session_id?: string | null
+          subtotal?: number | null
+          tax?: number | null
           tips?: number | null
+          total_amount?: number | null
           updated_at?: string
         }
         Relationships: [
