@@ -26,6 +26,7 @@ import BusinessRegistration from "./pages/BusinessRegistration";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BrandPartnership from "./pages/BrandPartnership";
 import StoreMenu from "./pages/StoreMenu";
+import CategoryStores from "./pages/CategoryStores";
 import OrderCheckout from "./pages/OrderCheckout";
 import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/business-dashboard" element={<BusinessDashboard />} />
               <Route path="/brand-partnership" element={<BrandPartnership />} />
               <Route path="/delivery" element={<Delivery />} />
+              <Route path="/category-stores" element={<CategoryStores />} />
               <Route path="/store/:storeName" element={<StoreMenu />} />
         <Route path="/order-checkout" element={<OrderCheckout />} />
         <Route path="/order-success" element={<OrderSuccess />} />

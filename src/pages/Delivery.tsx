@@ -52,7 +52,8 @@ const Delivery = () => {
   };
 
   const handleCategoryClick = (categoryName: string) => {
-    navigate(`/marketplace?category=${encodeURIComponent(categoryName)}`);
+    // Navigate to category-specific stores page
+    navigate(`/category-stores?category=${encodeURIComponent(categoryName)}`);
   };
 
   const handleStoreClick = (storeName: string) => {
