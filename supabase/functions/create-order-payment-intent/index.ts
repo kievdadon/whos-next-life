@@ -98,6 +98,11 @@ serve(async (req) => {
     const estimatedDeliveryTime = new Date();
     estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + 35);
 
+    // Compute earnings split from delivery fee (80% driver / 20% company)
+    const deliveryFeeNum = Number(totals?.deliveryFee ?? 0);
+    const driverEarning = Math.max(0, Math.round(deliveryFeeNum * 0.8 * 100) / 100);
+    const companyCommission = Math.max(0, Math.round((deliveryFeeNum - driverEarning) * 100) / 100);
+
     // Record order
     const { data: order, error: orderError } = await supabase
       .from("delivery_orders")
@@ -112,7 +117,9 @@ serve(async (req) => {
         restaurant_address: storeInfo?.address || storeInfo?.name || "N/A",
         cart_items: cartItems,
         subtotal: totals?.subtotal ?? null,
-        delivery_fee: totals?.deliveryFee ?? 0,
+        delivery_fee: deliveryFeeNum,
+        driver_earning: driverEarning,
+        company_commission: companyCommission,
         tax: totals?.tax ?? null,
         total_amount: totals?.total ?? null,
         payment_status: "pending",
