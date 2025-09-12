@@ -153,6 +153,8 @@ serve(async (req) => {
         customer_phone: deliveryInfo.phone,
         store_name: storeInfo.name,
         delivery_address: deliveryInfo.address,
+        customer_address: deliveryInfo.address,
+        restaurant_address: storeInfo?.address || storeInfo?.name || "N/A",
         cart_items: cartItems,
         subtotal: totals.subtotal,
         delivery_fee: totals.deliveryFee,

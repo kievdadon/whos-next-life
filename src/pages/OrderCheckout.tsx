@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, MapPin, Clock, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 interface CartItem {
   id: string;
   name: string;
@@ -41,6 +42,11 @@ const OrderCheckout = () => {
     phone: "",
     instructions: ""
   });
+
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [publishableKey, setPublishableKey] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
 
   const subtotal = totalPrice;
   const deliveryFee = storeInfo.deliveryFee;
@@ -76,55 +82,35 @@ const OrderCheckout = () => {
       console.log('Store info:', storeInfo);
       console.log('Totals:', { subtotal, deliveryFee, tax, total });
 
-      // Create payment session with Stripe
-      const { data, error } = await supabase.functions.invoke('create-order-payment', {
+      // Create a Payment Intent (embedded Stripe)
+      setIsCreatingPayment(true);
+      const { data, error } = await supabase.functions.invoke('create-order-payment-intent', {
         body: {
           deliveryInfo,
           cartItems,
           storeInfo,
-          totals: {
-            subtotal,
-            deliveryFee,
-            tax,
-            total
-          }
+          totals: { subtotal, deliveryFee, tax, total }
         }
       });
 
       console.log('Function response:', { data, error });
 
-      if (error) {
-        console.error('Payment error:', error);
+      if (error || !data) {
+        console.error('Payment setup error:', error);
         toast({
-          title: "Payment Error",
-          description: error.message || "Failed to process payment. Please try again.",
-          variant: "destructive",
+          title: 'Payment Error',
+          description: (error as any)?.message || 'Failed to initialize payment. Please try again.',
+          variant: 'destructive',
         });
+        setIsCreatingPayment(false);
         return;
       }
 
-      if (!data) {
-        console.error('No data returned from payment function');
-        toast({
-          title: "Payment Error",
-          description: "No response from payment system. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Redirect to Stripe Checkout
-      if (data.url) {
-        console.log('Redirecting to Stripe:', data.url);
-        window.location.href = data.url;
-      } else {
-        console.error('No URL returned from payment function');
-        toast({
-          title: "Payment Error",
-          description: "Invalid payment response. Please try again.",
-          variant: "destructive",
-        });
-      }
+      setClientSecret(data.clientSecret);
+      setPublishableKey(data.publishableKey);
+      setOrderId(data.orderId);
+      setIsCreatingPayment(false);
+      toast({ title: 'Secure payment', description: 'Enter your card details below to complete your order.' });
 
     } catch (error) {
       console.error('Order error:', error);
@@ -303,13 +289,23 @@ const OrderCheckout = () => {
                   </div>
                 </div>
 
-                <Button 
-                  size="lg" 
-                  className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
-                  onClick={handlePlaceOrder}
-                >
-                  Place Order - ${total.toFixed(2)}
-                </Button>
+                {clientSecret && publishableKey && orderId ? (
+                  <StripePaymentForm
+                    clientSecret={clientSecret}
+                    publishableKey={publishableKey}
+                    orderId={orderId}
+                    amount={total}
+                  />
+                ) : (
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+                    onClick={handlePlaceOrder}
+                    disabled={isCreatingPayment}
+                  >
+                    {isCreatingPayment ? 'Preparing Payment...' : `Place Order - $${total.toFixed(2)}`}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -318,5 +314,54 @@ const OrderCheckout = () => {
     </div>
   );
 };
+
+function PaymentFormContent({ orderId, amount }: { orderId: string; amount: number }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return;
+    setLoading(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order-success?order_id=${orderId}`,
+      },
+    });
+    if (error) {
+      console.error('Stripe error:', error);
+      toast({
+        title: 'Payment Error',
+        description: (error as any)?.message || 'Payment failed. Please try again.',
+        variant: 'destructive',
+      });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <PaymentElement options={{ layout: 'tabs' }} />
+      <Button
+        onClick={handlePay}
+        disabled={!stripe || loading}
+        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+      >
+        {loading ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+      </Button>
+    </div>
+  );
+}
+
+function StripePaymentForm(props: { clientSecret: string; publishableKey: string; orderId: string; amount: number }) {
+  const stripePromise = loadStripe(props.publishableKey);
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret: props.clientSecret, appearance: { theme: 'flat' } }}>
+      <PaymentFormContent orderId={props.orderId} amount={props.amount} />
+    </Elements>
+  );
+}
 
 export default OrderCheckout;
