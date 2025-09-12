@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import LocationPicker from "@/components/LocationPicker";
+import { useState } from "react";
 import { 
   Search, 
   MapPin,
@@ -22,11 +24,22 @@ import {
 const Delivery = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [userLocation, setUserLocation] = useState({
+    address: "123 Main St",
+    coordinates: [-81.5, 41.5] as [number, number]
+  });
 
   const handleLocationChange = () => {
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelect = (location: { address: string; coordinates: [number, number] }) => {
+    setUserLocation(location);
+    // Here you could filter nearby stores based on the new location
     toast({
-      title: "Location Update",
-      description: "Opening location picker...",
+      title: "Location Updated",
+      description: `Showing stores near ${location.address}`,
     });
   };
 
@@ -215,7 +228,7 @@ const Delivery = () => {
             <div className="flex items-center space-x-3">
               <Button variant="outline" size="sm" onClick={handleLocationChange}>
                 <MapPin className="h-4 w-4 mr-2" />
-                123 Main St
+                {userLocation.address.length > 20 ? userLocation.address.substring(0, 20) + '...' : userLocation.address}
               </Button>
               <Button size="sm" className="bg-wellness-primary hover:bg-wellness-primary/90" onClick={handleTrackOrder}>
                 <Package className="h-4 w-4 mr-2" />
@@ -440,6 +453,14 @@ const Delivery = () => {
           </div>
         </div>
       </section>
+
+      {/* Location Picker Modal */}
+      <LocationPicker
+        isOpen={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onLocationSelect={handleLocationSelect}
+        currentLocation={userLocation.address}
+      />
     </div>
   );
 };
