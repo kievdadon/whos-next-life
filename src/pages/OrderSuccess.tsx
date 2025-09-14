@@ -12,12 +12,16 @@ interface DeliveryOrder {
   customer_name: string;
   store_name: string;
   delivery_address: string;
+  customer_address: string;
   total_amount: number;
   order_status: string;
   payment_status: string;
   estimated_delivery_time: string;
   driver_id?: string;
-  cart_items: any[];
+  cart_items: any;
+  subtotal: number;
+  delivery_fee: number;
+  tax: number;
 }
 
 const OrderSuccess = () => {
@@ -35,8 +39,81 @@ const OrderSuccess = () => {
       return;
     }
 
-    verifyPaymentAndLoadOrder();
+    if (sessionId.startsWith('demo_')) {
+      // Handle demo orders
+      loadDemoOrder();
+    } else {
+      // Handle real orders
+      verifyPaymentAndLoadOrder();
+    }
   }, [sessionId]);
+
+  const loadDemoOrder = async () => {
+    try {
+      setLoading(true);
+      const orderId = sessionId.replace('demo_', '');
+      
+      const { data, error } = await supabase
+        .from('delivery_orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (error || !data) {
+        toast({
+          title: "Order Not Found",
+          description: "Unable to find your demo order.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setOrder({
+        ...data,
+        cart_items: Array.isArray(data.cart_items) ? data.cart_items : []
+      } as DeliveryOrder);
+
+      // Set up real-time updates for the order
+      const channel = supabase
+        .channel(`order-${data.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'delivery_orders',
+            filter: `id=eq.${data.id}`
+          },
+          (payload) => {
+            console.log('Order updated:', payload);
+            setOrder(prev => prev ? { ...prev, ...payload.new } : null);
+            
+            // Show notification for status changes
+            if (payload.new.order_status === 'assigned') {
+              toast({
+                title: "Driver Assigned!",
+                description: "A driver has been assigned to your order.",
+              });
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+
+    } catch (error) {
+      console.error('Error loading demo order:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong loading your demo order.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const verifyPaymentAndLoadOrder = async () => {
     try {
@@ -155,11 +232,31 @@ const OrderSuccess = () => {
         {/* Success Header */}
         <div className="text-center mb-8">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-green-600 mb-2">Order Confirmed!</h1>
+          <h1 className="text-3xl font-bold text-green-600 mb-2">
+            {order.payment_status === 'demo_mode' ? 'Demo Order Created!' : 'Order Confirmed!'}
+          </h1>
           <p className="text-muted-foreground">
-            Thank you for your order. We'll keep you updated on your delivery.
+            {order.payment_status === 'demo_mode' 
+              ? 'This is a demo order. No payment was processed.'
+              : 'Thank you for your order. We\'ll keep you updated on your delivery.'
+            }
           </p>
         </div>
+
+        {/* Pending Driver Alert */}
+        {order.order_status === 'pending_driver' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="animate-pulse w-4 h-4 bg-yellow-400 rounded-full"></div>
+              <div>
+                <h3 className="font-semibold text-yellow-800">Looking for a Driver</h3>
+                <p className="text-yellow-700">
+                  We're finding a nearby driver to accept your order. This usually takes 2-5 minutes.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Order Status */}
         <Card className="mb-6">
