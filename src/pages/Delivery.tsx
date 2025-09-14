@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import LocationPicker from "@/components/LocationPicker";
-import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { 
   Search, 
   MapPin,
@@ -25,10 +26,69 @@ const Delivery = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [userLocation, setUserLocation] = useState({
-    address: "123 Main St",
-    coordinates: [-81.5, 41.5] as [number, number]
-  });
+  const [userLocation, setUserLocation] = useState<{
+    address: string;
+    coordinates: [number, number];
+  } | null>(null);
+  const [nearbyBusinesses, setNearbyBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Calculate distance between two coordinates in miles
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Fetch businesses from Supabase
+  const fetchNearbyBusinesses = async (userCoords: [number, number]) => {
+    setLoading(true);
+    try {
+      const { data: businesses, error } = await supabase
+        .from('business_applications')
+        .select('*')
+        .eq('status', 'approved');
+
+      if (error) throw error;
+
+      // Calculate distances and filter within 10 miles
+      const businessesWithDistance = (businesses || [])
+        .map(business => {
+          // Parse coordinates from address or use default
+          const lat = 41.5 + (Math.random() - 0.5) * 0.1; // Mock coordinates for demo
+          const lon = -81.5 + (Math.random() - 0.5) * 0.1;
+          const distance = calculateDistance(userCoords[1], userCoords[0], lat, lon);
+          
+          return {
+            ...business,
+            distance,
+            coordinates: [lon, lat] as [number, number],
+            deliveryTime: distance < 5 ? "20-35 min" : "45-60 min",
+            deliveryFee: distance < 5 ? 2.99 : 4.99,
+            rating: 4.0 + Math.random() * 1 // Mock rating
+          };
+        })
+        .filter(business => business.distance <= 10)
+        .sort((a, b) => a.distance - b.distance);
+
+      setNearbyBusinesses(businessesWithDistance);
+    } catch (error) {
+      console.error('Error fetching businesses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load nearby businesses",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLocationChange = () => {
     setShowLocationPicker(true);
@@ -36,12 +96,19 @@ const Delivery = () => {
 
   const handleLocationSelect = (location: { address: string; coordinates: [number, number] }) => {
     setUserLocation(location);
-    // Here you could filter nearby stores based on the new location
+    fetchNearbyBusinesses(location.coordinates);
     toast({
       title: "Location Updated",
-      description: `Showing stores near ${location.address}`,
+      description: `Finding businesses near ${location.address}`,
     });
   };
+
+  // Show location picker on first load
+  useEffect(() => {
+    if (!userLocation) {
+      setShowLocationPicker(true);
+    }
+  }, [userLocation]);
 
   const handleTrackOrder = () => {
     toast({
@@ -65,19 +132,41 @@ const Delivery = () => {
   };
 
   const handleCategoryClick = (categoryName: string) => {
-    // Navigate to category-specific stores page
+    if (!userLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please set your location first to browse categories",
+        variant: "destructive",
+      });
+      setShowLocationPicker(true);
+      return;
+    }
     navigate(`/category-stores?category=${encodeURIComponent(categoryName)}`);
   };
 
   const handleStoreClick = (storeName: string) => {
+    if (!userLocation) {
+      toast({
+        title: "Location Required", 
+        description: "Please set your location first",
+        variant: "destructive",
+      });
+      setShowLocationPicker(true);
+      return;
+    }
     navigate(`/store/${encodeURIComponent(storeName)}`);
   };
 
   const handleViewAll = () => {
-    toast({
-      title: "All Stores",
-      description: "Showing all available stores...",
-    });
+    if (!userLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please set your location first",
+        variant: "destructive",
+      });
+      setShowLocationPicker(true);
+      return;
+    }
     navigate('/marketplace');
   };
 
@@ -87,6 +176,7 @@ const Delivery = () => {
       description: "Starting voice confirmation setup...",
     });
   };
+
   const categories = [
     { 
       name: "Food Delivery", 
@@ -213,6 +303,35 @@ const Delivery = () => {
       default: return "Processing";
     }
   };
+
+  if (!userLocation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Welcome to WHOSENXT Delivery</CardTitle>
+            <CardDescription>Set your location to start browsing nearby businesses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+              onClick={() => setShowLocationPicker(true)}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Set My Location
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <LocationPicker
+          isOpen={showLocationPicker}
+          onClose={() => setShowLocationPicker(false)}
+          onLocationSelect={handleLocationSelect}
+          currentLocation="Set Location"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm">
@@ -350,49 +469,60 @@ const Delivery = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {nearbyStores.map((store, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(store.name)}>
-                <div className="relative">
-                  <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
-                    {store.image}
-                  </div>
-                  {store.promo && (
+            {loading ? (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground">Loading businesses near you...</p>
+              </div>
+            ) : nearbyBusinesses.length > 0 ? (
+              nearbyBusinesses.map((business, index) => (
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(business.business_name)}>
+                  <div className="relative">
+                    <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
+                      {business.business_type === 'restaurant' ? '🍽️' : 
+                       business.business_type === 'grocery' ? '🛒' : 
+                       business.business_type === 'electronics' ? '📱' : 
+                       business.business_type === 'pharmacy' ? '💊' : '🏪'}
+                    </div>
                     <Badge className="absolute top-3 left-3 bg-wellness-accent/90 text-primary-foreground">
-                      {store.promo}
+                      {business.distance?.toFixed(1)} mi away
                     </Badge>
-                  )}
-                </div>
-                
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg line-clamp-1">{store.name}</CardTitle>
-                  <CardDescription className="text-sm">{store.category}</CardDescription>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <span>{store.rating}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{store.deliveryTime}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Delivery fee: ${store.deliveryFee}</span>
-                    </div>
-                    
-                    <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90" onClick={() => handleStoreClick(store.name)}>
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      Browse Menu
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg line-clamp-1">{business.business_name}</CardTitle>
+                    <CardDescription className="text-sm">{business.business_type}</CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span>{business.rating?.toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{business.deliveryTime}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Delivery fee: ${business.deliveryFee}</span>
+                      </div>
+                      
+                      <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90" onClick={() => handleStoreClick(business.business_name)}>
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        Browse Menu
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground">No businesses found in your area. Try expanding your search radius.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -454,12 +584,11 @@ const Delivery = () => {
         </div>
       </section>
 
-      {/* Location Picker Modal */}
       <LocationPicker
         isOpen={showLocationPicker}
         onClose={() => setShowLocationPicker(false)}
         onLocationSelect={handleLocationSelect}
-        currentLocation={userLocation.address}
+        currentLocation={userLocation?.address || "Set Location"}
       />
     </div>
   );
