@@ -89,39 +89,43 @@ const DriverDashboard = () => {
     if (!user?.email) return;
 
     try {
-      // Temporary: Allow access without requiring approved driver for testing
-      // Check if user has any driver application (approved or not)
+      // Check if user has an approved driver application
       const { data: driverData, error: driverError } = await supabase
         .from('driver_applications')
         .select('*')
         .eq('email', user.email)
+        .eq('status', 'approved')
         .single();
 
       if (driverError && driverError.code !== 'PGRST116') {
         console.error('Error loading driver:', driverError);
-        // For testing: Create a temporary driver profile if none exists
-        const { data: tempDriver, error: createError } = await supabase
+        return;
+      }
+
+      if (!driverData) {
+        // Check if user has any application
+        const { data: anyApplication } = await supabase
           .from('driver_applications')
-          .insert({
-            full_name: user.email?.split('@')[0] || 'Test Driver',
-            email: user.email!,
-            phone: '555-0123',
-            address: '123 Test St, Test City, TC 12345',
-            license_number: 'TEST123456',
-            vehicle_type: 'car',
-            status: 'approved'
-          })
-          .select('*')
+          .select('status')
+          .eq('email', user.email)
           .single();
-        
-        if (!createError) {
-          setDriver(tempDriver);
-          await Promise.all([
-            loadCurrentShift(tempDriver.id),
-            loadOrders(),
-            loadEarnings(tempDriver.id)
-          ]);
+
+        if (anyApplication?.status === 'pending') {
+          setDriver({ 
+            id: '', 
+            full_name: '', 
+            email: user.email!, 
+            status: 'pending' 
+          });
+        } else if (anyApplication?.status === 'rejected') {
+          setDriver({ 
+            id: '', 
+            full_name: '', 
+            email: user.email!, 
+            status: 'rejected' 
+          });
         }
+        setIsLoading(false);
         return;
       }
 
@@ -392,12 +396,48 @@ const DriverDashboard = () => {
         <Card className="max-w-md w-full text-center">
           <CardContent className="pt-8">
             <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">No Approved Driver Application</h2>
+            <h2 className="text-2xl font-bold mb-2">No Driver Application Found</h2>
             <p className="text-muted-foreground mb-6">
-              You don't have an approved driver application yet. Please apply for driver registration first.
+              You don't have a driver application yet. Please apply for driver registration first.
             </p>
             <Button onClick={() => window.location.href = '/driver-application'}>
               Apply to Become a Driver
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (driver.status === 'pending') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8">
+            <Timer className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Application Under Review</h2>
+            <p className="text-muted-foreground mb-6">
+              Your driver application is being reviewed. We'll notify you via email once it's processed (typically within 2-3 business days).
+            </p>
+            <Badge className="bg-yellow-100 text-yellow-800">Pending Review</Badge>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (driver.status === 'rejected') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8">
+            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Application Not Approved</h2>
+            <p className="text-muted-foreground mb-6">
+              Unfortunately, your driver application was not approved. You're welcome to reapply in the future if your circumstances change.
+            </p>
+            <Button onClick={() => window.location.href = '/driver-application'} variant="outline">
+              Apply Again
             </Button>
           </CardContent>
         </Card>

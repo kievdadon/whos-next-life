@@ -14,6 +14,7 @@ import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
 import FamilyGroupChat from "./pages/FamilyGroupChat";
 import DeliveryDriverApplication from "./pages/DeliveryDriverApplication";
+import AdminDriverApplications from "./pages/AdminDriverApplications";
 import DriverDashboard from "./pages/DriverDashboard";
 import Auth from "./pages/Auth";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/family-chat" element={<FamilyGroupChat />} />
               <Route path="/driver-application" element={<DeliveryDriverApplication />} />
               <Route path="/driver-dashboard" element={<DriverDashboard />} />
+              <Route path="/admin/driver-applications" element={<AdminDriverApplications />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
