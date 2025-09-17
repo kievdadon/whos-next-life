@@ -186,6 +186,37 @@ const DeliveryDriverApplication = () => {
         throw new Error(`Database submission failed: ${insertError.message}`);
       }
 
+      // Send email notification
+      try {
+        const emailData = {
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          email: user.email!,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          dateOfBirth: formData.dateOfBirth,
+          vehicleType: formData.vehicleType,
+          vehicleMake: formData.vehicleMake,
+          vehicleModel: formData.vehicleModel,
+          vehicleYear: formData.vehicleYear,
+          licensePlate: formData.licensePlate,
+          insuranceProvider: formData.insuranceProvider,
+          emergencyContactName: formData.emergencyContact,
+          emergencyContactPhone: formData.emergencyPhone,
+          availability: Array.isArray(formData.availability) ? formData.availability.join(', ') : formData.availability,
+          experience: formData.experience
+        };
+
+        await supabase.functions.invoke('send-driver-application', {
+          body: emailData
+        });
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't fail the whole process if email fails
+      }
+
       toast({
         title: "Application Submitted Successfully!",
         description: "We'll review your application and get back to you within 2-3 business days. You'll receive an email notification once your application is processed.",

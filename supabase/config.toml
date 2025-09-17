@@ -79,6 +79,9 @@ verify_jwt = true
 [functions.wellness-chat]
 verify_jwt = true
 
+[functions.send-driver-application]
+verify_jwt = false
+
 # Public function for embedded payments via Payment Intent
 [functions.create-order-payment-intent]
 verify_jwt = false
