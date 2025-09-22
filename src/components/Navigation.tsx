@@ -8,7 +8,9 @@ import {
   Users,
   FileText,
   PlusCircle,
-  MessageSquare
+  MessageSquare,
+  Car,
+  Store
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
@@ -17,6 +19,8 @@ const Navigation = () => {
 
   const navItems = [
     { to: "/", icon: Home, label: "Home" },
+    { to: "/driver-dashboard", icon: Car, label: "Driver" },
+    { to: "/business-dashboard", icon: Store, label: "Business" },
     { to: "/wellness-chat", icon: MessageCircle, label: "Wellness AI" },
     { to: "/delivery", icon: Package, label: "Delivery" },
     { to: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
