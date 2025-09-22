@@ -19,7 +19,7 @@ const Navigation = () => {
 
   const navItems = [
     { to: "/", icon: Home, label: "Home" },
-    { to: "/driver-dashboard", icon: Car, label: "Driver" },
+    { to: "/driver-dashboard", icon: Car, label: "Driver", priority: true },
     { to: "/business-dashboard", icon: Store, label: "Business" },
     { to: "/wellness-chat", icon: MessageCircle, label: "Wellness AI" },
     { to: "/delivery", icon: Package, label: "Delivery" },
@@ -44,10 +44,14 @@ const Navigation = () => {
                   isActive 
                     ? 'text-wellness-primary bg-wellness-primary/10' 
                     : 'text-muted-foreground hover:text-wellness-primary hover:bg-wellness-primary/5'
+                } ${
+                  item.priority ? 'ring-2 ring-wellness-primary/30 bg-wellness-primary/5' : ''
                 }`}
               >
-                <item.icon className="h-5 w-5 mb-1" />
-                <span className="text-xs">{item.label}</span>
+                <item.icon className={`mb-1 ${item.priority ? 'h-6 w-6' : 'h-5 w-5'}`} />
+                <span className={`${item.priority ? 'text-xs font-semibold' : 'text-xs'}`}>
+                  {item.label}
+                </span>
               </Button>
             </Link>
           );
