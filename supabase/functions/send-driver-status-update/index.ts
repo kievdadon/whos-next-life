@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,9 +27,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, fullName, status }: StatusUpdateRequest = await req.json();
+    let email: string, fullName: string, status: 'approved' | 'rejected';
+
+    if (req.method === "GET") {
+      // Handle URL parameters for email link clicks
+      const url = new URL(req.url);
+      email = url.searchParams.get('email') || '';
+      fullName = url.searchParams.get('name') || '';
+      status = url.searchParams.get('status') as 'approved' | 'rejected';
+      
+      if (!email || !status) {
+        throw new Error("Missing required parameters");
+      }
+    } else {
+      // Handle POST requests
+      const body: StatusUpdateRequest = await req.json();
+      email = body.email;
+      fullName = body.fullName;
+      status = body.status;
+    }
     
-    console.log("Sending driver status update:", { email, fullName, status });
+    console.log("Processing driver status update:", { email, fullName, status });
+
+    // Update the driver application status in the database
+    const { data: updateResult, error: updateError } = await supabase
+      .from('driver_applications')
+      .update({ 
+        status: status,
+        approved_at: status === 'approved' ? new Date().toISOString() : null
+      })
+      .eq('email', email);
+
+    if (updateError) {
+      console.error("Error updating driver application:", updateError);
+      throw new Error("Failed to update driver application status");
+    }
+
+    console.log("Driver application status updated successfully");
 
     const isApproved = status === 'approved';
     const statusText = isApproved ? 'Approved' : 'Rejected';
@@ -90,9 +129,42 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Status update email sent successfully:", emailResponse);
 
+    // If this was a GET request (email link click), return an HTML response
+    if (req.method === "GET") {
+      const successPage = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Driver Application ${statusText}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .success { background-color: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor}; }
+            .button { background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="success">
+            <h1 style="color: ${statusColor};">✅ Driver Application ${statusText}</h1>
+            <p><strong>${fullName}</strong> has been ${status} successfully!</p>
+            <p>The driver has been notified via email and their status has been updated in the system.</p>
+            <a href="mailto:jameskiev16@gmail.com" class="button">Back to Email</a>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      return new Response(successPage, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...corsHeaders,
+        },
+      });
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
-      message: "Status update email sent successfully",
+      message: "Status update processed successfully",
       emailId: emailResponse.data?.id 
     }), {
       status: 200,
