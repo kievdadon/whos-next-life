@@ -63,9 +63,13 @@ const DriverDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [todaysEarnings, setTodaysEarnings] = useState(0);
   const [weeklyEarnings, setWeeklyEarnings] = useState(0);
+  const [testingMode, setTestingMode] = useState(false);
 
-  // Redirect non-authenticated users
-  if (!user) {
+  // For testing: Allow access without authentication
+  const isTestingMode = !user || testingMode;
+  
+  // Redirect non-authenticated users only if not in testing mode
+  if (!user && !testingMode) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -86,6 +90,59 @@ const DriverDashboard = () => {
   }, [user]);
 
   const loadDriverData = async () => {
+    // For testing mode: Create mock driver data
+    if (isTestingMode) {
+      const mockDriver = {
+        id: 'test-driver-123',
+        full_name: 'Test Driver',
+        email: user?.email || 'test@example.com',
+        status: 'approved'
+      };
+      setDriver(mockDriver);
+      
+      // Load mock data
+      setTodaysEarnings(125.50);
+      setWeeklyEarnings(890.25);
+      
+      // Create mock orders
+      setAvailableOrders([
+        {
+          id: 'order-1',
+          order_id: 'ORD-001',
+          customer_address: '123 Main St, City, State',
+          restaurant_address: 'Pizza Palace, 456 Oak Ave',
+          distance_miles: 2.5,
+          delivery_fee: 8.99,
+          driver_earning: 6.50,
+          company_commission: 2.49,
+          tips: 0,
+          status: 'pending',
+          assigned_at: new Date().toISOString(),
+          pickup_time: null,
+          delivery_time: null
+        },
+        {
+          id: 'order-2',
+          order_id: 'ORD-002',
+          customer_address: '789 Elm St, City, State',
+          restaurant_address: 'Burger Hub, 321 Pine St',
+          distance_miles: 1.8,
+          delivery_fee: 7.50,
+          driver_earning: 5.25,
+          company_commission: 2.25,
+          tips: 0,
+          status: 'pending',
+          assigned_at: new Date().toISOString(),
+          pickup_time: null,
+          delivery_time: null
+        }
+      ]);
+      
+      setAssignedOrders([]);
+      setIsLoading(false);
+      return;
+    }
+
     if (!user?.email) return;
 
     try {
@@ -242,6 +299,25 @@ const DriverDashboard = () => {
   const clockIn = async () => {
     if (!driver) return;
 
+    // For testing mode: Mock clock in
+    if (isTestingMode) {
+      const mockShift = {
+        id: 'test-shift-123',
+        clock_in_time: new Date().toISOString(),
+        clock_out_time: null,
+        total_hours: null,
+        total_earnings: 0,
+        total_deliveries: 0,
+        status: 'active'
+      };
+      setCurrentShift(mockShift);
+      toast({
+        title: "Clocked In (Testing Mode)",
+        description: "You're now on shift and ready to receive orders!",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('driver_shifts')
@@ -273,6 +349,20 @@ const DriverDashboard = () => {
 
   const clockOut = async () => {
     if (!driver || !currentShift) return;
+
+    // For testing mode: Mock clock out
+    if (isTestingMode) {
+      const clockInTime = new Date(currentShift.clock_in_time);
+      const totalHours = (Date.now() - clockInTime.getTime()) / (1000 * 60 * 60);
+      
+      toast({
+        title: "Clocked Out (Testing Mode)",
+        description: `Shift completed! You worked ${totalHours.toFixed(2)} hours.`,
+      });
+      
+      setCurrentShift(null);
+      return;
+    }
 
     try {
       const clockOutTime = new Date().toISOString();
@@ -312,6 +402,21 @@ const DriverDashboard = () => {
   const acceptOrder = async (orderId: string) => {
     if (!driver) return;
 
+    // For testing mode: Mock order acceptance
+    if (isTestingMode) {
+      const orderToAccept = availableOrders.find(order => order.id === orderId);
+      if (orderToAccept) {
+        setAvailableOrders(prev => prev.filter(order => order.id !== orderId));
+        setAssignedOrders(prev => [...prev, { ...orderToAccept, status: 'accepted' }]);
+        
+        toast({
+          title: "Order Accepted (Testing Mode)",
+          description: "You've accepted the delivery order!",
+        });
+      }
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('delivery_orders')
@@ -343,6 +448,34 @@ const DriverDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // For testing mode: Mock status update
+    if (isTestingMode) {
+      setAssignedOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { 
+              ...order, 
+              status: newStatus,
+              pickup_time: newStatus === 'picked_up' ? new Date().toISOString() : order.pickup_time,
+              delivery_time: newStatus === 'delivered' ? new Date().toISOString() : order.delivery_time
+            }
+          : order
+      ));
+      
+      if (newStatus === 'delivered') {
+        // Remove from assigned orders and add to earnings
+        setTimeout(() => {
+          setAssignedOrders(prev => prev.filter(order => order.id !== orderId));
+          setTodaysEarnings(prev => prev + 15.75); // Mock earning
+        }, 1000);
+      }
+      
+      toast({
+        title: "Status Updated (Testing Mode)",
+        description: `Order marked as ${newStatus.replace('_', ' ')}!`,
+      });
+      return;
+    }
+
     try {
       const updateData: any = { status: newStatus };
       
@@ -452,6 +585,11 @@ const DriverDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Driver Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {driver.full_name}!</p>
+            {isTestingMode && (
+              <Badge className="bg-orange-100 text-orange-800 mt-2">
+                Testing Mode - No Authentication Required
+              </Badge>
+            )}
           </div>
           <div className="flex gap-4">
             <Badge className="bg-green-100 text-green-800">

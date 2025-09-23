@@ -60,6 +60,7 @@ const BusinessDashboard = () => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showStoreHours, setShowStoreHours] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [testingMode, setTestingMode] = useState(false);
   const [productForm, setProductForm] = useState({
     name: '',
     description: '',
@@ -95,8 +96,11 @@ const BusinessDashboard = () => {
     'Other'
   ];
 
-  // Redirect non-authenticated users
-  if (!user) {
+  // For testing: Allow access without authentication
+  const isTestingMode = !user || testingMode;
+  
+  // Redirect non-authenticated users only if not in testing mode
+  if (!user && !testingMode) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -105,6 +109,66 @@ const BusinessDashboard = () => {
   }, [user]);
 
   const loadBusinessData = async () => {
+    // For testing mode: Create mock business data
+    if (isTestingMode) {
+      const mockBusiness = {
+        id: 'test-business-123',
+        business_name: 'Test Business Store',
+        business_type: 'retail',
+        status: 'approved',
+        monday_open: '09:00',
+        monday_close: '17:00',
+        tuesday_open: '09:00',
+        tuesday_close: '17:00',
+        wednesday_open: '09:00',
+        wednesday_close: '17:00',
+        thursday_open: '09:00',
+        thursday_close: '17:00',
+        friday_open: '09:00',
+        friday_close: '17:00',
+        saturday_open: '10:00',
+        saturday_close: '16:00',
+        sunday_open: null,
+        sunday_close: null,
+        timezone: 'America/New_York',
+        is_24_7: false,
+        temporary_closure: false,
+        closure_message: null
+      };
+      setBusiness(mockBusiness);
+      
+      // Set mock products
+      setProducts([
+        {
+          id: 'product-1',
+          name: 'Sample Product 1',
+          description: 'This is a sample product for testing',
+          price: 29.99,
+          category: 'Electronics',
+          image_url: '',
+          stock_quantity: 50,
+          is_active: true,
+          delivery_available: true,
+          delivery_radius: 10
+        },
+        {
+          id: 'product-2',
+          name: 'Sample Product 2',
+          description: 'Another sample product for testing',
+          price: 15.50,
+          category: 'Clothing & Accessories',
+          image_url: '',
+          stock_quantity: 25,
+          is_active: false,
+          delivery_available: true,
+          delivery_radius: 5
+        }
+      ]);
+      
+      setIsLoading(false);
+      return;
+    }
+
     if (!user?.email) return;
 
     try {
@@ -184,6 +248,49 @@ const BusinessDashboard = () => {
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!business) return;
+
+    // For testing mode: Mock product creation/update
+    if (isTestingMode) {
+      const newProduct = {
+        id: editingProduct?.id || `product-${Date.now()}`,
+        business_id: business.id,
+        name: productForm.name,
+        description: productForm.description,
+        price: parseFloat(productForm.price),
+        category: productForm.category,
+        image_url: productForm.image_url,
+        stock_quantity: parseInt(productForm.stock_quantity),
+        delivery_available: productForm.delivery_available,
+        delivery_radius: parseInt(productForm.delivery_radius),
+        is_active: true
+      };
+
+      if (editingProduct) {
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? newProduct : p));
+      } else {
+        setProducts(prev => [...prev, newProduct]);
+      }
+
+      toast({
+        title: "Success (Testing Mode)",
+        description: editingProduct ? "Product updated successfully!" : "Product added successfully!",
+      });
+
+      // Reset form
+      setProductForm({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        image_url: '',
+        stock_quantity: '',
+        delivery_available: true,
+        delivery_radius: '10'
+      });
+      setShowAddProduct(false);
+      setEditingProduct(null);
+      return;
+    }
 
     try {
       const productData = {
@@ -308,6 +415,19 @@ const BusinessDashboard = () => {
   };
 
   const toggleProductStatus = async (product: Product) => {
+    // For testing mode: Mock status toggle
+    if (isTestingMode) {
+      setProducts(prev => prev.map(p => 
+        p.id === product.id ? { ...p, is_active: !p.is_active } : p
+      ));
+      
+      toast({
+        title: "Success (Testing Mode)",
+        description: `Product ${product.is_active ? 'hidden' : 'made visible'} successfully!`,
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('products')
@@ -337,6 +457,17 @@ const BusinessDashboard = () => {
 
   const deleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
+
+    // For testing mode: Mock deletion
+    if (isTestingMode) {
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      
+      toast({
+        title: "Success (Testing Mode)",
+        description: "Product deleted successfully!",
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -418,6 +549,11 @@ const BusinessDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">{business.business_name}</h1>
             <div className="flex items-center gap-4 mt-2">
               <p className="text-muted-foreground">Business Dashboard</p>
+              {isTestingMode && (
+                <Badge className="bg-orange-100 text-orange-800">
+                  Testing Mode - No Authentication Required
+                </Badge>
+              )}
               {business && (
                 <Badge className={
                   business.temporary_closure 
