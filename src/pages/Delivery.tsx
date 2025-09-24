@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import LocationPicker from "@/components/LocationPicker";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { 
   Search, 
@@ -25,6 +26,7 @@ import {
 const Delivery = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     address: string;
@@ -170,8 +172,9 @@ const Delivery = () => {
     try {
       // Create a test delivery order
       const testOrder = {
-        customer_name: "Test Customer",
-        customer_email: "test@customer.com", 
+        customer_id: user?.id || null,
+        customer_name: user?.email?.split('@')[0] || "Test Customer",
+        customer_email: user?.email || "test@customer.com", 
         customer_phone: "555-0123",
         customer_address: userLocation.address,
         restaurant_address: "Tony's Italian Kitchen, 123 Restaurant St",
