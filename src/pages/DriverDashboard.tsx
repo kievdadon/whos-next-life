@@ -20,6 +20,7 @@ import {
   Phone,
   Camera
 } from 'lucide-react';
+import { CameraCapture } from '@/components/CameraCapture';
 
 interface DriverProfile {
   id: string;
@@ -959,35 +960,16 @@ const DriverDashboard = () => {
           </div>
         </div>
         
-        {/* Camera Dialog for Photo Capture */}
-        {showCamera && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">
-                {currentOrderAction?.action === 'pickup' ? '📸 Confirm Pickup' : '📸 Confirm Delivery'}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Take a photo to confirm {currentOrderAction?.action}
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={() => {
-                  if (currentOrderAction) {
-                    const newStatus = currentOrderAction.action === 'pickup' ? 'picked_up' : 'delivered';
-                    updateOrderStatusWithPhoto(currentOrderAction.orderId, newStatus);
-                    setCurrentOrderAction(null);
-                  }
-                  setShowCamera(false);
-                }}>
-                  <Camera className="h-4 w-4 mr-2" />
-                  Confirm {currentOrderAction?.action === 'pickup' ? 'Pickup' : 'Delivery'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowCamera(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Camera Component for Photo Capture */}
+        <CameraCapture
+          isOpen={showCamera}
+          onClose={() => {
+            setShowCamera(false);
+            setCurrentOrderAction(null);
+          }}
+          onCapture={handlePhotoCapture}
+          title={currentOrderAction?.action === 'pickup' ? 'Confirm Pickup' : 'Confirm Delivery'}
+        />
       </div>
     </div>
   );

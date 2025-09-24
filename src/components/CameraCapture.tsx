@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Camera, X, RotateCcw } from 'lucide-react';
@@ -99,20 +99,20 @@ export const CameraCapture = ({ onCapture, isOpen, onClose, title }: CameraCaptu
   }, [stopCamera, onClose]);
 
   // Start camera when dialog opens
-  useState(() => {
+  useEffect(() => {
     if (isOpen && !isStreaming) {
       startCamera();
     } else if (!isOpen) {
       stopCamera();
     }
-  });
+  }, [isOpen, isStreaming, startCamera, stopCamera]);
 
   // Restart camera when facing mode changes
-  useState(() => {
+  useEffect(() => {
     if (isOpen && isStreaming) {
       startCamera();
     }
-  });
+  }, [facingMode, isOpen, isStreaming, startCamera]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
