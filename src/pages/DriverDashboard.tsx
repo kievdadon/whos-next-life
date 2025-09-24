@@ -602,12 +602,37 @@ const DriverDashboard = () => {
         return;
       }
 
+      // If order is delivered, update driver's shift totals
+      if (newStatus === 'delivered' && driver && currentShift) {
+        const order = assignedOrders.find(o => o.id === orderId);
+        if (order) {
+          const orderEarning = Number(order.driver_earning || 0) + Number(order.tips || 0);
+          
+          const { error: shiftError } = await supabase
+            .from('driver_shifts')
+            .update({
+              total_earnings: Number(currentShift.total_earnings || 0) + orderEarning,
+              total_deliveries: Number(currentShift.total_deliveries || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', currentShift.id);
+
+          if (shiftError) {
+            console.error('Error updating shift totals:', shiftError);
+          } else {
+            // Reload current shift to get updated totals
+            await loadCurrentShift(driver.id);
+          }
+        }
+      }
+
       toast({
         title: "Status Updated",
         description: `Order marked as ${newStatus.replace('_', ' ')}! ${photoFile ? '📸 Photo captured' : ''}`,
       });
 
       loadOrders();
+      if (driver) loadEarnings(driver.id);
     } catch (error) {
       console.error('Error updating order status:', error);
     }
