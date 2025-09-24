@@ -52,6 +52,7 @@ const DeliveryDriverApplication = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -221,6 +222,8 @@ const DeliveryDriverApplication = () => {
         title: "Application Submitted Successfully!",
         description: "We'll review your application and get back to you within 2-3 business days. You'll receive an email notification once your application is processed.",
       });
+
+      setHasSubmitted(true);
 
       // Reset form
       setFormData({
@@ -697,7 +700,7 @@ const DeliveryDriverApplication = () => {
           </Card>
 
           {/* Submit Button */}
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <Button 
               type="submit" 
               className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
@@ -705,7 +708,57 @@ const DeliveryDriverApplication = () => {
             >
               {isSubmitting ? "Submitting Application..." : "Submit Application"}
             </Button>
-            <p className="text-sm text-muted-foreground mt-3">
+            
+            {hasSubmitted && (
+              <div className="space-y-3">
+                <p className="text-sm text-wellness-primary font-medium">
+                  ✓ Application submitted successfully!
+                </p>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setHasSubmitted(false);
+                    // Reset form for resubmission
+                    setFormData({
+                      firstName: "",
+                      lastName: "",
+                      email: "",
+                      phone: "",
+                      address: "",
+                      city: "",
+                      state: "",
+                      zipCode: "",
+                      dateOfBirth: "",
+                      vehicleType: "",
+                      vehicleMake: "",
+                      vehicleModel: "",
+                      vehicleYear: "",
+                      licensePlate: "",
+                      insuranceProvider: "",
+                      emergencyContact: "",
+                      emergencyPhone: "",
+                      availability: [],
+                      experience: "",
+                      agreedToTerms: false
+                    });
+                    setUploadedFiles({
+                      driversLicense: null,
+                      secondaryId: null
+                    });
+                    toast({
+                      title: "Ready to resubmit",
+                      description: "Form has been reset. You can now submit a new application.",
+                    });
+                  }}
+                >
+                  Submit New Application
+                </Button>
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground">
               We'll review your application and contact you within 2-3 business days
             </p>
           </div>
