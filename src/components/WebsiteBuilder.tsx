@@ -438,7 +438,152 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
               <Save className="mr-2 h-4 w-4" />
               Save Website
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                const previewWindow = window.open('', 'preview', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                if (previewWindow) {
+                  const previewHtml = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>WHOSENXT_${config.businessName.toUpperCase().replace(/\s+/g, '_')}</title>
+                      <link href="https://fonts.googleapis.com/css2?family=${config.fontFamily.replace(' ', '+')}:wght@300;400;600;700&display=swap" rel="stylesheet">
+                      <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                          font-family: '${config.fontFamily}', sans-serif; 
+                          background-color: ${config.backgroundColor}; 
+                          color: ${config.textColor}; 
+                          line-height: 1.6;
+                        }
+                        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+                        header { 
+                          background-color: ${config.primaryColor}; 
+                          color: white; 
+                          padding: 1rem 0; 
+                          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        }
+                        .header-content { display: flex; justify-content: space-between; align-items: center; }
+                        .logo { font-size: 1.5rem; font-weight: bold; }
+                        nav { display: flex; gap: 2rem; }
+                        nav a { color: white; text-decoration: none; transition: opacity 0.3s; }
+                        nav a:hover { opacity: 0.8; }
+                        .hero { 
+                          background: ${config.heroImage ? `url(${config.heroImage})` : `linear-gradient(135deg, ${config.primaryColor}, ${config.secondaryColor})`};
+                          background-size: cover;
+                          background-position: center;
+                          color: white;
+                          padding: 6rem 0;
+                          text-align: center;
+                        }
+                        .hero h1 { font-size: 3.5rem; font-weight: bold; margin-bottom: 1rem; }
+                        .hero p { font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.9; }
+                        .cta-button { 
+                          background: white; 
+                          color: #1f2937; 
+                          padding: 0.75rem 2rem; 
+                          border: none; 
+                          border-radius: 0.5rem; 
+                          font-size: 1.1rem; 
+                          font-weight: 600; 
+                          cursor: pointer; 
+                          transition: all 0.3s;
+                        }
+                        .cta-button:hover { background: #f3f4f6; }
+                        .section { padding: 4rem 0; }
+                        .section h2 { color: ${config.primaryColor}; font-size: 2.5rem; font-weight: bold; margin-bottom: 2rem; }
+                        .section p { font-size: 1.1rem; line-height: 1.8; }
+                        .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; }
+                        .contact-item h3 { font-weight: 600; margin-bottom: 0.5rem; color: ${config.primaryColor}; }
+                        footer { 
+                          background-color: ${config.primaryColor}; 
+                          color: white; 
+                          text-align: center; 
+                          padding: 2rem 0; 
+                          border-top: 1px solid rgba(255,255,255,0.1);
+                        }
+                        .footer-brand { font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem; }
+                        @media (max-width: 768px) {
+                          .hero h1 { font-size: 2.5rem; }
+                          .hero { padding: 4rem 0; }
+                          nav { display: none; }
+                          .contact-grid { grid-template-columns: 1fr; }
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <header>
+                        <div class="container">
+                          <div class="header-content">
+                            <div class="logo">WHOSENXT_${config.businessName.toUpperCase().replace(/\s+/g, '_')}</div>
+                            <nav>
+                              <a href="#home">Home</a>
+                              <a href="#about">About</a>
+                              <a href="#services">Services</a>
+                              <a href="#contact">Contact</a>
+                            </nav>
+                          </div>
+                        </div>
+                      </header>
+
+                      <section class="hero" id="home">
+                        <div class="container">
+                          <h1>${config.businessName}</h1>
+                          <p>${config.description}</p>
+                          <button class="cta-button">Get Started</button>
+                        </div>
+                      </section>
+
+                      <section class="section" id="about">
+                        <div class="container">
+                          <h2>About Us</h2>
+                          <p>${config.aboutText}</p>
+                        </div>
+                      </section>
+
+                      <section class="section" id="contact" style="border-top: 1px solid #e5e7eb;">
+                        <div class="container">
+                          <h2>Contact Information</h2>
+                          <div class="contact-grid">
+                            ${config.contactInfo.phone ? `
+                              <div class="contact-item">
+                                <h3>Phone</h3>
+                                <p>${config.contactInfo.phone}</p>
+                              </div>
+                            ` : ''}
+                            ${config.contactInfo.email ? `
+                              <div class="contact-item">
+                                <h3>Email</h3>
+                                <p>${config.contactInfo.email}</p>
+                              </div>
+                            ` : ''}
+                            ${config.contactInfo.address ? `
+                              <div class="contact-item">
+                                <h3>Address</h3>
+                                <p>${config.contactInfo.address}</p>
+                              </div>
+                            ` : ''}
+                          </div>
+                        </div>
+                      </section>
+
+                      <footer>
+                        <div class="container">
+                          <p>&copy; 2024 WHOSENXT_${config.businessName.toUpperCase().replace(/\s+/g, '_')}. All rights reserved.</p>
+                          <p class="footer-brand">Powered by WHOSENXT</p>
+                        </div>
+                      </footer>
+                    </body>
+                    </html>
+                  `;
+                  previewWindow.document.write(previewHtml);
+                  previewWindow.document.close();
+                }
+              }}
+            >
               <Eye className="mr-2 h-4 w-4" />
               Preview Live
             </Button>
