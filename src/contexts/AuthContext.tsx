@@ -14,6 +14,9 @@ interface AuthContextType {
   subscriptionTier: string | null;
   subscriptionEnd: string | null;
   checkSubscription: () => Promise<void>;
+  hasApprovedBusiness: boolean;
+  businessName: string | null;
+  checkBusinessStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +36,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [subscribed, setSubscribed] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [hasApprovedBusiness, setHasApprovedBusiness] = useState(false);
+  const [businessName, setBusinessName] = useState<string | null>(null);
   const { toast } = useToast();
 
   const checkSubscription = async () => {
@@ -55,6 +60,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const checkBusinessStatus = async () => {
+    if (!session?.user?.email) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('business_applications')
+        .select('id, business_name, status')
+        .eq('email', session.user.email)
+        .eq('status', 'approved')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking business status:', error);
+        return;
+      }
+
+      setHasApprovedBusiness(!!data);
+      setBusinessName(data?.business_name || null);
+    } catch (error) {
+      console.error('Error checking business status:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -63,15 +91,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Check subscription when user logs in
+        // Check subscription and business status when user logs in
         if (session?.user) {
           setTimeout(() => {
             checkSubscription();
+            checkBusinessStatus();
           }, 0);
         } else {
           setSubscribed(false);
           setSubscriptionTier(null);
           setSubscriptionEnd(null);
+          setHasApprovedBusiness(false);
+          setBusinessName(null);
         }
       }
     );
@@ -85,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         setTimeout(() => {
           checkSubscription();
+          checkBusinessStatus();
         }, 0);
       }
     });
@@ -138,6 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSubscribed(false);
     setSubscriptionTier(null);
     setSubscriptionEnd(null);
+    setHasApprovedBusiness(false);
+    setBusinessName(null);
   };
 
   const value = {
@@ -151,6 +185,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     subscriptionTier,
     subscriptionEnd,
     checkSubscription,
+    hasApprovedBusiness,
+    businessName,
+    checkBusinessStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

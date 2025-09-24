@@ -1,9 +1,11 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Crown, Shield, Star } from "lucide-react";
+import { Crown, Shield, Star, Store } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
-  const { user, subscribed, subscriptionTier } = useAuth();
+  const { user, subscribed, subscriptionTier, hasApprovedBusiness, businessName } = useAuth();
 
   const getTierDisplay = (tier: string | null) => {
     switch (tier?.toLowerCase()) {
@@ -18,24 +20,33 @@ const Header = () => {
     }
   };
 
-  // Only show header if user is logged in and subscribed
-  if (!user || !subscribed || !subscriptionTier) {
+  // Show header if user is logged in and either subscribed or has approved business
+  if (!user || (!subscribed && !hasApprovedBusiness)) {
     return null;
   }
 
   const tierDisplay = getTierDisplay(subscriptionTier);
 
-  if (!tierDisplay) {
-    return null;
-  }
-
   return (
-    <header className="fixed top-0 right-0 z-50 p-4">
-      <Badge className={`${tierDisplay.color} shadow-lg backdrop-blur-sm`}>
-        <span className="mr-1 text-base">{tierDisplay.emoji}</span>
-        <tierDisplay.icon className="mr-1 h-3 w-3" />
-        {subscriptionTier.charAt(0).toUpperCase()}{subscriptionTier.slice(1)} Member
-      </Badge>
+    <header className="fixed top-0 right-0 z-50 p-4 flex items-center gap-3">
+      {/* Business Dashboard Link */}
+      {hasApprovedBusiness && (
+        <Link to="/business-dashboard">
+          <Button variant="outline" size="sm" className="bg-green-50 border-green-200 text-green-800 hover:bg-green-100">
+            <Store className="mr-2 h-4 w-4" />
+            {businessName || 'Business Dashboard'}
+          </Button>
+        </Link>
+      )}
+      
+      {/* Subscription Tier Badge */}
+      {subscribed && subscriptionTier && tierDisplay && (
+        <Badge className={`${tierDisplay.color} shadow-lg backdrop-blur-sm`}>
+          <span className="mr-1 text-base">{tierDisplay.emoji}</span>
+          <tierDisplay.icon className="mr-1 h-3 w-3" />
+          {subscriptionTier.charAt(0).toUpperCase()}{subscriptionTier.slice(1)} Member
+        </Badge>
+      )}
     </header>
   );
 };
