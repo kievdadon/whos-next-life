@@ -79,32 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const hasApproved = !!data;
       setHasApprovedBusiness(hasApproved);
       setBusinessName(data?.business_name || null);
-      
-      // If no approved business but user is logged in, create a test one for dashboard access
-      if (!hasApproved && session.user.email) {
-        try {
-          const { data: tempBusiness, error: createError } = await supabase
-            .from('business_applications')
-            .insert({
-              business_name: `${session.user.email.split('@')[0]}'s Business`,
-              business_type: 'other',
-              contact_name: session.user.email.split('@')[0] || 'User',
-              email: session.user.email,
-              description: 'Auto-created for dashboard access',
-              status: 'approved',
-              approved_at: new Date().toISOString()
-            })
-            .select('id, business_name')
-            .single();
-          
-          if (!createError && tempBusiness) {
-            setHasApprovedBusiness(true);
-            setBusinessName(tempBusiness.business_name);
-          }
-        } catch (createError) {
-          console.log('Could not create test business:', createError);
-        }
-      }
     } catch (error) {
       console.error('Error checking business status:', error);
     }
