@@ -28,7 +28,7 @@ import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-community.avif";
 
 const Index = () => {
-  const { user, signOut, subscribed, subscriptionTier } = useAuth();
+  const { user, signOut, subscribed, subscriptionTier, hasApprovedBusiness } = useAuth();
   const [isApprovedDriver, setIsApprovedDriver] = useState(false);
   const [isApprovedBusiness, setIsApprovedBusiness] = useState(false);
   const [dashboardLinks, setDashboardLinks] = useState<Array<{
@@ -234,17 +234,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testing Access Section - Always visible when logged in */}
+      {/* Dashboard Access Section - Always visible when logged in */}
       {user && (
         <section className="py-12 bg-gradient-to-r from-wellness-accent/5 to-wellness-warm/5">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <Badge className="bg-orange-100 text-orange-800 mb-4">
-                🧪 Testing Access
-              </Badge>
-              <h2 className="text-3xl font-bold mb-4">Dashboard Access</h2>
+              <h2 className="text-3xl font-bold mb-4">Quick Access</h2>
               <p className="text-lg text-muted-foreground">
-                Access dashboards for testing purposes
+                Access your dashboards and business tools
               </p>
             </div>
             
@@ -256,9 +253,15 @@ const Index = () => {
                       <div className="p-4 rounded-xl bg-wellness-secondary/10 group-hover:scale-110 transition-transform duration-300">
                         <Car className="h-8 w-8 text-wellness-secondary" />
                       </div>
-                      <Badge className="bg-orange-100 text-orange-800">
-                        Testing Access
-                      </Badge>
+                      {isApprovedDriver ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          ✅ Approved
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          🚗 Driver Access
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-2xl group-hover:text-wellness-secondary transition-colors">
                       Driver Dashboard
@@ -283,9 +286,15 @@ const Index = () => {
                       <div className="p-4 rounded-xl bg-wellness-primary/10 group-hover:scale-110 transition-transform duration-300">
                         <Store className="h-8 w-8 text-wellness-primary" />
                       </div>
-                      <Badge className="bg-orange-100 text-orange-800">
-                        Testing Access
-                      </Badge>
+                      {hasApprovedBusiness ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          ✅ Approved
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          🏪 Business Access
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-2xl group-hover:text-wellness-primary transition-colors">
                       Business Dashboard
