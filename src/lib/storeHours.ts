@@ -60,10 +60,16 @@ export function isStoreCurrentlyOpen(storeHours: StoreHours): {
     };
   }
 
+  // Use the business timezone, defaulting to America/New_York if not set
+  const businessTimezone = storeHours.timezone || 'America/New_York';
+  
+  // Get current time in the business timezone
   const now = new Date();
-  const dayIndex = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const timeInBusinessTimezone = new Date(now.toLocaleString("en-US", {timeZone: businessTimezone}));
+  
+  const dayIndex = timeInBusinessTimezone.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const currentDay = DAYS_OF_WEEK[dayIndex];
-  const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+  const currentTime = timeInBusinessTimezone.toTimeString().slice(0, 5); // HH:MM format
 
   const openKey = `${currentDay}_open` as keyof StoreHours;
   const closeKey = `${currentDay}_close` as keyof StoreHours;
