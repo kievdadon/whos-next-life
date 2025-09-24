@@ -165,6 +165,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
+          delivered_photo_url: string | null
           delivery_address: string | null
           delivery_fee: number
           delivery_time: string | null
@@ -176,6 +177,7 @@ export type Database = {
           order_id: string | null
           order_status: string | null
           payment_status: string | null
+          picked_up_photo_url: string | null
           pickup_time: string | null
           restaurant_address: string
           status: string | null
@@ -197,6 +199,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_photo_url?: string | null
           delivery_address?: string | null
           delivery_fee: number
           delivery_time?: string | null
@@ -208,6 +211,7 @@ export type Database = {
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
+          picked_up_photo_url?: string | null
           pickup_time?: string | null
           restaurant_address: string
           status?: string | null
@@ -229,6 +233,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_photo_url?: string | null
           delivery_address?: string | null
           delivery_fee?: number
           delivery_time?: string | null
@@ -240,6 +245,7 @@ export type Database = {
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
+          picked_up_photo_url?: string | null
           pickup_time?: string | null
           restaurant_address?: string
           status?: string | null
