@@ -49,21 +49,27 @@ const Index = () => {
     if (!user?.email) return;
 
     try {
-      // Check if user is an approved driver
-      const { data: driverData } = await supabase
+      // Check if user is an approved driver (get most recent one)
+      const { data: driverApplications } = await supabase
         .from('driver_applications')
         .select('status')
         .eq('email', user.email)
         .eq('status', 'approved')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      const driverData = driverApplications?.[0];
 
-      // Check if user is an approved business
-      const { data: businessData } = await supabase
+      // Check if user is an approved business (get most recent one)
+      const { data: businessApplications } = await supabase
         .from('business_applications')
         .select('status')
         .eq('email', user.email)
         .eq('status', 'approved')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const businessData = businessApplications?.[0];
 
       const approvedDriver = !!driverData;
       const approvedBusiness = !!businessData;
