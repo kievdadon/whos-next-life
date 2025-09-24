@@ -872,6 +872,68 @@ const BusinessDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Store Hours Modal */}
+        {showStoreHours && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Store Hours Management</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Set your business operating hours for each day of the week.
+                </p>
+                <form className="space-y-4">
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                    <div key={day} className="grid grid-cols-3 gap-4 items-center">
+                      <Label className="font-medium">{day}</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Open</Label>
+                        <Input
+                          type="time"
+                          defaultValue={business?.[`${day.toLowerCase()}_open` as keyof BusinessApplication] as string || '09:00'}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Close</Label>
+                        <Input
+                          type="time"
+                          defaultValue={business?.[`${day.toLowerCase()}_close` as keyof BusinessApplication] as string || '17:00'}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="flex items-center space-x-2 pt-4">
+                    <input
+                      type="checkbox"
+                      id="is_24_7"
+                      defaultChecked={business?.is_24_7}
+                    />
+                    <Label htmlFor="is_24_7">Open 24/7</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="temporary_closure"
+                      defaultChecked={business?.temporary_closure}
+                    />
+                    <Label htmlFor="temporary_closure">Temporarily Closed</Label>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setShowStoreHours(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Update Hours
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
