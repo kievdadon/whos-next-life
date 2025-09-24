@@ -63,6 +63,16 @@ const BusinessDashboard = () => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showStoreHours, setShowStoreHours] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    image_url: '',
+    stock_quantity: '',
+    delivery_available: true,
+    delivery_radius: '10'
+  });
 
   const categories = [
     'Clothing & Accessories',
@@ -85,37 +95,41 @@ const BusinessDashboard = () => {
     if (!user?.email) return;
 
     try {
-      // Check if user has an approved business application
+      // Check if user has an approved business application - use maybeSingle to handle multiple records
       const { data: businessData, error: businessError } = await supabase
         .from('business_applications')
         .select('*')
         .eq('email', user.email)
         .eq('status', 'approved')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (businessError) {
-        if (businessError.code === 'PGRST116') {
-          // No approved business found - create a test business for dashboard access
-          console.log('No approved business application found, creating test business');
-          const { data: tempBusiness, error: createError } = await supabase
-            .from('business_applications')
-            .insert({
-              business_name: `${user.email?.split('@')[0]}'s Business`,
-              business_type: 'other',
-              contact_name: user.email?.split('@')[0] || 'User',
-              email: user.email!,
-              description: 'Test business for dashboard access',
-              status: 'approved',
-              approved_at: new Date().toISOString()
-            })
-            .select('*')
-            .single();
-          
-          if (!createError && tempBusiness) {
-            setBusiness(tempBusiness);
-          }
-        } else {
-          console.error('Error loading business:', businessError);
+        console.error('Error loading business:', businessError);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!businessData) {
+        // No approved business found - create a test business for dashboard access
+        console.log('No approved business application found, creating test business');
+        const { data: tempBusiness, error: createError } = await supabase
+          .from('business_applications')
+          .insert({
+            business_name: `${user.email?.split('@')[0]}'s Business`,
+            business_type: 'other',
+            contact_name: user.email?.split('@')[0] || 'User',
+            email: user.email!,
+            description: 'Test business for dashboard access',
+            status: 'approved',
+            approved_at: new Date().toISOString()
+          })
+          .select('*')
+          .single();
+        
+        if (!createError && tempBusiness) {
+          setBusiness(tempBusiness);
         }
         setIsLoading(false);
         return;
@@ -225,9 +239,89 @@ const BusinessDashboard = () => {
     }
   };
 
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!business || !user) return;
+
+    try {
+      const productData = {
+        name: productForm.name,
+        description: productForm.description,
+        price: parseFloat(productForm.price),
+        category: productForm.category,
+        image_url: productForm.image_url,
+        stock_quantity: parseInt(productForm.stock_quantity) || 0,
+        delivery_available: productForm.delivery_available,
+        delivery_radius: parseInt(productForm.delivery_radius) || 10,
+        business_id: business.id,
+        user_id: user.id,
+        is_active: true
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+        toast({ title: 'Product updated successfully!' });
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .insert(productData);
+
+        if (error) throw error;
+        toast({ title: 'Product added successfully!' });
+      }
+
+      setShowAddProduct(false);
+      setEditingProduct(null);
+      setProductForm({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        image_url: '',
+        stock_quantity: '',
+        delivery_available: true,
+        delivery_radius: '10'
+      });
+      loadBusinessData();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast({ title: 'Error saving product', variant: 'destructive' });
+    }
+  };
+
   const startEdit = (product: Product) => {
     setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category,
+      image_url: product.image_url,
+      stock_quantity: product.stock_quantity.toString(),
+      delivery_available: product.delivery_available,
+      delivery_radius: product.delivery_radius.toString()
+    });
     setShowAddProduct(true);
+  };
+
+  const cancelProductForm = () => {
+    setShowAddProduct(false);
+    setEditingProduct(null);
+    setProductForm({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      image_url: '',
+      stock_quantity: '',
+      delivery_available: true,
+      delivery_radius: '10'
+    });
   };
 
   if (isLoading) {
@@ -237,7 +331,6 @@ const BusinessDashboard = () => {
       </div>
     );
   }
-
   // For testing: Allow access even without approved business
   if (!business) {
     console.log('No approved business found, creating test business for dashboard access');
@@ -501,6 +594,118 @@ const BusinessDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Product Form Modal */}
+        {showAddProduct && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                </h3>
+                <form onSubmit={handleProductSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Product Name</Label>
+                    <Input
+                      id="name"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={productForm.description}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Price ($)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={productForm.category}
+                      onValueChange={(value) => setProductForm(prev => ({ ...prev, category: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="image_url">Image URL</Label>
+                    <Input
+                      id="image_url"
+                      type="url"
+                      value={productForm.image_url}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="stock_quantity">Stock Quantity</Label>
+                    <Input
+                      id="stock_quantity"
+                      type="number"
+                      value={productForm.stock_quantity}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="delivery_available"
+                      checked={productForm.delivery_available}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, delivery_available: e.target.checked }))}
+                      className="rounded"
+                    />
+                    <Label htmlFor="delivery_available">Delivery Available</Label>
+                  </div>
+                  {productForm.delivery_available && (
+                    <div>
+                      <Label htmlFor="delivery_radius">Delivery Radius (miles)</Label>
+                      <Input
+                        id="delivery_radius"
+                        type="number"
+                        value={productForm.delivery_radius}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, delivery_radius: e.target.value }))}
+                        min="1"
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button type="button" variant="outline" onClick={cancelProductForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingProduct ? 'Update Product' : 'Add Product'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
