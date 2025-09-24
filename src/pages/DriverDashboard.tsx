@@ -116,9 +116,8 @@ const DriverDashboard = () => {
       // Load real orders from database in testing mode
       loadOrdersForTesting();
       return;
-    }
-
-    if (!user?.email) return;
+    } else {
+      if (!user?.email) return;
 
     try {
       // Check if user has an approved driver application (get most recent one)
@@ -180,6 +179,7 @@ const DriverDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+    } // Close the else block
   };
 
   const loadCurrentShift = async (driverId: string) => {
