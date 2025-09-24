@@ -146,13 +146,16 @@ const DriverDashboard = () => {
     if (!user?.email) return;
 
     try {
-      // Check if user has an approved driver application
-      const { data: driverData, error: driverError } = await supabase
+      // Check if user has an approved driver application (get most recent one)
+      const { data: driverApplications, error: driverError } = await supabase
         .from('driver_applications')
         .select('*')
         .eq('email', user.email)
         .eq('status', 'approved')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const driverData = driverApplications?.[0];
 
       if (driverError && driverError.code !== 'PGRST116') {
         console.error('Error loading driver:', driverError);
@@ -160,12 +163,15 @@ const DriverDashboard = () => {
       }
 
       if (!driverData) {
-        // Check if user has any application
-        const { data: anyApplication } = await supabase
+        // Check if user has any application (get most recent one)
+        const { data: anyApplications } = await supabase
           .from('driver_applications')
           .select('status')
           .eq('email', user.email)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const anyApplication = anyApplications?.[0];
 
         if (anyApplication?.status === 'pending') {
           setDriver({ 
