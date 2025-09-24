@@ -164,7 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <p>Thank you for your interest in partnering with WHOSENXT and for submitting your brand partnership application for <strong>${companyName}</strong>.</p>
           
-          <p>After careful review, we have decided not to move forward with your application at this time. This decision was not made lightly, and we appreciate the time and effort you put into your submission.</p>
+          <p>I'm sorry to inform you that after careful review, we will not be accepting your partnership application at this time. This decision was not made lightly, and we genuinely appreciate the time and effort you put into your submission.</p>
           
           <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 25px 0;">
             <h3 style="color: #dc2626; margin-top: 0;">Why this decision was made:</h3>
