@@ -117,7 +117,6 @@ const DriverDashboard = () => {
       loadOrdersForTesting();
       return;
     }
-    }
 
     if (!user?.email) return;
 
