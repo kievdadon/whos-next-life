@@ -235,7 +235,12 @@ const DriverDashboard = () => {
   };
 
   const loadOrders = async () => {
-    if (!driver) return;
+    if (!driver) {
+      console.log('No driver found, cannot load orders');
+      return;
+    }
+
+    console.log('Loading orders for driver:', driver);
 
     try {
       // Load available orders (not assigned to anyone)
@@ -246,9 +251,12 @@ const DriverDashboard = () => {
         .eq('status', 'pending')
         .order('assigned_at', { ascending: true });
 
+      console.log('Available orders query result:', { available, availableError });
+
       if (availableError) {
         console.error('Error loading available orders:', availableError);
       } else {
+        console.log('Setting available orders:', available);
         setAvailableOrders(available || []);
       }
 
