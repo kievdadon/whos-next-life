@@ -50,19 +50,53 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing brand partnership ${status} for ${companyName} (${email}) with ${messageType} tone`);
 
-    // Update database if business_applications table exists
+    // Update or create business application when approving
     try {
-      const { error: updateError } = await supabase
-        .from('business_applications')
-        .update({ 
-          status,
-          approved_at: status === 'approved' ? new Date().toISOString() : null
-        })
-        .eq('email', email)
-        .eq('business_name', companyName);
+      if (status === 'approved') {
+        // First try to update existing business application
+        const { error: updateError } = await supabase
+          .from('business_applications')
+          .update({ 
+            status,
+            approved_at: new Date().toISOString()
+          })
+          .eq('email', email)
+          .eq('business_name', companyName);
 
-      if (updateError) {
-        console.log('Note: Could not update database (table may not exist):', updateError.message);
+        if (updateError && updateError.code === 'PGRST116') {
+          // No existing business application found, create one
+          const { error: insertError } = await supabase
+            .from('business_applications')
+            .insert({
+              business_name: companyName,
+              business_type: 'brand_partnership',
+              contact_name: contactName,
+              email: email,
+              status: 'approved',
+              approved_at: new Date().toISOString(),
+              description: 'Approved through brand partnership application'
+            });
+          
+          if (insertError) {
+            console.log('Could not create business application:', insertError.message);
+          }
+        } else if (updateError) {
+          console.log('Could not update business application:', updateError.message);
+        }
+      } else {
+        // For rejections, only update if business application exists
+        const { error: updateError } = await supabase
+          .from('business_applications')
+          .update({ 
+            status,
+            approved_at: null
+          })
+          .eq('email', email)
+          .eq('business_name', companyName);
+
+        if (updateError) {
+          console.log('Note: Could not update database (table may not exist):', updateError.message);
+        }
       }
     } catch (dbError) {
       console.log('Database update skipped:', dbError);
