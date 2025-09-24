@@ -97,7 +97,7 @@ const DriverDashboard = () => {
   }, [user]);
 
   const loadDriverData = async () => {
-    // For testing mode: Create mock driver data
+    // For testing mode: Create mock driver data but load real orders
     if (isTestingMode) {
       const mockDriver = {
         id: 'test-driver-123',
@@ -110,44 +110,13 @@ const DriverDashboard = () => {
       // Load mock data
       setTodaysEarnings(125.50);
       setWeeklyEarnings(890.25);
-      
-      // Create mock orders
-      setAvailableOrders([
-        {
-          id: 'order-1',
-          order_id: 'ORD-001',
-          customer_address: '123 Main St, City, State',
-          restaurant_address: 'Pizza Palace, 456 Oak Ave',
-          distance_miles: 2.5,
-          delivery_fee: 8.99,
-          driver_earning: 6.50,
-          company_commission: 2.49,
-          tips: 0,
-          status: 'pending',
-          assigned_at: new Date().toISOString(),
-          pickup_time: null,
-          delivery_time: null
-        },
-        {
-          id: 'order-2',
-          order_id: 'ORD-002',
-          customer_address: '789 Elm St, City, State',
-          restaurant_address: 'Burger Hub, 321 Pine St',
-          distance_miles: 1.8,
-          delivery_fee: 7.50,
-          driver_earning: 5.25,
-          company_commission: 2.25,
-          tips: 0,
-          status: 'pending',
-          assigned_at: new Date().toISOString(),
-          pickup_time: null,
-          delivery_time: null
-        }
-      ]);
-      
       setAssignedOrders([]);
       setIsLoading(false);
+      
+      // Load real orders from database in testing mode
+      loadOrdersForTesting();
       return;
+    }
     }
 
     if (!user?.email) return;
@@ -314,6 +283,28 @@ const DriverDashboard = () => {
       }
     } catch (error) {
       console.error('Error loading earnings:', error);
+    }
+  };
+
+  const loadOrdersForTesting = async () => {
+    try {
+      // Load available orders (not assigned to anyone) - testing mode
+      const { data: available, error: availableError } = await supabase
+        .from('delivery_orders')
+        .select('*')
+        .is('driver_id', null)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      console.log('Testing mode - Available orders:', available);
+
+      if (availableError) {
+        console.error('Error loading available orders in testing mode:', availableError);
+      } else {
+        setAvailableOrders(available || []);
+      }
+    } catch (error) {
+      console.error('Error in loadOrdersForTesting:', error);
     }
   };
 
