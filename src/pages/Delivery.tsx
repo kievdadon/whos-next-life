@@ -157,6 +157,63 @@ const Delivery = () => {
     navigate(`/store/${encodeURIComponent(storeName)}`);
   };
 
+  const createTestOrder = async () => {
+    if (!userLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please set your location first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create a test delivery order
+      const testOrder = {
+        customer_name: "Test Customer",
+        customer_email: "test@customer.com", 
+        customer_phone: "555-0123",
+        customer_address: userLocation.address,
+        restaurant_address: "Tony's Italian Kitchen, 123 Restaurant St",
+        store_name: "Tony's Italian Kitchen",
+        cart_items: [
+          { name: "Margherita Pizza", quantity: 1, price: 16.99 },
+          { name: "Caesar Salad", quantity: 1, price: 8.99 },
+          { name: "Garlic Bread", quantity: 1, price: 4.99 }
+        ],
+        subtotal: 30.97,
+        tax: 2.48,
+        delivery_fee: 3.99,
+        total_amount: 37.44,
+        driver_earning: 8.50,
+        company_commission: 1.25,
+        estimated_delivery_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min from now
+        status: 'pending',
+        payment_status: 'paid'
+      };
+
+      const { data, error } = await supabase
+        .from('delivery_orders')
+        .insert(testOrder)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Test Order Created! 🎉",
+        description: `Order #${data.id.slice(0, 8)} created for Tony's Italian Kitchen. Check the driver dashboard to accept it!`,
+      });
+    } catch (error) {
+      console.error('Error creating test order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create test order",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleViewAll = () => {
     if (!userLocation) {
       toast({
@@ -371,6 +428,32 @@ const Delivery = () => {
         </div>
       </section>
 
+      {/* Test Order Creation */}
+      <section className="py-8 bg-gradient-to-r from-wellness-accent/5 to-wellness-warm/5">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-2xl mx-auto bg-gradient-to-br from-card to-wellness-calm/30">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">🧪 Test Order Creation</CardTitle>
+              <CardDescription>
+                Create a test delivery order to see the full driver workflow
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button 
+                className="w-full bg-wellness-accent hover:bg-wellness-accent/90"
+                onClick={createTestOrder}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Create Test Pizza Order
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will create a test order that drivers can see and accept
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* Active Deliveries */}
       {activeDeliveries.length > 0 && (
         <section className="py-8">
@@ -484,18 +567,21 @@ const Delivery = () => {
                        business.business_type === 'pharmacy' ? '💊' : '🏪'}
                     </div>
                     <Badge className="absolute top-3 left-3 bg-wellness-accent/90 text-primary-foreground">
-                      {business.distance?.toFixed(1)} mi away
+                      {business.distance?.toFixed(1)} mi
+                    </Badge>
+                    <Badge className="absolute top-3 right-3 bg-wellness-warm/90 text-primary-foreground">
+                      ${business.deliveryFee}
                     </Badge>
                   </div>
                   
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg line-clamp-1">{business.business_name}</CardTitle>
-                    <CardDescription className="text-sm">{business.business_type}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg group-hover:text-wellness-primary transition-colors">
+                        {business.business_name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{business.business_type}</p>
+                      
+                      <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center space-x-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           <span>{business.rating?.toFixed(1)}</span>
@@ -505,80 +591,114 @@ const Delivery = () => {
                           <span>{business.deliveryTime}</span>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Delivery fee: ${business.deliveryFee}</span>
-                      </div>
-                      
-                      <Button className="w-full bg-wellness-primary hover:bg-wellness-primary/90" onClick={() => handleStoreClick(business.business_name)}>
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        Browse Menu
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="col-span-full text-center py-8">
-                <p className="text-muted-foreground">No businesses found in your area. Try expanding your search radius.</p>
-              </div>
+              nearbyStores.map((store, index) => (
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(store.name)}>
+                  <div className="relative">
+                    <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
+                      {store.image}
+                    </div>
+                    <Badge className="absolute top-3 left-3 bg-wellness-warm/90 text-primary-foreground">
+                      {store.promo}
+                    </Badge>
+                  </div>
+                  
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg group-hover:text-wellness-primary transition-colors">
+                        {store.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{store.category}</p>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span>{store.rating}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{store.deliveryTime}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-wellness-primary">
+                        Delivery: ${store.deliveryFee}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </div>
         </div>
       </section>
 
-      {/* Voice Confirmation Feature */}
+      {/* Voice Confirmation Section */}
       <section className="py-12 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto space-y-6">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold">Voice-Confirmed Delivery</h2>
-              <p className="text-lg text-muted-foreground">
-                Experience our unique voice confirmation system for secure, contactless delivery.
+              <h2 className="text-3xl font-bold">🎤 Voice Confirmation System</h2>
+              <p className="text-xl text-muted-foreground">
+                Secure deliveries with AI-powered voice verification for peace of mind
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-6 text-left">
               <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-wellness-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Phone className="h-6 w-6 text-wellness-primary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-wellness-primary/10 rounded-full flex items-center justify-center">
+                      <Smartphone className="h-6 w-6 text-wellness-primary" />
+                    </div>
+                    <h3 className="font-semibold">Smart Pickup</h3>
                   </div>
-                  <h3 className="font-semibold mb-2">Voice Setup</h3>
                   <p className="text-sm text-muted-foreground">
-                    Record your voice signature for secure delivery verification
+                    Driver confirms pickup with voice verification before leaving the restaurant
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-wellness-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Truck className="h-6 w-6 text-wellness-secondary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-wellness-secondary/10 rounded-full flex items-center justify-center">
+                      <CheckCircle className="h-6 w-6 text-wellness-secondary" />
+                    </div>
+                    <h3 className="font-semibold">Secure Delivery</h3>
                   </div>
-                  <h3 className="font-semibold mb-2">Delivery Arrives</h3>
                   <p className="text-sm text-muted-foreground">
-                    Driver calls for voice confirmation before leaving your order
+                    Customer confirms receipt through voice and photo verification system
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-wellness-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-6 w-6 text-wellness-accent" />
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-wellness-accent/10 rounded-full flex items-center justify-center">
+                      <Zap className="h-6 w-6 text-wellness-accent" />
+                    </div>
+                    <h3 className="font-semibold">Real-time Updates</h3>
                   </div>
-                  <h3 className="font-semibold mb-2">Secure Handoff</h3>
                   <p className="text-sm text-muted-foreground">
-                    Voice match confirmed - your order is safely delivered
+                    Get instant notifications at every step of your delivery journey
                   </p>
                 </CardContent>
               </Card>
             </div>
             
-            <Button size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90" onClick={handleVoiceSetup}>
-              <Smartphone className="mr-2 h-5 w-5" />
-              Set Up Voice Confirmation
+            <Button 
+              size="lg" 
+              className="bg-wellness-primary hover:bg-wellness-primary/90 text-lg px-8"
+              onClick={handleVoiceSetup}
+            >
+              <Smartphone className="h-5 w-5 mr-3" />
+              Set Up Voice Profile
             </Button>
           </div>
         </div>
@@ -588,7 +708,7 @@ const Delivery = () => {
         isOpen={showLocationPicker}
         onClose={() => setShowLocationPicker(false)}
         onLocationSelect={handleLocationSelect}
-        currentLocation={userLocation?.address || "Set Location"}
+        currentLocation={userLocation?.address || ""}
       />
     </div>
   );

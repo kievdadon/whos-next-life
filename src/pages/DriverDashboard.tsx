@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Car,
   Navigation,
-  Phone
+  Phone,
+  Camera
 } from 'lucide-react';
 
 interface DriverProfile {
@@ -64,6 +65,11 @@ const DriverDashboard = () => {
   const [todaysEarnings, setTodaysEarnings] = useState(0);
   const [weeklyEarnings, setWeeklyEarnings] = useState(0);
   const [testingMode, setTestingMode] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [currentOrderAction, setCurrentOrderAction] = useState<{
+    orderId: string;
+    action: 'pickup' | 'delivery';
+  } | null>(null);
 
   // For testing: Allow access without authentication
   const isTestingMode = !user || testingMode;
@@ -518,6 +524,109 @@ const DriverDashboard = () => {
     }
   };
 
+  const updateOrderStatusWithPhoto = async (orderId: string, newStatus: string, photoFile?: File) => {
+    try {
+      let photoUrl = null;
+
+      // Upload photo if provided
+      if (photoFile) {
+        const fileName = `${orderId}-${newStatus}-${Date.now()}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('driver-documents')
+          .upload(fileName, photoFile);
+
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          toast({
+            title: "Photo Upload Failed",
+            description: "Failed to upload photo. Continuing without photo.",
+            variant: "destructive",
+          });
+        } else {
+          photoUrl = uploadData.path;
+        }
+      }
+
+      // For testing mode: Mock status update with photo
+      if (isTestingMode) {
+        setAssignedOrders(prev => prev.map(order => 
+          order.id === orderId 
+            ? { 
+                ...order, 
+                status: newStatus,
+                pickup_time: newStatus === 'picked_up' ? new Date().toISOString() : order.pickup_time,
+                delivery_time: newStatus === 'delivered' ? new Date().toISOString() : order.delivery_time
+              }
+            : order
+        ));
+        
+        if (newStatus === 'delivered') {
+          // Remove from assigned orders and add to earnings
+          setTimeout(() => {
+            setAssignedOrders(prev => prev.filter(order => order.id !== orderId));
+            setTodaysEarnings(prev => prev + 15.75); // Mock earning
+          }, 1000);
+        }
+        
+        toast({
+          title: "Status Updated (Testing Mode)",
+          description: `Order marked as ${newStatus.replace('_', ' ')}! ${photoFile ? '📸 Photo captured' : ''}`,
+        });
+        return;
+      }
+
+      const updateData: any = { status: newStatus };
+      
+      if (newStatus === 'picked_up') {
+        updateData.pickup_time = new Date().toISOString();
+      } else if (newStatus === 'delivered') {
+        updateData.delivery_time = new Date().toISOString();
+      }
+
+      if (photoUrl) {
+        updateData[`${newStatus}_photo_url`] = photoUrl;
+      }
+
+      const { error } = await supabase
+        .from('delivery_orders')
+        .update(updateData)
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('Error updating order status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update order status. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Status Updated",
+        description: `Order marked as ${newStatus.replace('_', ' ')}! ${photoFile ? '📸 Photo captured' : ''}`,
+      });
+
+      loadOrders();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
+  };
+
+  const handleOrderAction = (orderId: string, action: 'pickup' | 'delivery') => {
+    setCurrentOrderAction({ orderId, action });
+    setShowCamera(true);
+  };
+
+  const handlePhotoCapture = (photoFile: File) => {
+    if (currentOrderAction) {
+      const newStatus = currentOrderAction.action === 'pickup' ? 'picked_up' : 'delivered';
+      updateOrderStatusWithPhoto(currentOrderAction.orderId, newStatus, photoFile);
+      setCurrentOrderAction(null);
+    }
+    setShowCamera(false);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex items-center justify-center">
@@ -808,24 +917,26 @@ const DriverDashboard = () => {
                     <div className="flex gap-2">
                       {order.status === 'accepted' && (
                         <Button 
-                          onClick={() => updateOrderStatus(order.id, 'picked_up')}
+                          onClick={() => handleOrderAction(order.id, 'pickup')}
                           className="flex-1"
                         >
+                          <Camera className="h-4 w-4 mr-2" />
                           Mark Picked Up
                         </Button>
                       )}
                       {order.status === 'picked_up' && (
                         <Button 
-                          onClick={() => updateOrderStatus(order.id, 'delivered')}
+                          onClick={() => handleOrderAction(order.id, 'delivery')}
                           className="flex-1 bg-green-600 hover:bg-green-700"
                         >
+                          <Camera className="h-4 w-4 mr-2" />
                           Mark Delivered
                         </Button>
                       )}
                       <Button 
                         variant="outline" 
                         size="icon"
-                        onClick={() => window.open(`tel:${order.customer_address}`, '_self')}
+                        onClick={() => window.open(`tel:${order.customer_phone || '555-0123'}`, '_self')}
                       >
                         <Phone className="h-4 w-4" />
                       </Button>
@@ -844,7 +955,20 @@ const DriverDashboard = () => {
                     </p>
                   </CardContent>
                 </Card>
-              )}
+      )}
+      
+      {/* Camera Dialog for Photo Capture */}
+      <CameraCapture
+        isOpen={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handlePhotoCapture}
+        title={
+          currentOrderAction?.action === 'pickup' 
+            ? "📸 Confirm Pickup" 
+            : "📸 Confirm Delivery"
+        }
+      />
+    </div>
             </div>
           </div>
         </div>
