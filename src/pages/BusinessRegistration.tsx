@@ -10,6 +10,7 @@ import { Navigate } from 'react-router-dom';
 import { Store, Building, Utensils, ShoppingCart, User, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { businessRegistrationSchema, sanitizeInput } from '@/lib/validation';
 
 const BusinessRegistration = () => {
   const { user } = useAuth();
@@ -50,18 +51,35 @@ const BusinessRegistration = () => {
     setIsSubmitting(true);
 
     try {
+      // Comprehensive validation using Zod schema
+      const validationResult = businessRegistrationSchema.safeParse(formData);
+      
+      if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Sanitize input data before database insertion
+      const sanitizedData = {
+        business_name: sanitizeInput(formData.businessName),
+        business_type: sanitizeInput(formData.businessType),
+        contact_name: sanitizeInput(formData.ownerName),
+        email: formData.contactEmail.trim().toLowerCase(),
+        phone: sanitizeInput(formData.contactPhone),
+        address: sanitizeInput(formData.address),
+        description: sanitizeInput(formData.description)
+      };
+
       // Save to database
       const { data, error } = await supabase
         .from('business_applications')
-        .insert({
-          business_name: formData.businessName,
-          business_type: formData.businessType,
-          contact_name: formData.ownerName,
-          email: formData.contactEmail,
-          phone: formData.contactPhone,
-          address: formData.address,
-          description: formData.description
-        });
+        .insert([sanitizedData]);
 
       if (error) {
         console.error('Error submitting application:', error);
@@ -70,6 +88,7 @@ const BusinessRegistration = () => {
           description: "There was an error submitting your application. Please try again.",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
       

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CameraCapture } from "@/components/CameraCapture";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { driverApplicationSchema, validateFileUpload, sanitizeInput } from "@/lib/validation";
 
 const DeliveryDriverApplication = () => {
   const { toast } = useToast();
@@ -60,10 +61,22 @@ const DeliveryDriverApplication = () => {
 
   const handleFileUpload = (type: 'driversLicense' | 'secondaryId', file: File) => {
     console.log('File upload triggered for:', type, 'File:', file.name);
+    
+    // Validate file upload
+    const validation = validateFileUpload(file);
+    if (!validation.isValid) {
+      toast({
+        title: "File Upload Error",
+        description: validation.error,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setUploadedFiles(prev => ({ ...prev, [type]: file }));
     toast({
       title: "File uploaded",
-      description: `${file.name} has been uploaded successfully.`,
+      description: `${sanitizeInput(file.name)} has been uploaded successfully.`,
     });
   };
 
@@ -104,13 +117,17 @@ const DeliveryDriverApplication = () => {
     setIsSubmitting(true);
     
     try {
-      // Validation
-      if (!formData.firstName || !formData.lastName) {
+      // Comprehensive validation using Zod schema
+      const validationResult = driverApplicationSchema.safeParse(formData);
+      
+      if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0];
         toast({
-          title: "Error",
-          description: "Please fill in your first and last name.",
+          title: "Validation Error",
+          description: firstError.message,
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -120,15 +137,31 @@ const DeliveryDriverApplication = () => {
           description: "Please upload both required identification documents.",
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
 
-      if (!formData.agreedToTerms) {
+      // Validate uploaded files
+      const licenseValidation = validateFileUpload(uploadedFiles.driversLicense);
+      const idValidation = validateFileUpload(uploadedFiles.secondaryId);
+      
+      if (!licenseValidation.isValid) {
         toast({
-          title: "Error",
-          description: "Please agree to the terms and conditions.",
+          title: "Driver's License File Error",
+          description: licenseValidation.error,
           variant: "destructive"
         });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!idValidation.isValid) {
+        toast({
+          title: "Secondary ID File Error",
+          description: idValidation.error,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
         return;
       }
 

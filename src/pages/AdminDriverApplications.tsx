@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Eye, Calendar, Phone, Mail, MapPin, Car, User } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Calendar, Phone, Mail, MapPin, Car, User, Shield, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -41,14 +41,44 @@ const AdminDriverApplications = () => {
   const [applications, setApplications] = useState<DriverApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<DriverApplication | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(true);
 
-  // Check if user is admin (you'll need to implement proper admin role checking)
-  const isAdmin = user?.email === "jameskiev16@gmail.com";
+  // Secure admin role checking using database function
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setRoleLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (error) {
+          console.error('Error checking admin role:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data || false);
+        }
+      } catch (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+      } finally {
+        setRoleLoading(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [user]);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || roleLoading) return;
     fetchApplications();
-  }, [isAdmin]);
+  }, [isAdmin, roleLoading]);
 
   const fetchApplications = async () => {
     try {
@@ -72,6 +102,21 @@ const AdminDriverApplications = () => {
 
   const updateApplicationStatus = async (applicationId: string, status: 'approved' | 'rejected') => {
     try {
+      // Double-check admin role before performing sensitive action
+      const { data: isStillAdmin } = await supabase.rpc('has_role', {
+        _user_id: user?.id,
+        _role: 'admin'
+      });
+
+      if (!isStillAdmin) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to perform this action.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('driver_applications')
         .update({ 
@@ -81,6 +126,17 @@ const AdminDriverApplications = () => {
         .eq('id', applicationId);
 
       if (error) throw error;
+
+      // Log audit trail
+      await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: user?.id,
+          action: `driver_application_${status}`,
+          table_name: 'driver_applications',
+          record_id: applicationId,
+          new_values: { status, approved_at: status === 'approved' ? new Date().toISOString() : null }
+        });
 
       // Send email notification
       const application = applications.find(app => app.id === applicationId);
@@ -101,6 +157,7 @@ const AdminDriverApplications = () => {
 
       fetchApplications();
     } catch (error: any) {
+      console.error('Error updating application status:', error);
       toast({
         title: "Error",
         description: "Failed to update application: " + error.message,
@@ -109,13 +166,38 @@ const AdminDriverApplications = () => {
     }
   };
 
+  if (roleLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center">
+          <p>Verifying permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-4">Authentication Required</h2>
+            <p className="text-muted-foreground">Please sign in to access this page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-8 text-center">
+            <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-destructive mb-4">Access Denied</h2>
-            <p>You don't have permission to access this page.</p>
+            <p className="text-muted-foreground">You don't have administrator permissions to access this page.</p>
           </CardContent>
         </Card>
       </div>
@@ -125,7 +207,9 @@ const AdminDriverApplications = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Loading applications...</p>
+        <div className="flex items-center justify-center">
+          <p>Loading applications...</p>
+        </div>
       </div>
     );
   }
