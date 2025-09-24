@@ -169,12 +169,26 @@ const Delivery = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create an order",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     try {
+      console.log('Creating test order with user:', user);
+      console.log('User ID:', user.id);
+      console.log('User email:', user.email);
+      
       // Create a test delivery order
       const testOrder = {
-        customer_id: user?.id || null,
-        customer_name: user?.email?.split('@')[0] || "Test Customer",
-        customer_email: user?.email || "test@customer.com", 
+        customer_id: user.id,
+        customer_name: user.email?.split('@')[0] || "Test Customer",
+        customer_email: user.email,
         customer_phone: "555-0123",
         customer_address: userLocation.address,
         restaurant_address: "Tony's Italian Kitchen, 123 Restaurant St",
