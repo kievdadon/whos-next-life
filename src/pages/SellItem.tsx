@@ -31,7 +31,14 @@ const SellItem = () => {
     condition: '',
     location: '',
     deliveryAvailable: true,
-    stockQuantity: 1
+    stockQuantity: 1,
+    productType: '', // virtual or physical
+    dimensions: '',
+    weight: '',
+    priceType: 'fixed', // fixed, negotiable, auction
+    originalPrice: '',
+    brand: '',
+    features: ''
   });
 
   const [productImages, setProductImages] = useState<File[]>([]);
@@ -50,7 +57,21 @@ const SellItem = () => {
     { value: 'sports', label: 'Sports & Outdoors', icon: '⚽' },
     { value: 'home', label: 'Home & Garden', icon: '🏡' },
     { value: 'beauty', label: 'Beauty & Health', icon: '💄' },
+    { value: 'digital', label: 'Digital Products', icon: '💻' },
+    { value: 'services', label: 'Services', icon: '🔧' },
     { value: 'other', label: 'Other', icon: '📦' }
+  ];
+
+  const productTypes = [
+    { value: 'physical', label: 'Physical Product', description: 'Tangible item that can be shipped or picked up' },
+    { value: 'virtual', label: 'Virtual/Digital', description: 'Digital product delivered electronically' },
+    { value: 'service', label: 'Service', description: 'Service or consultation offered' }
+  ];
+
+  const priceTypes = [
+    { value: 'fixed', label: 'Fixed Price', description: 'Set price, no negotiation' },
+    { value: 'negotiable', label: 'Negotiable', description: 'Open to price discussions' },
+    { value: 'auction', label: 'Auction', description: 'Let buyers bid on your item' }
   ];
 
   const conditions = [
@@ -131,7 +152,7 @@ const SellItem = () => {
     if (!user) return;
 
     // Validation
-    if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.condition) {
+    if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.productType) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -140,10 +161,10 @@ const SellItem = () => {
       return;
     }
 
-    if (productImages.length === 0) {
+    if (productImages.length === 0 && formData.productType !== 'virtual') {
       toast({
         title: "Images Required",
-        description: "Please add at least one photo of your item",
+        description: "Please add at least one photo of your item (not required for virtual products)",
         variant: "destructive"
       });
       return;
@@ -155,18 +176,33 @@ const SellItem = () => {
       // Upload all images
       const imageUrls = await uploadImagesToStorage(productImages);
 
+      // Build detailed description
+      let detailedDescription = formData.description;
+      
+      if (formData.productType === 'physical' && formData.condition) {
+        detailedDescription += `\n\nCondition: ${conditions.find(c => c.value === formData.condition)?.label}`;
+      }
+      
+      if (formData.brand) detailedDescription += `\nBrand: ${formData.brand}`;
+      if (formData.features) detailedDescription += `\nFeatures: ${formData.features}`;
+      if (formData.dimensions && formData.productType === 'physical') detailedDescription += `\nDimensions: ${formData.dimensions}`;
+      if (formData.weight && formData.productType === 'physical') detailedDescription += `\nWeight: ${formData.weight}`;
+      if (formData.originalPrice) detailedDescription += `\nOriginal Price: $${formData.originalPrice}`;
+      if (formData.location) detailedDescription += `\nLocation: ${formData.location}`;
+      if (formData.priceType !== 'fixed') detailedDescription += `\nPricing: ${priceTypes.find(p => p.value === formData.priceType)?.label}`;
+
       // Create product listing directly for the user
       const { data: newProduct, error: productError } = await supabase
         .from('products')
         .insert({
           name: formData.name,
-          description: `${formData.description}\n\nCondition: ${conditions.find(c => c.value === formData.condition)?.label}${formData.location ? `\nLocation: ${formData.location}` : ''}`,
+          description: detailedDescription,
           price: parseFloat(formData.price),
           category: formData.category,
-          image_url: imageUrls[0], // Primary image
+          image_url: imageUrls[0] || null, // Primary image (null for virtual products)
           user_id: user.id,
           stock_quantity: formData.stockQuantity,
-          delivery_available: formData.deliveryAvailable,
+          delivery_available: formData.productType === 'physical' ? formData.deliveryAvailable : false,
           is_active: true
         })
         .select()
@@ -208,7 +244,14 @@ const SellItem = () => {
         condition: '',
         location: '',
         deliveryAvailable: true,
-        stockQuantity: 1
+        stockQuantity: 1,
+        productType: '',
+        dimensions: '',
+        weight: '',
+        priceType: 'fixed',
+        originalPrice: '',
+        brand: '',
+        features: ''
       });
       setProductImages([]);
       setImagePreviews([]);
@@ -391,15 +434,61 @@ const SellItem = () => {
               </div>
 
               <div>
+                <Label htmlFor="productType">Product Type *</Label>
+                <Select onValueChange={(value) => handleInputChange('productType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{type.label}</span>
+                          <span className="text-xs text-muted-foreground">{type.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="description">Description *</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe your item in detail - size, color, features, any defects..."
+                  placeholder={formData.productType === 'virtual' 
+                    ? "Describe your digital product - what's included, format, delivery method..."
+                    : formData.productType === 'service'
+                    ? "Describe your service - what you offer, duration, experience..."
+                    : "Describe your item in detail - size, color, features, any defects..."
+                  }
                   rows={4}
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="brand">Brand (optional)</Label>
+                  <Input
+                    id="brand"
+                    value={formData.brand}
+                    onChange={(e) => handleInputChange('brand', e.target.value)}
+                    placeholder="e.g., Apple, Nike, Samsung"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="features">Key Features (optional)</Label>
+                  <Input
+                    id="features"
+                    value={formData.features}
+                    onChange={(e) => handleInputChange('features', e.target.value)}
+                    placeholder="e.g., Bluetooth, Touch Screen, Wireless"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -422,57 +511,132 @@ const SellItem = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="condition">Condition *</Label>
-                  <Select onValueChange={(value) => handleInputChange('condition', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select condition" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {conditions.map((condition) => (
-                        <SelectItem key={condition.value} value={condition.value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{condition.label}</span>
-                            <span className="text-xs text-muted-foreground">{condition.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {formData.productType === 'physical' && (
+                  <div>
+                    <Label htmlFor="condition">Condition *</Label>
+                    <Select onValueChange={(value) => handleInputChange('condition', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {conditions.map((condition) => (
+                          <SelectItem key={condition.value} value={condition.value}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{condition.label}</span>
+                              <span className="text-xs text-muted-foreground">{condition.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                </div>
 
-               <div>
-                 <Label htmlFor="location">Your Location (City, State)</Label>
-                 <Input
-                   id="location"
-                   value={formData.location}
-                   onChange={(e) => handleInputChange('location', e.target.value)}
-                   placeholder="e.g., Cleveland, OH or Local Pickup"
-                 />
-                 <p className="text-xs text-muted-foreground mt-1">
-                   Help buyers know where the item is located for pickup/delivery.
-                 </p>
-               </div>
-
-               <div>
-                 <Label htmlFor="price">Asking Price *</Label>
-                 <div className="relative">
-                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input
-                     id="price"
-                     type="number"
-                     step="0.01"
-                     value={formData.price}
-                     onChange={(e) => handleInputChange('price', e.target.value)}
-                     placeholder="0.00"
-                     className="pl-10"
-                     required
-                   />
+               {/* Physical Product Details */}
+               {formData.productType === 'physical' && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                     <Label htmlFor="dimensions">Dimensions (optional)</Label>
+                     <Input
+                       id="dimensions"
+                       value={formData.dimensions}
+                       onChange={(e) => handleInputChange('dimensions', e.target.value)}
+                       placeholder="e.g., 12 x 8 x 3 inches"
+                     />
+                   </div>
+                   
+                   <div>
+                     <Label htmlFor="weight">Weight (optional)</Label>
+                     <Input
+                       id="weight"
+                       value={formData.weight}
+                       onChange={(e) => handleInputChange('weight', e.target.value)}
+                       placeholder="e.g., 2.5 lbs"
+                     />
+                   </div>
                  </div>
-                 <p className="text-xs text-muted-foreground mt-1">
-                   Set a competitive price. Buyers can negotiate through messages.
-                 </p>
+               )}
+
+                <div>
+                  <Label htmlFor="location">{formData.productType === 'service' ? 'Service Area' : 'Your Location'} (City, State)</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    placeholder={formData.productType === 'service' 
+                      ? "e.g., Cleveland metro area, Remote"
+                      : "e.g., Cleveland, OH or Local Pickup"
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.productType === 'service' 
+                      ? "Specify where you provide your service or if it's remote."
+                      : "Help buyers know where the item is located for pickup/delivery."
+                    }
+                  </p>
+                </div>
+
+               {/* Pricing Details */}
+               <div className="space-y-4 border-t pt-4">
+                 <h3 className="text-lg font-semibold">Pricing Information</h3>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                     <Label htmlFor="price">Your Price *</Label>
+                     <div className="relative">
+                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                       <Input
+                         id="price"
+                         type="number"
+                         step="0.01"
+                         value={formData.price}
+                         onChange={(e) => handleInputChange('price', e.target.value)}
+                         placeholder="0.00"
+                         className="pl-10"
+                         required
+                       />
+                     </div>
+                   </div>
+
+                   <div>
+                     <Label htmlFor="originalPrice">Original/Retail Price (optional)</Label>
+                     <div className="relative">
+                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                       <Input
+                         id="originalPrice"
+                         type="number"
+                         step="0.01"
+                         value={formData.originalPrice}
+                         onChange={(e) => handleInputChange('originalPrice', e.target.value)}
+                         placeholder="0.00"
+                         className="pl-10"
+                       />
+                     </div>
+                     <p className="text-xs text-muted-foreground mt-1">
+                       Show buyers the savings they're getting
+                     </p>
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label htmlFor="priceType">Price Type</Label>
+                   <Select onValueChange={(value) => handleInputChange('priceType', value)} defaultValue="fixed">
+                     <SelectTrigger>
+                       <SelectValue placeholder="Select pricing type" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {priceTypes.map((type) => (
+                         <SelectItem key={type.value} value={type.value}>
+                           <div className="flex flex-col">
+                             <span className="font-medium">{type.label}</span>
+                             <span className="text-xs text-muted-foreground">{type.description}</span>
+                           </div>
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                </div>
             </CardContent>
           </Card>
