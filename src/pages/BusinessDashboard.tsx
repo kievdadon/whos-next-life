@@ -76,6 +76,24 @@ const BusinessDashboard = () => {
     account_number: '',
     account_holder_name: ''
   });
+  const [storeHoursForm, setStoreHoursForm] = useState({
+    monday_open: '',
+    monday_close: '',
+    tuesday_open: '',
+    tuesday_close: '',
+    wednesday_open: '',
+    wednesday_close: '',
+    thursday_open: '',
+    thursday_close: '',
+    friday_open: '',
+    friday_close: '',
+    saturday_open: '',
+    saturday_close: '',
+    sunday_open: '',
+    sunday_close: '',
+    is_24_7: false,
+    temporary_closure: false
+  });
   const [productForm, setProductForm] = useState({
     name: '',
     description: '',
@@ -372,6 +390,36 @@ const BusinessDashboard = () => {
     }
   };
 
+  const handleStoreHoursSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!business) return;
+    
+    try {
+      const { error } = await supabase
+        .from('business_applications')
+        .update(storeHoursForm)
+        .eq('id', business.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Store hours updated successfully",
+      });
+      
+      setShowStoreHours(false);
+      loadBusinessData(); // Reload to get updated data
+    } catch (error) {
+      console.error('Error updating store hours:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update store hours. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const cancelBankingForm = () => {
     setShowBankingForm(false);
     setBankingForm({
@@ -616,7 +664,30 @@ const BusinessDashboard = () => {
                 <CardDescription>Set your business operating hours for each day of the week</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => setShowStoreHours(true)}>
+                <Button onClick={() => {
+                  // Initialize form with current business hours
+                  if (business) {
+                    setStoreHoursForm({
+                      monday_open: business.monday_open || '09:00',
+                      monday_close: business.monday_close || '17:00',
+                      tuesday_open: business.tuesday_open || '09:00',
+                      tuesday_close: business.tuesday_close || '17:00',
+                      wednesday_open: business.wednesday_open || '09:00',
+                      wednesday_close: business.wednesday_close || '17:00',
+                      thursday_open: business.thursday_open || '09:00',
+                      thursday_close: business.thursday_close || '17:00',
+                      friday_open: business.friday_open || '09:00',
+                      friday_close: business.friday_close || '17:00',
+                      saturday_open: business.saturday_open || '09:00',
+                      saturday_close: business.saturday_close || '17:00',
+                      sunday_open: business.sunday_open || '09:00',
+                      sunday_close: business.sunday_close || '17:00',
+                      is_24_7: business.is_24_7 || false,
+                      temporary_closure: business.temporary_closure || false
+                    });
+                  }
+                  setShowStoreHours(true);
+                }}>
                   <Clock className="mr-2 h-4 w-4" />
                   Update Store Hours
                 </Button>
@@ -882,7 +953,7 @@ const BusinessDashboard = () => {
                 <p className="text-sm text-muted-foreground mb-6">
                   Set your business operating hours for each day of the week.
                 </p>
-                <form className="space-y-4">
+                <form onSubmit={handleStoreHoursSubmit} className="space-y-4">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <div key={day} className="grid grid-cols-3 gap-4 items-center">
                       <Label className="font-medium">{day}</Label>
@@ -890,14 +961,16 @@ const BusinessDashboard = () => {
                         <Label className="text-sm text-muted-foreground">Open</Label>
                         <Input
                           type="time"
-                          defaultValue={business?.[`${day.toLowerCase()}_open` as keyof BusinessApplication] as string || '09:00'}
+                          value={storeHoursForm[`${day.toLowerCase()}_open` as keyof typeof storeHoursForm] as string}
+                          onChange={(e) => setStoreHoursForm(prev => ({ ...prev, [`${day.toLowerCase()}_open`]: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm text-muted-foreground">Close</Label>
                         <Input
                           type="time"
-                          defaultValue={business?.[`${day.toLowerCase()}_close` as keyof BusinessApplication] as string || '17:00'}
+                          value={storeHoursForm[`${day.toLowerCase()}_close` as keyof typeof storeHoursForm] as string}
+                          onChange={(e) => setStoreHoursForm(prev => ({ ...prev, [`${day.toLowerCase()}_close`]: e.target.value }))}
                         />
                       </div>
                     </div>
@@ -907,7 +980,8 @@ const BusinessDashboard = () => {
                     <input
                       type="checkbox"
                       id="is_24_7"
-                      defaultChecked={business?.is_24_7}
+                      checked={storeHoursForm.is_24_7}
+                      onChange={(e) => setStoreHoursForm(prev => ({ ...prev, is_24_7: e.target.checked }))}
                     />
                     <Label htmlFor="is_24_7">Open 24/7</Label>
                   </div>
@@ -916,7 +990,8 @@ const BusinessDashboard = () => {
                     <input
                       type="checkbox"
                       id="temporary_closure"
-                      defaultChecked={business?.temporary_closure}
+                      checked={storeHoursForm.temporary_closure}
+                      onChange={(e) => setStoreHoursForm(prev => ({ ...prev, temporary_closure: e.target.checked }))}
                     />
                     <Label htmlFor="temporary_closure">Temporarily Closed</Label>
                   </div>
