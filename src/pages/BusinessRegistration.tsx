@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Navigate } from 'react-router-dom';
-import { Store, Building, Utensils, ShoppingCart, User, CheckCircle } from 'lucide-react';
+import { Store, Building, Utensils, ShoppingCart, User, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { businessRegistrationSchema, sanitizeInput } from '@/lib/validation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const BusinessRegistration = () => {
   const { user } = useAuth();
@@ -28,6 +29,10 @@ const BusinessRegistration = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [moderationAlert, setModerationAlert] = useState<{
+    type: 'warning' | 'error';
+    message: string;
+  } | null>(null);
 
   // Redirect non-authenticated users
   if (!user) {
@@ -51,6 +56,9 @@ const BusinessRegistration = () => {
     setIsSubmitting(true);
 
     try {
+      // Clear previous moderation alerts
+      setModerationAlert(null);
+      
       // Comprehensive validation using Zod schema
       const validationResult = businessRegistrationSchema.safeParse(formData);
       
@@ -60,6 +68,30 @@ const BusinessRegistration = () => {
           title: "Validation Error",
           description: firstError.message,
           variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Content moderation check
+      const contentToModerate = `${formData.businessName} ${formData.description} ${formData.ownerName}`;
+      
+      const moderationResponse = await supabase.functions.invoke('content-moderation', {
+        body: {
+          content: contentToModerate,
+          contentType: 'business_application',
+          userEmail: user.email
+        }
+      });
+
+      if (moderationResponse.error) {
+        throw new Error('Content moderation failed');
+      }
+
+      if (moderationResponse.data.flagged) {
+        setModerationAlert({
+          type: moderationResponse.data.actionTaken === 'warning' ? 'warning' : 'error',
+          message: moderationResponse.data.message
         });
         setIsSubmitting(false);
         return;
@@ -149,6 +181,14 @@ const BusinessRegistration = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {moderationAlert && (
+                <Alert className={moderationAlert.type === 'error' ? 'border-red-500 bg-red-50/90' : 'border-orange-500 bg-orange-50/90'}>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-gray-800">
+                    {moderationAlert.message}
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="businessName" className="text-white">Business Name *</Label>

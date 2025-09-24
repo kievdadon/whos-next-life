@@ -33,6 +33,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 import Header from "./components/Header";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/driver-application" element={<DeliveryDriverApplication />} />
               <Route path="/driver-dashboard" element={<DriverDashboard />} />
               <Route path="/admin/driver-applications" element={<AdminDriverApplications />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -164,6 +164,48 @@ export type Database = {
         }
         Relationships: []
       }
+      community_violations: {
+        Row: {
+          action_taken: string
+          content_type: string
+          created_at: string
+          flagged_content: string
+          id: string
+          is_active: boolean
+          moderator_notes: string | null
+          resolved_at: string | null
+          severity: string
+          user_email: string
+          violation_type: string
+        }
+        Insert: {
+          action_taken: string
+          content_type: string
+          created_at?: string
+          flagged_content: string
+          id?: string
+          is_active?: boolean
+          moderator_notes?: string | null
+          resolved_at?: string | null
+          severity: string
+          user_email: string
+          violation_type: string
+        }
+        Update: {
+          action_taken?: string
+          content_type?: string
+          created_at?: string
+          flagged_content?: string
+          id?: string
+          is_active?: boolean
+          moderator_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          user_email?: string
+          violation_type?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -717,6 +759,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bans: {
+        Row: {
+          ban_duration_days: number | null
+          ban_reason: string
+          ban_type: string
+          banned_at: string
+          banned_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          user_email: string
+          violation_id: string | null
+        }
+        Insert: {
+          ban_duration_days?: number | null
+          ban_reason: string
+          ban_type: string
+          banned_at?: string
+          banned_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          user_email: string
+          violation_id?: string | null
+        }
+        Update: {
+          ban_duration_days?: number | null
+          ban_reason?: string
+          ban_type?: string
+          banned_at?: string
+          banned_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          user_email?: string
+          violation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bans_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "community_violations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -741,6 +830,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_warnings: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          user_email: string
+          violation_id: string | null
+          warning_message: string
+          warning_reason: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          user_email: string
+          violation_id?: string | null
+          warning_message: string
+          warning_reason: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          user_email?: string
+          violation_id?: string | null
+          warning_message?: string
+          warning_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_warnings_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "community_violations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -750,11 +880,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_warning_count: {
+        Args: { _user_email: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_user_banned: {
+        Args: { _ban_type?: string; _user_email: string }
         Returns: boolean
       }
     }
