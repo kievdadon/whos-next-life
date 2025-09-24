@@ -82,6 +82,7 @@ const DriverDashboard = () => {
 
   useEffect(() => {
     loadDriverData();
+    loadOrders();
     // Set up real-time subscription for new orders
     const ordersSubscription = supabase
       .channel('delivery-orders')
@@ -170,7 +171,7 @@ const DriverDashboard = () => {
         setDriver(driverData);
         await Promise.all([
           loadCurrentShift(driverData.id),
-          loadOrders(),
+          loadOrders(driverData.id),
           loadEarnings(driverData.id)
         ]);
       }
@@ -202,13 +203,8 @@ const DriverDashboard = () => {
     }
   };
 
-  const loadOrders = async () => {
-    if (!driver) {
-      console.log('No driver found, cannot load orders');
-      return;
-    }
-
-    console.log('Loading orders for driver:', driver);
+  const loadOrders = async (driverIdOverride?: string) => {
+    const currentDriverId = driverIdOverride ?? driver?.id;
 
     try {
       // Load available orders (not assigned to anyone)
@@ -228,18 +224,22 @@ const DriverDashboard = () => {
         setAvailableOrders(available || []);
       }
 
-      // Load assigned orders
-      const { data: assigned, error: assignedError } = await supabase
-        .from('delivery_orders')
-        .select('*')
-        .eq('driver_id', driver.id)
-        .in('status', ['accepted', 'picked_up'])
-        .order('assigned_at', { ascending: true });
+      // Load assigned orders only if we have a driver id
+      if (currentDriverId) {
+        const { data: assigned, error: assignedError } = await supabase
+          .from('delivery_orders')
+          .select('*')
+          .eq('driver_id', currentDriverId)
+          .in('status', ['accepted', 'picked_up'])
+          .order('assigned_at', { ascending: true });
 
-      if (assignedError) {
-        console.error('Error loading assigned orders:', assignedError);
+        if (assignedError) {
+          console.error('Error loading assigned orders:', assignedError);
+        } else {
+          setAssignedOrders(assigned || []);
+        }
       } else {
-        setAssignedOrders(assigned || []);
+        setAssignedOrders([]);
       }
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -818,7 +818,7 @@ const DriverDashboard = () => {
                       <div>
                         <p className="font-semibold">Order #{order.order_id}</p>
                         <p className="text-sm text-muted-foreground">
-                          {order.distance_miles} miles • ${order.driver_earning.toFixed(2)}
+                          {(order.distance_miles ?? '-') + ' miles'} • ${Number(order.driver_earning ?? 0).toFixed(2)}
                         </p>
                       </div>
                       <Badge>Available</Badge>
@@ -839,15 +839,15 @@ const DriverDashboard = () => {
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
                           <p className="text-muted-foreground">Your Earnings</p>
-                          <p className="font-bold text-green-600">${order.driver_earning.toFixed(2)}</p>
+                          <p className="font-bold text-green-600">${Number(order.driver_earning ?? 0).toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Company Fee</p>
-                          <p className="font-bold">${order.company_commission.toFixed(2)}</p>
+                          <p className="font-bold">${Number(order.company_commission ?? 0).toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Delivery Fee</p>
-                          <p className="font-bold">${order.delivery_fee.toFixed(2)}</p>
+                          <p className="font-bold">${Number(order.delivery_fee ?? 0).toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
