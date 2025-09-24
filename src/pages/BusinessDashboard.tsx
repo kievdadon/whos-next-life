@@ -101,28 +101,7 @@ const BusinessDashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  useEffect(() => {
-    loadBusinessData();
-  }, [user]);
-
-  // Show loading while checking business status
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p>Loading business dashboard...</p>
-      </div>
-    );
-  }
-
-  // For testing: Allow access even without approved business
-  // In production, uncomment the redirect below
-  if (!business) {
-    console.log('No approved business found, creating test business for dashboard access');
-    // return <Navigate to="/business-registration" replace />;
-  }
-
   const loadBusinessData = async () => {
-
     if (!user?.email) return;
 
     try {
@@ -204,6 +183,28 @@ const BusinessDashboard = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.email) {
+      loadBusinessData();
+    }
+  }, [user]);
+
+  // Show loading while checking business status
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p>Loading business dashboard...</p>
+      </div>
+    );
+  }
+
+  // For testing: Allow access even without approved business
+  // In production, uncomment the redirect below
+  if (!business) {
+    console.log('No approved business found, creating test business for dashboard access');
+    // return <Navigate to="/business-registration" replace />;
+  }
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
