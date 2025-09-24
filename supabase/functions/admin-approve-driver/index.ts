@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[ADMIN-APPROVE-BUSINESS] ${step}${detailsStr}`);
+  console.log(`[ADMIN-APPROVE-DRIVER] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -59,9 +59,9 @@ serve(async (req) => {
       throw new Error("Invalid action. Must be 'approve' or 'reject'");
     }
 
-    logStep("Processing business application", { applicationId, action });
+    logStep("Processing driver application", { applicationId, action });
 
-    // Update business application status
+    // Update driver application status
     const updateData: any = {
       status: action === 'approve' ? 'approved' : 'rejected',
       updated_at: new Date().toISOString()
@@ -72,7 +72,7 @@ serve(async (req) => {
     }
 
     const { data: updatedApplication, error: updateError } = await supabaseClient
-      .from('business_applications')
+      .from('driver_applications')
       .update(updateData)
       .eq('id', applicationId)
       .select('*')
@@ -83,16 +83,16 @@ serve(async (req) => {
       throw new Error(`Failed to update application: ${updateError.message}`);
     }
 
-    logStep("Successfully updated business application", { 
+    logStep("Successfully updated driver application", { 
       applicationId, 
       action, 
-      businessName: updatedApplication.business_name 
+      driverName: updatedApplication.full_name 
     });
 
     return new Response(JSON.stringify({ 
       success: true, 
       application: updatedApplication,
-      message: `Business application ${action}d successfully`
+      message: `Driver application ${action}d successfully`
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -100,7 +100,7 @@ serve(async (req) => {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in admin-approve-business", { message: errorMessage });
+    logStep("ERROR in admin-approve-driver", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
