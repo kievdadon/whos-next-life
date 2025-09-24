@@ -196,17 +196,28 @@ const BusinessDashboard = () => {
   }, [user]);
 
   const handleWebsiteSave = async (websiteConfig: any) => {
+    if (!business) return;
+    
     try {
-      // Here you would save the website configuration to the database
-      // For now, we'll just show a success message
+      const { error } = await supabase
+        .from('business_applications')
+        .update({ website_config: websiteConfig })
+        .eq('id', business.id);
+      
+      if (error) throw error;
+      
       toast({
         title: "Website Saved",
-        description: "Your business website has been updated successfully!",
+        description: "Your business website configuration has been updated successfully!",
       });
+      
+      // Reload business data to get the updated website config
+      loadBusinessData();
     } catch (error) {
+      console.error('Error saving website config:', error);
       toast({
         title: "Error",
-        description: "Failed to save website configuration.",
+        description: "Failed to save website configuration. Please try again.",
         variant: "destructive",
       });
     }

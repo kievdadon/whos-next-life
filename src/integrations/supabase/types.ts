@@ -82,6 +82,7 @@ export type Database = {
           tuesday_close: string | null
           tuesday_open: string | null
           updated_at: string
+          website_config: Json | null
           wednesday_close: string | null
           wednesday_open: string | null
         }
@@ -119,6 +120,7 @@ export type Database = {
           tuesday_close?: string | null
           tuesday_open?: string | null
           updated_at?: string
+          website_config?: Json | null
           wednesday_close?: string | null
           wednesday_open?: string | null
         }
@@ -156,6 +158,7 @@ export type Database = {
           tuesday_close?: string | null
           tuesday_open?: string | null
           updated_at?: string
+          website_config?: Json | null
           wednesday_close?: string | null
           wednesday_open?: string | null
         }
