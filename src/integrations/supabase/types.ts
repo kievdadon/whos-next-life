@@ -49,6 +49,8 @@ export type Database = {
       }
       business_applications: {
         Row: {
+          account_holder_name: string | null
+          account_number: string | null
           address: string | null
           approved_at: string | null
           business_name: string
@@ -64,10 +66,13 @@ export type Database = {
           is_24_7: boolean | null
           monday_close: string | null
           monday_open: string | null
+          payout_enabled: boolean | null
           phone: string | null
+          routing_number: string | null
           saturday_close: string | null
           saturday_open: string | null
           status: string | null
+          stripe_connect_account_id: string | null
           sunday_close: string | null
           sunday_open: string | null
           temporary_closure: boolean | null
@@ -81,6 +86,8 @@ export type Database = {
           wednesday_open: string | null
         }
         Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
           approved_at?: string | null
           business_name: string
@@ -96,10 +103,13 @@ export type Database = {
           is_24_7?: boolean | null
           monday_close?: string | null
           monday_open?: string | null
+          payout_enabled?: boolean | null
           phone?: string | null
+          routing_number?: string | null
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
+          stripe_connect_account_id?: string | null
           sunday_close?: string | null
           sunday_open?: string | null
           temporary_closure?: boolean | null
@@ -113,6 +123,8 @@ export type Database = {
           wednesday_open?: string | null
         }
         Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
           approved_at?: string | null
           business_name?: string
@@ -128,10 +140,13 @@ export type Database = {
           is_24_7?: boolean | null
           monday_close?: string | null
           monday_open?: string | null
+          payout_enabled?: boolean | null
           phone?: string | null
+          routing_number?: string | null
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
+          stripe_connect_account_id?: string | null
           sunday_close?: string | null
           sunday_open?: string | null
           temporary_closure?: boolean | null
@@ -191,6 +206,8 @@ export type Database = {
         Row: {
           assigned_at: string | null
           cart_items: Json | null
+          commission_amount: number | null
+          commission_rate: number | null
           company_commission: number
           created_at: string
           customer_address: string
@@ -210,6 +227,7 @@ export type Database = {
           order_id: string | null
           order_status: string | null
           payment_status: string | null
+          payout_amount: number | null
           picked_up_photo_url: string | null
           pickup_time: string | null
           restaurant_address: string
@@ -225,6 +243,8 @@ export type Database = {
         Insert: {
           assigned_at?: string | null
           cart_items?: Json | null
+          commission_amount?: number | null
+          commission_rate?: number | null
           company_commission: number
           created_at?: string
           customer_address: string
@@ -244,6 +264,7 @@ export type Database = {
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
+          payout_amount?: number | null
           picked_up_photo_url?: string | null
           pickup_time?: string | null
           restaurant_address: string
@@ -259,6 +280,8 @@ export type Database = {
         Update: {
           assigned_at?: string | null
           cart_items?: Json | null
+          commission_amount?: number | null
+          commission_rate?: number | null
           company_commission?: number
           created_at?: string
           customer_address?: string
@@ -278,6 +301,7 @@ export type Database = {
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
+          payout_amount?: number | null
           picked_up_photo_url?: string | null
           pickup_time?: string | null
           restaurant_address?: string
@@ -302,6 +326,8 @@ export type Database = {
       }
       driver_applications: {
         Row: {
+          account_holder_name: string | null
+          account_number: string | null
           address: string
           approved_at: string | null
           availability: string | null
@@ -318,10 +344,13 @@ export type Database = {
           insurance_policy: string | null
           insurance_provider: string | null
           license_number: string
+          payout_enabled: boolean | null
           phone: string
+          routing_number: string | null
           secondary_id_url: string | null
           state: string | null
           status: string | null
+          stripe_connect_account_id: string | null
           updated_at: string
           vehicle_make: string | null
           vehicle_model: string | null
@@ -330,6 +359,8 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address: string
           approved_at?: string | null
           availability?: string | null
@@ -346,10 +377,13 @@ export type Database = {
           insurance_policy?: string | null
           insurance_provider?: string | null
           license_number: string
+          payout_enabled?: boolean | null
           phone: string
+          routing_number?: string | null
           secondary_id_url?: string | null
           state?: string | null
           status?: string | null
+          stripe_connect_account_id?: string | null
           updated_at?: string
           vehicle_make?: string | null
           vehicle_model?: string | null
@@ -358,6 +392,8 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string
           approved_at?: string | null
           availability?: string | null
@@ -374,10 +410,13 @@ export type Database = {
           insurance_policy?: string | null
           insurance_provider?: string | null
           license_number?: string
+          payout_enabled?: boolean | null
           phone?: string
+          routing_number?: string | null
           secondary_id_url?: string | null
           state?: string | null
           status?: string | null
+          stripe_connect_account_id?: string | null
           updated_at?: string
           vehicle_make?: string | null
           vehicle_model?: string | null
@@ -467,12 +506,15 @@ export type Database = {
       orders: {
         Row: {
           business_id: string
+          commission_amount: number | null
+          commission_rate: number | null
           created_at: string
           customer_id: string
           delivery_address: string | null
           id: string
           order_status: string | null
           payment_status: string | null
+          payout_amount: number | null
           product_id: string | null
           quantity: number
           stripe_session_id: string | null
@@ -481,12 +523,15 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          commission_amount?: number | null
+          commission_rate?: number | null
           created_at?: string
           customer_id: string
           delivery_address?: string | null
           id?: string
           order_status?: string | null
           payment_status?: string | null
+          payout_amount?: number | null
           product_id?: string | null
           quantity?: number
           stripe_session_id?: string | null
@@ -495,12 +540,15 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          commission_amount?: number | null
+          commission_rate?: number | null
           created_at?: string
           customer_id?: string
           delivery_address?: string | null
           id?: string
           order_status?: string | null
           payment_status?: string | null
+          payout_amount?: number | null
           product_id?: string | null
           quantity?: number
           stripe_session_id?: string | null
