@@ -174,8 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: "Application submitted successfully",
-      emailId: emailResponse.data?.id 
+      message: "Application submitted successfully"
     }), {
       status: 200,
       headers: {
