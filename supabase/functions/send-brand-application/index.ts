@@ -90,7 +90,25 @@ const handler = async (req: Request): Promise<Response> => {
           ` : ''}
         </div>
 
-        <div style="background-color: #4f46e5; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+        <div style="background-color: #4f46e5; color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          <h3 style="margin: 0 0 15px 0;">Quick Actions</h3>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://iosdtunxezeccsfxvvqn.supabase.co/functions/v1/send-brand-status-update?email=${encodeURIComponent(applicationData.email)}&companyName=${encodeURIComponent(applicationData.companyName)}&contactName=${encodeURIComponent(applicationData.contactName)}&status=approved&messageType=exciting" 
+               style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              ✨ Approve (Exciting)
+            </a>
+            <a href="https://iosdtunxezeccsfxvvqn.supabase.co/functions/v1/send-brand-status-update?email=${encodeURIComponent(applicationData.email)}&companyName=${encodeURIComponent(applicationData.companyName)}&contactName=${encodeURIComponent(applicationData.contactName)}&status=approved&messageType=sincere" 
+               style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              ✓ Approve (Sincere)
+            </a>
+            <a href="https://iosdtunxezeccsfxvvqn.supabase.co/functions/v1/send-brand-status-update?email=${encodeURIComponent(applicationData.email)}&companyName=${encodeURIComponent(applicationData.companyName)}&contactName=${encodeURIComponent(applicationData.contactName)}&status=rejected&messageType=sincere" 
+               style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              ✗ Decline
+            </a>
+          </div>
+        </div>
+
+        <div style="background-color: #f8fafc; color: #64748b; padding: 20px; border-radius: 8px; text-align: center;">
           <p style="margin: 0;">Application submitted on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
         </div>
       </div>
