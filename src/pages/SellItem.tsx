@@ -286,7 +286,16 @@ const SellItem = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Sell Your Item</h1>
-          <p className="text-muted-foreground">List your item on the marketplace and connect with buyers</p>
+          <p className="text-muted-foreground">Fill out the form below to list your item on the marketplace and connect with buyers</p>
+          <div className="bg-wellness-accent/10 rounded-lg p-4 mt-4 text-sm">
+            <h3 className="font-semibold mb-2">📝 What you'll need:</h3>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>1-7 clear photos of your item (not required for digital products)</li>
+              <li>Detailed description including condition and features</li>
+              <li>Competitive pricing information</li>
+              <li>Your location for pickup/delivery</li>
+            </ul>
+          </div>
           <Button 
             variant="outline" 
             onClick={() => navigate('/marketplace')}
@@ -305,6 +314,9 @@ const SellItem = () => {
                 <Camera className="h-5 w-5 text-wellness-primary" />
                 Product Photos
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Add 1-7 high-quality photos. The first photo will be the main image buyers see. Good photos increase your chances of selling!
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -420,21 +432,26 @@ const SellItem = () => {
           <Card>
             <CardHeader>
               <CardTitle>Product Details</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Provide detailed information about your item. The more details you include, the more likely buyers are to be interested.
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name" className="text-base font-medium">Product Name *</Label>
+                <p className="text-xs text-muted-foreground mb-2">Be specific and descriptive. Include brand, model, size, or key features.</p>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="e.g., iPhone 13 Pro, Vintage Armchair, Kids Bicycle"
+                  placeholder="e.g., iPhone 13 Pro 128GB Unlocked, Vintage Oak Dining Table, Men's Nike Running Shoes Size 10"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="productType">Product Type *</Label>
+                <Label htmlFor="productType" className="text-base font-medium">Product Type *</Label>
+                <p className="text-xs text-muted-foreground mb-2">Choose what type of product you're selling to help buyers understand what they're getting.</p>
                 <Select onValueChange={(value) => handleInputChange('productType', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select product type" />
@@ -453,40 +470,53 @@ const SellItem = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description" className="text-base font-medium">Description *</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Write a detailed description. Include condition, age, features, dimensions, any flaws, and why you're selling.
+                </p>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder={formData.productType === 'virtual' 
-                    ? "Describe your digital product - what's included, format, delivery method..."
+                    ? "Describe your digital product - what's included, format, delivery method, system requirements, license terms..."
                     : formData.productType === 'service'
-                    ? "Describe your service - what you offer, duration, experience..."
-                    : "Describe your item in detail - size, color, features, any defects..."
+                    ? "Describe your service - what you offer, your experience, duration, what's included, your qualifications..."
+                    : "Describe your item in detail - condition, age, brand, features, size, color, any wear or damage, reason for selling..."
                   }
-                  rows={4}
+                  rows={5}
                   required
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.productType === 'virtual' 
+                    ? "Tip: Mention file formats, compatibility, and how the buyer will receive the product"
+                    : formData.productType === 'service'
+                    ? "Tip: Include your experience, availability, and what makes your service special"
+                    : "Tip: Be honest about any flaws - it builds trust with buyers"
+                  }
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="brand">Brand (optional)</Label>
+                  <Label htmlFor="brand" className="text-base font-medium">Brand (optional)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Include the brand name if applicable - it helps buyers search and trust your listing.</p>
                   <Input
                     id="brand"
                     value={formData.brand}
                     onChange={(e) => handleInputChange('brand', e.target.value)}
-                    placeholder="e.g., Apple, Nike, Samsung"
+                    placeholder="e.g., Apple, Nike, Samsung, IKEA, Toyota"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="features">Key Features (optional)</Label>
+                  <Label htmlFor="features" className="text-base font-medium">Key Features (optional)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">List the main features that make your item special or useful.</p>
                   <Input
                     id="features"
                     value={formData.features}
                     onChange={(e) => handleInputChange('features', e.target.value)}
-                    placeholder="e.g., Bluetooth, Touch Screen, Wireless"
+                    placeholder="e.g., Bluetooth, Touch Screen, Wireless, Waterproof, Memory Foam"
                   />
                 </div>
               </div>
@@ -579,11 +609,15 @@ const SellItem = () => {
 
                {/* Pricing Details */}
                <div className="space-y-4 border-t pt-4">
-                 <h3 className="text-lg font-semibold">Pricing Information</h3>
+                 <div>
+                   <h3 className="text-lg font-semibold">Pricing Information</h3>
+                   <p className="text-sm text-muted-foreground">Set a competitive price. Research similar items to price yours fairly.</p>
+                 </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
-                     <Label htmlFor="price">Your Price *</Label>
+                     <Label htmlFor="price" className="text-base font-medium">Your Price *</Label>
+                     <p className="text-xs text-muted-foreground mb-2">Set your asking price. Be competitive but fair based on condition and market value.</p>
                      <div className="relative">
                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                        <Input
@@ -600,7 +634,8 @@ const SellItem = () => {
                    </div>
 
                    <div>
-                     <Label htmlFor="originalPrice">Original/Retail Price (optional)</Label>
+                     <Label htmlFor="originalPrice" className="text-base font-medium">Original/Retail Price (optional)</Label>
+                     <p className="text-xs text-muted-foreground mb-2">What did you originally pay? This shows buyers the value they're getting.</p>
                      <div className="relative">
                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                        <Input
