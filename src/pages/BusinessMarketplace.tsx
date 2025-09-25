@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Search, Store, Shirt, Scissors, UtensilsCrossed, Star, MapPin, Clock } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import DeliveryBusinessCard from '@/components/DeliveryBusinessCard';
+import WebsiteBusinessCard from '@/components/WebsiteBusinessCard';
 
 interface Product {
   id: string;
@@ -58,8 +60,7 @@ const BusinessMarketplace = () => {
         const { data, error } = await supabase
           .from('business_applications')
           .select('*')
-          .eq('status', 'approved')
-          .or('is_brand_partner.eq.true,and(has_physical_location.eq.true,location_verified.eq.true)');
+          .eq('status', 'approved');
 
         if (error) throw error;
 
@@ -90,12 +91,27 @@ const BusinessMarketplace = () => {
     fetchApprovedBusinesses();
   }, [subscribed, subscriptionTier]);
 
-  const filteredBusinesses = businesses.filter(business => {
-    const matchesSearch = business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         business.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || business.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Separate businesses into delivery-eligible and website-only
+  const deliveryEligibleBusinesses = businesses.filter(business => 
+    business.isBrandPartner || (business.hasPhysicalLocation)
+  );
+  
+  const websiteOnlyBusinesses = businesses.filter(business => 
+    !business.isBrandPartner && !business.hasPhysicalLocation
+  );
+
+  // Filter function that works on both arrays
+  const filterBusinesses = (businessList: any[]) => {
+    return businessList.filter(business => {
+      const matchesSearch = business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           business.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || business.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  };
+
+  const filteredDeliveryBusinesses = filterBusinesses(deliveryEligibleBusinesses);
+  const filteredWebsiteBusinesses = filterBusinesses(websiteOnlyBusinesses);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm py-8">
@@ -184,62 +200,49 @@ const BusinessMarketplace = () => {
             <p className="text-muted-foreground">Loading verified businesses...</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBusinesses.map((business) => (
-            <Card key={business.id} className="transition-all duration-300 hover:shadow-lg">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{business.name}</CardTitle>
-                    <CardDescription>{business.description}</CardDescription>
-                  </div>
-                  {business.discount > 0 && (
-                    <Badge className="bg-wellness-secondary text-white">
-                      {business.discount}% off
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span>{business.rating}</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{business.location}</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{business.hours}</span>
-                </div>
-                
-                <Button 
-                  className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
-                >
-                  Visit Store
-                </Button>
-                
-                {business.isBrandPartner && (
-                  <Badge className="w-full justify-center bg-wellness-accent/10 text-wellness-accent border-wellness-accent/20 mt-2">
-                    Official Brand Partner
+          <div className="space-y-12">
+            {/* Delivery-Eligible Businesses */}
+            {filteredDeliveryBusinesses.length > 0 && (
+              <section>
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="text-2xl font-bold">🚚 Delivery Available</h2>
+                  <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20">
+                    {filteredDeliveryBusinesses.length} stores
                   </Badge>
-                )}
-              </CardContent>
-            </Card>
-            ))}
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredDeliveryBusinesses.map((business) => (
+                    <DeliveryBusinessCard key={business.id} business={business} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Website-Only Businesses */}
+            {filteredWebsiteBusinesses.length > 0 && (
+              <section>
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="text-2xl font-bold">🌐 Online Marketplaces</h2>
+                  <Badge className="bg-wellness-secondary/10 text-wellness-secondary border-wellness-secondary/20">
+                    {filteredWebsiteBusinesses.length} stores
+                  </Badge>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredWebsiteBusinesses.map((business) => (
+                    <WebsiteBusinessCard key={business.id} business={business} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
 
-        {!loading && filteredBusinesses.length === 0 && (
+        {!loading && filteredDeliveryBusinesses.length === 0 && filteredWebsiteBusinesses.length === 0 && (
           <div className="text-center py-12">
             <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No eligible businesses found</h3>
+            <h3 className="text-lg font-semibold mb-2">No businesses found</h3>
             <p className="text-muted-foreground">
-              Only official brand partners and verified local businesses with physical locations appear in WHOSENXT delivery.
+              Try adjusting your search or browse different categories.
             </p>
           </div>
         )}
