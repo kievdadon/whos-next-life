@@ -846,43 +846,73 @@ const BusinessDashboard = () => {
         {/* Product Form Modal */}
         {showAddProduct && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl">
               <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">
+                <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </h3>
-                <form onSubmit={handleProductSubmit} className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                  Fill out the details below to list your product. All fields marked with * are required.
+                </p>
+                <form onSubmit={handleProductSubmit} className="space-y-5">
                   <div>
-                    <Label htmlFor="name">Product Name</Label>
+                    <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Product Name *
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Enter the full name of your product (e.g., "Wireless Bluetooth Headphones")
+                    </p>
                     <Input
                       id="name"
                       value={productForm.name}
                       onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter your product name here..."
+                      className="w-full"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Product Description
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Describe your product's features, benefits, and what makes it special. This helps customers understand what they're buying.
+                    </p>
                     <Textarea
                       id="description"
                       value={productForm.description}
                       onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
+                      placeholder="Describe your product's features, size, color, materials, condition, etc..."
+                      rows={4}
+                      className="w-full"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Price ($)</Label>
+                    <Label htmlFor="price" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Price (USD) *
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Set your selling price in US dollars. You can use decimals (e.g., 29.99)
+                    </p>
                     <Input
                       id="price"
                       type="number"
                       step="0.01"
+                      min="0.01"
                       value={productForm.price}
                       onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Product Category *
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Choose the category that best describes your product to help customers find it
+                    </p>
                     <Select
                       value={productForm.category}
                       onValueChange={(value) => setProductForm(prev => ({ ...prev, category: value }))}
@@ -899,48 +929,75 @@ const BusinessDashboard = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="image_url">Image URL</Label>
-                    <Input
-                      id="image_url"
-                      type="url"
-                      value={productForm.image_url}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
-                      placeholder="https://example.com/image.jpg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="stock_quantity">Stock Quantity</Label>
-                    <Input
-                      id="stock_quantity"
-                      type="number"
-                      value={productForm.stock_quantity}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
-                      min="0"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="delivery_available"
-                      checked={productForm.delivery_available}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, delivery_available: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <Label htmlFor="delivery_available">Delivery Available</Label>
-                  </div>
-                  {productForm.delivery_available && (
-                    <div>
-                      <Label htmlFor="delivery_radius">Delivery Radius (miles)</Label>
-                      <Input
-                        id="delivery_radius"
-                        type="number"
-                        value={productForm.delivery_radius}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, delivery_radius: e.target.value }))}
-                        min="1"
-                      />
-                    </div>
-                  )}
+                   <div>
+                     <Label htmlFor="image_url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                       Product Image URL
+                     </Label>
+                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                       Add a link to your product image. Use a clear, high-quality photo that shows your product well.
+                     </p>
+                     <Input
+                       id="image_url"
+                       type="url"
+                       value={productForm.image_url}
+                       onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
+                       placeholder="https://example.com/your-product-image.jpg"
+                       className="w-full"
+                     />
+                   </div>
+                   <div>
+                     <Label htmlFor="stock_quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                       Stock Quantity
+                     </Label>
+                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                       How many units do you have available for sale? Enter 0 if out of stock.
+                     </p>
+                     <Input
+                       id="stock_quantity"
+                       type="number"
+                       value={productForm.stock_quantity}
+                       onChange={(e) => setProductForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
+                       placeholder="e.g., 10"
+                       min="0"
+                       className="w-full"
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <div className="flex items-center space-x-2">
+                       <input
+                         type="checkbox"
+                         id="delivery_available"
+                         checked={productForm.delivery_available}
+                         onChange={(e) => setProductForm(prev => ({ ...prev, delivery_available: e.target.checked }))}
+                         className="rounded w-4 h-4"
+                       />
+                       <Label htmlFor="delivery_available" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                         Offer Delivery Service
+                       </Label>
+                     </div>
+                     <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                       Check this box if you can deliver this product to customers
+                     </p>
+                   </div>
+                   {productForm.delivery_available && (
+                     <div>
+                       <Label htmlFor="delivery_radius" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                         Delivery Radius (miles)
+                       </Label>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                         How far from your location are you willing to deliver? (e.g., 5 miles, 20 miles)
+                       </p>
+                       <Input
+                         id="delivery_radius"
+                         type="number"
+                         value={productForm.delivery_radius}
+                         onChange={(e) => setProductForm(prev => ({ ...prev, delivery_radius: e.target.value }))}
+                         placeholder="e.g., 10"
+                         min="1"
+                         className="w-full"
+                       />
+                     </div>
+                   )}
                   <div className="flex justify-end space-x-2 pt-4">
                     <Button type="button" variant="outline" onClick={cancelProductForm}>
                       Cancel
