@@ -25,7 +25,9 @@ const BusinessRegistration = () => {
     contactPhone: '',
     address: '',
     ownerName: '',
-    businessLicense: ''
+    businessLicense: '',
+    hasPhysicalLocation: false,
+    businessSize: 'local'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -47,7 +49,7 @@ const BusinessRegistration = () => {
     { value: 'personal', label: 'Personal Business', icon: User }
   ];
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -105,7 +107,9 @@ const BusinessRegistration = () => {
         email: formData.contactEmail.trim().toLowerCase(),
         phone: sanitizeInput(formData.contactPhone),
         address: sanitizeInput(formData.address),
-        description: sanitizeInput(formData.description)
+        description: sanitizeInput(formData.description),
+        has_physical_location: formData.hasPhysicalLocation,
+        business_size: formData.businessSize
       };
 
       // Save to database
@@ -310,11 +314,65 @@ const BusinessRegistration = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="businessSize" className="text-white">Business Size *</Label>
+                  <Select value={formData.businessSize} onValueChange={(value) => handleInputChange('businessSize', value)}>
+                    <SelectTrigger className="bg-white/20 border-white/30 text-white">
+                      <SelectValue placeholder="Select business size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">Local Business</SelectItem>
+                      <SelectItem value="regional">Regional Chain</SelectItem>
+                      <SelectItem value="national">National Brand</SelectItem>
+                      <SelectItem value="international">International Brand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white">Physical Location</Label>
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      type="button"
+                      variant={formData.hasPhysicalLocation ? "default" : "outline"}
+                      onClick={() => handleInputChange('hasPhysicalLocation', true)}
+                      className="flex-1"
+                    >
+                      Yes, I have a physical store/location
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={!formData.hasPhysicalLocation ? "default" : "outline"}
+                      onClick={() => handleInputChange('hasPhysicalLocation', false)}
+                      className="flex-1"
+                    >
+                      Online/Service-based only
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-900/30 p-4 rounded-lg mb-4">
+                <h3 className="text-white font-semibold mb-2">🚚 WHOSENXT Delivery Eligibility</h3>
+                <p className="text-blue-200 text-sm mb-2">
+                  To appear in WHOSENXT delivery, your business must meet one of these criteria:
+                </p>
+                <ul className="text-blue-200 text-sm space-y-1">
+                  <li>• <strong>Official Brand Partner:</strong> Large businesses like Walmart, H&M, Target, etc.</li>
+                  <li>• <strong>Verified Local Business:</strong> Physical storefront open to the public (convenience stores, restaurants, shops, etc.)</li>
+                </ul>
+                <p className="text-blue-200 text-sm mt-2">
+                  Online-only businesses will appear in the marketplace but not delivery section.
+                </p>
+              </div>
+
               <div className="bg-purple-900/30 p-4 rounded-lg">
                 <h3 className="text-white font-semibold mb-2">What happens next?</h3>
                 <ul className="text-purple-200 text-sm space-y-1">
                   <li>• Our team will review your application within 2-3 business days</li>
                   <li>• We'll verify your business information and reach out for any additional details</li>
+                  <li>• Physical locations will be verified for delivery eligibility</li>
                   <li>• Once approved, we'll contact you about subscription options and onboarding</li>
                   <li>• You'll gain access to our marketplace platform to showcase your inventory</li>
                 </ul>

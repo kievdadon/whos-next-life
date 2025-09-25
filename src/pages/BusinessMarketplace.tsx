@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Store, Shirt, Scissors, UtensilsCrossed, Star, MapPin, Clock } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
   id: string;
@@ -47,52 +48,47 @@ const BusinessMarketplace = () => {
     { id: 'food', name: 'Food & Dining', icon: UtensilsCrossed }
   ];
 
-  const businesses = [
-    {
-      id: 1,
-      name: 'Urban Threads',
-      category: 'clothing',
-      description: 'Trendy streetwear and casual fashion',
-      rating: 4.8,
-      location: 'Downtown District',
-      discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
-      image: '/placeholder.svg',
-      hours: 'Mon-Sat 9AM-8PM'
-    },
-    {
-      id: 2,
-      name: 'Glow Beauty Studio',
-      category: 'beauty',
-      description: 'Professional hair styling and beauty services',
-      rating: 4.9,
-      location: 'Midtown Plaza',
-      discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
-      image: '/placeholder.svg',
-      hours: 'Tue-Sun 10AM-7PM'
-    },
-    {
-      id: 3,
-      name: 'Soul Kitchen',
-      category: 'food',
-      description: 'Farm-to-table dining with local ingredients',
-      rating: 4.7,
-      location: 'Arts Quarter',
-      discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
-      image: '/placeholder.svg',
-      hours: 'Daily 11AM-10PM'
-    },
-    {
-      id: 4,
-      name: 'Elite Boutique',
-      category: 'clothing',
-      description: 'Designer clothing and luxury accessories',
-      rating: 4.6,
-      location: 'Fashion District',
-      discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
-      image: '/placeholder.svg',
-      hours: 'Mon-Sat 10AM-9PM'
-    }
-  ];
+  // Fetch real businesses from Supabase that meet delivery criteria
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchApprovedBusinesses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('business_applications')
+          .select('*')
+          .eq('status', 'approved')
+          .or('is_brand_partner.eq.true,and(has_physical_location.eq.true,location_verified.eq.true)');
+
+        if (error) throw error;
+
+        const businessesWithMockData = (data || []).map(business => ({
+          id: business.id,
+          name: business.business_name,
+          category: business.business_type,
+          description: business.description || 'Local business',
+          rating: 4.0 + Math.random() * 1, // Mock rating
+          location: business.address || 'Local area',
+          discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
+          image: '/placeholder.svg',
+          hours: business.is_24_7 ? '24/7' : 'Mon-Sun 8AM-8PM', // Simplified for demo
+          isBrandPartner: business.is_brand_partner,
+          hasPhysicalLocation: business.has_physical_location
+        }));
+
+        setBusinesses(businessesWithMockData);
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+        // Fallback to empty array if error
+        setBusinesses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApprovedBusinesses();
+  }, [subscribed, subscriptionTier]);
 
   const filteredBusinesses = businesses.filter(business => {
     const matchesSearch = business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -182,8 +178,14 @@ const BusinessMarketplace = () => {
         </Card>
 
         {/* Business Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBusinesses.map((business) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-wellness-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading verified businesses...</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBusinesses.map((business) => (
             <Card key={business.id} className="transition-all duration-300 hover:shadow-lg">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -220,17 +222,24 @@ const BusinessMarketplace = () => {
                 >
                   Visit Store
                 </Button>
+                
+                {business.isBrandPartner && (
+                  <Badge className="w-full justify-center bg-wellness-accent/10 text-wellness-accent border-wellness-accent/20 mt-2">
+                    Official Brand Partner
+                  </Badge>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredBusinesses.length === 0 && (
+        {!loading && filteredBusinesses.length === 0 && (
           <div className="text-center py-12">
             <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No businesses found</h3>
+            <h3 className="text-lg font-semibold mb-2">No eligible businesses found</h3>
             <p className="text-muted-foreground">
-              Try adjusting your search or browse different categories.
+              Only official brand partners and verified local businesses with physical locations appear in WHOSENXT delivery.
             </p>
           </div>
         )}

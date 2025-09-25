@@ -53,7 +53,9 @@ export type Database = {
           account_number: string | null
           address: string | null
           approved_at: string | null
+          brand_partnership_date: string | null
           business_name: string
+          business_size: string | null
           business_type: string
           closure_message: string | null
           contact_name: string
@@ -62,8 +64,11 @@ export type Database = {
           email: string
           friday_close: string | null
           friday_open: string | null
+          has_physical_location: boolean | null
           id: string
           is_24_7: boolean | null
+          is_brand_partner: boolean | null
+          location_verified: boolean | null
           monday_close: string | null
           monday_open: string | null
           payout_enabled: boolean | null
@@ -91,7 +96,9 @@ export type Database = {
           account_number?: string | null
           address?: string | null
           approved_at?: string | null
+          brand_partnership_date?: string | null
           business_name: string
+          business_size?: string | null
           business_type: string
           closure_message?: string | null
           contact_name: string
@@ -100,8 +107,11 @@ export type Database = {
           email: string
           friday_close?: string | null
           friday_open?: string | null
+          has_physical_location?: boolean | null
           id?: string
           is_24_7?: boolean | null
+          is_brand_partner?: boolean | null
+          location_verified?: boolean | null
           monday_close?: string | null
           monday_open?: string | null
           payout_enabled?: boolean | null
@@ -129,7 +139,9 @@ export type Database = {
           account_number?: string | null
           address?: string | null
           approved_at?: string | null
+          brand_partnership_date?: string | null
           business_name?: string
+          business_size?: string | null
           business_type?: string
           closure_message?: string | null
           contact_name?: string
@@ -138,8 +150,11 @@ export type Database = {
           email?: string
           friday_close?: string | null
           friday_open?: string | null
+          has_physical_location?: boolean | null
           id?: string
           is_24_7?: boolean | null
+          is_brand_partner?: boolean | null
+          location_verified?: boolean | null
           monday_close?: string | null
           monday_open?: string | null
           payout_enabled?: boolean | null
