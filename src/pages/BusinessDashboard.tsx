@@ -1196,16 +1196,16 @@ const BusinessDashboard = () => {
         {/* Store Hours Modal */}
         {showStoreHours && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-background text-foreground rounded-lg border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
               <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Store Hours Management</h3>
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Store Hours Management</h3>
                 <p className="text-sm text-muted-foreground mb-6">
                   Set your business operating hours for each day of the week.
                 </p>
                 <form onSubmit={handleStoreHoursSubmit} className="space-y-4">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <div key={day} className="grid grid-cols-3 gap-4 items-center">
-                      <Label className="font-medium">{day}</Label>
+                      <Label className="font-medium text-foreground">{day}</Label>
                       <div className="space-y-2">
                         <Label className="text-sm text-muted-foreground">Open</Label>
                         <Input
@@ -1232,7 +1232,7 @@ const BusinessDashboard = () => {
                       checked={storeHoursForm.is_24_7}
                       onChange={(e) => setStoreHoursForm(prev => ({ ...prev, is_24_7: e.target.checked }))}
                     />
-                    <Label htmlFor="is_24_7">Open 24/7</Label>
+                    <Label htmlFor="is_24_7" className="text-foreground">Open 24/7</Label>
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -1242,7 +1242,7 @@ const BusinessDashboard = () => {
                       checked={storeHoursForm.temporary_closure}
                       onChange={(e) => setStoreHoursForm(prev => ({ ...prev, temporary_closure: e.target.checked }))}
                     />
-                    <Label htmlFor="temporary_closure">Temporarily Closed</Label>
+                    <Label htmlFor="temporary_closure" className="text-foreground">Temporarily Closed</Label>
                   </div>
                   
                   <div className="flex justify-end space-x-2 pt-4">
