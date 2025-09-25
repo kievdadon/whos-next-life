@@ -525,6 +525,115 @@ export type Database = {
         }
         Relationships: []
       }
+      family_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          edited: boolean | null
+          group_id: string | null
+          id: string
+          message_type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          edited?: boolean | null
+          group_id?: string | null
+          id?: string
+          message_type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          edited?: boolean | null
+          group_id?: string | null
+          id?: string
+          message_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_chat_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_group_members: {
+        Row: {
+          display_name: string | null
+          group_id: string | null
+          id: string
+          is_admin: boolean | null
+          joined_at: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          group_id?: string | null
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          group_id?: string | null
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -885,6 +994,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wellness_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          message_type: string | null
+          mood_label: string | null
+          mood_score: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          mood_label?: string | null
+          mood_score?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          mood_label?: string | null
+          mood_score?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_chat_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          session_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

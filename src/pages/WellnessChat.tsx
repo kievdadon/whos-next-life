@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import { 
   Send, 
   Mic,
@@ -23,19 +25,25 @@ import {
 } from "lucide-react";
 
 const WellnessChat = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: 1,
-      type: "ai",
-      message: "Good morning! How are you feeling today? I'm here to support your wellness journey.",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      mood: null
-    }
-  ]);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const todayMood = {
     mood: "Calm",
@@ -62,37 +70,110 @@ const WellnessChat = () => {
     { icon: Moon, label: "Sleep Tips", color: "wellness-accent" }
   ];
 
+  // Create or get current wellness session
+  const getOrCreateSession = async () => {
+    try {
+      // Get existing active session
+      const { data: existingSessions, error: fetchError } = await supabase
+        .from('wellness_chat_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (existingSessions && existingSessions.length > 0) {
+        setCurrentSession(existingSessions[0]);
+        return existingSessions[0];
+      }
+
+      // Create new session
+      const { data: newSession, error: createError } = await supabase
+        .from('wellness_chat_sessions')
+        .insert({
+          user_id: user.id,
+          session_name: `Wellness Chat - ${new Date().toLocaleDateString()}`
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      setCurrentSession(newSession);
+
+      // Add initial AI message
+      await supabase
+        .from('wellness_chat_messages')
+        .insert({
+          session_id: newSession.id,
+          user_id: null,
+          content: "Good morning! How are you feeling today? I'm here to support your wellness journey.",
+          message_type: 'ai'
+        });
+
+      return newSession;
+    } catch (error) {
+      console.error('Error with session:', error);
+      return null;
+    }
+  };
+
+  // Load chat messages
+  const loadMessages = async (sessionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('wellness_chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setChatHistory(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
   const handleSend = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || !currentSession) return;
 
-    const userMessage = {
-      id: Date.now(),
-      type: "user" as const,
-      message: message.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      mood: null
-    };
-
-    setChatHistory(prev => [...prev, userMessage]);
-    setMessage("");
     setIsLoading(true);
 
     try {
+      // Add user message to database
+      const { error: userMessageError } = await supabase
+        .from('wellness_chat_messages')
+        .insert({
+          session_id: currentSession.id,
+          user_id: user.id,
+          content: message.trim(),
+          message_type: 'user'
+        });
+
+      if (userMessageError) throw userMessageError;
+
+      const userMessageContent = message.trim();
+      setMessage("");
+
+      // Get AI response
       const { data, error } = await supabase.functions.invoke('wellness-chat', {
-        body: { message: userMessage.message }
+        body: { message: userMessageContent }
       });
 
       if (error) throw error;
 
-      const aiMessage = {
-        id: Date.now() + 1,
-        type: "ai" as const,
-        message: data.response,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        mood: null
-      };
+      // Add AI response to database
+      await supabase
+        .from('wellness_chat_messages')
+        .insert({
+          session_id: currentSession.id,
+          user_id: null,
+          content: data.response,
+          message_type: 'ai'
+        });
 
-      setChatHistory(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -108,6 +189,62 @@ const WellnessChat = () => {
   const handleVoiceInput = () => {
     setIsListening(!isListening);
   };
+
+  // Setup real-time subscriptions
+  useEffect(() => {
+    if (!currentSession) return;
+
+    const messagesChannel = supabase
+      .channel('wellness_chat_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'wellness_chat_messages',
+          filter: `session_id=eq.${currentSession.id}`
+        },
+        (payload) => {
+          setChatHistory(prev => [...prev, payload.new]);
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [currentSession]);
+
+  // Load initial data
+  useEffect(() => {
+    const initializeChat = async () => {
+      setLoading(true);
+      const session = await getOrCreateSession();
+      if (session) {
+        await loadMessages(session.id);
+      }
+      setLoading(false);
+    };
+
+    initializeChat();
+  }, [user.id]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatHistory]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-wellness-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading wellness chat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex">
@@ -229,49 +366,41 @@ const WellnessChat = () => {
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {chatHistory.map((chat) => (
-            <div key={chat.id} className={`flex ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-2xl ${chat.type === 'user' ? 'order-2' : ''}`}>
-                {chat.type === 'ai' && (
+            <div key={chat.id} className={`flex ${chat.message_type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-2xl ${chat.message_type === 'user' ? 'order-2' : ''}`}>
+                {chat.message_type === 'ai' && (
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-6 h-6 bg-wellness-primary rounded-full flex items-center justify-center">
                       <Sparkles className="h-3 w-3 text-white" />
                     </div>
                     <span className="text-sm text-muted-foreground">Wellness AI</span>
-                    <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(chat.created_at).toLocaleTimeString()}
+                    </span>
                   </div>
                 )}
                 
                 <Card className={`${
-                  chat.type === 'user' 
+                  chat.message_type === 'user' 
                     ? 'bg-wellness-primary text-primary-foreground ml-12' 
                     : 'bg-card mr-12'
                 }`}>
                   <CardContent className="p-4">
-                    <p className="leading-relaxed">{chat.message}</p>
-                    
-                    {chat.mood && chat.type === 'user' && (
-                      <div className="flex items-center space-x-2 mt-2 pt-2 border-t border-primary-foreground/20">
-                        <span className="text-lg">{chat.mood.emoji}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {chat.mood.level} anxiety
-                        </Badge>
-                      </div>
-                    )}
-                    
+                    <p className="leading-relaxed">{chat.content}</p>
                   </CardContent>
                 </Card>
                 
-                {chat.type === 'user' && (
+                {chat.message_type === 'user' && (
                   <div className="flex items-center justify-end space-x-2 mt-1 mr-4">
-                    <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
-                    {chat.mood && (
-                      <span className="text-sm">{chat.mood.emoji}</span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(chat.created_at).toLocaleTimeString()}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Chat Input */}

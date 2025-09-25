@@ -160,77 +160,6 @@ const Delivery = () => {
     navigate(`/store/${encodeURIComponent(storeName)}`);
   };
 
-  const createTestOrder = async () => {
-    if (!userLocation) {
-      toast({
-        title: "Location Required",
-        description: "Please set your location first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to create an order",
-        variant: "destructive",
-      });
-      navigate('/auth');
-      return;
-    }
-
-    try {
-      console.log('Creating test order with user:', user);
-      console.log('User ID:', user.id);
-      console.log('User email:', user.email);
-      
-      // Create a test delivery order
-      const testOrder = {
-        customer_id: user.id,
-        customer_name: user.email?.split('@')[0] || "Test Customer",
-        customer_email: user.email,
-        customer_phone: "555-0123",
-        customer_address: userLocation.address,
-        restaurant_address: "Tony's Italian Kitchen, 123 Restaurant St",
-        store_name: "Tony's Italian Kitchen",
-        cart_items: [
-          { name: "Margherita Pizza", quantity: 1, price: 16.99 },
-          { name: "Caesar Salad", quantity: 1, price: 8.99 },
-          { name: "Garlic Bread", quantity: 1, price: 4.99 }
-        ],
-        subtotal: 30.97,
-        tax: 2.48,
-        delivery_fee: 3.99,
-        total_amount: 37.44,
-        driver_earning: 8.50,
-        company_commission: 1.25,
-        estimated_delivery_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min from now
-        status: 'pending',
-        payment_status: 'paid'
-      };
-
-      const { data, error } = await supabase
-        .from('delivery_orders')
-        .insert(testOrder)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Test Order Created! 🎉",
-        description: `Order #${data.id.slice(0, 8)} created for Tony's Italian Kitchen. Check the driver dashboard to accept it!`,
-      });
-    } catch (error) {
-      console.error('Error creating test order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create test order",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleViewAll = () => {
     if (!userLocation) {
@@ -446,31 +375,6 @@ const Delivery = () => {
         </div>
       </section>
 
-      {/* Test Order Creation */}
-      <section className="py-8 bg-gradient-to-r from-wellness-accent/5 to-wellness-warm/5">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-2xl mx-auto bg-gradient-to-br from-card to-wellness-calm/30">
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl">🧪 Test Order Creation</CardTitle>
-              <CardDescription>
-                Create a test delivery order to see the full driver workflow
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button 
-                className="w-full bg-wellness-accent hover:bg-wellness-accent/90"
-                onClick={createTestOrder}
-              >
-                <Package className="h-4 w-4 mr-2" />
-                Create Test Pizza Order
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                This will create a test order that drivers can see and accept
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
 
       {/* Active Deliveries */}
       {activeDeliveries.length > 0 && (
