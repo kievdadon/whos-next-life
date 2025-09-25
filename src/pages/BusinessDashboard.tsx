@@ -76,6 +76,7 @@ const BusinessDashboard = () => {
   const [uploadMethod, setUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [bankingForm, setBankingForm] = useState({
     routing_number: '',
     account_number: '',
@@ -199,6 +200,15 @@ const BusinessDashboard = () => {
       loadBusinessData();
     }
   }, [user]);
+
+  // Update current time every minute to keep store status accurate
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleWebsiteSave = async (websiteConfig: any) => {
     console.log('handleWebsiteSave called with config:', websiteConfig);
@@ -546,16 +556,14 @@ const BusinessDashboard = () => {
               {business && (
                 <Badge className={
                   business.temporary_closure 
-                    ? 'bg-red-100 text-red-800' 
-                     : isStoreCurrentlyOpen(business as StoreHours).isOpen
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-red-100 text-red-800 border-red-200' 
+                    : isStoreCurrentlyOpen(business as StoreHours).isOpen
+                      ? 'bg-green-100 text-green-800 border-green-200'
+                      : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                 }>
                   {business.temporary_closure 
                     ? 'Temporarily Closed' 
-                    : isStoreCurrentlyOpen(business as StoreHours).isOpen
-                      ? 'Open'
-                      : 'Closed'
+                    : isStoreCurrentlyOpen(business as StoreHours).status
                   }
                 </Badge>
               )}
@@ -620,14 +628,17 @@ const BusinessDashboard = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {business?.temporary_closure 
-                      ? 'Closed' 
+                      ? 'Temporarily Closed' 
                       : business && isStoreCurrentlyOpen(business as StoreHours).isOpen
                         ? 'Open'
                         : 'Closed'
                     }
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Current status
+                    {business && !business.temporary_closure 
+                      ? isStoreCurrentlyOpen(business as StoreHours).status
+                      : business?.closure_message || 'Current status'
+                    }
                   </p>
                 </CardContent>
               </Card>

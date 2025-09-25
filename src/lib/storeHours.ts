@@ -46,7 +46,10 @@ export function isStoreCurrentlyOpen(storeHours: StoreHours): {
   status: string;
   nextChange?: string;
 } {
+  console.log('Checking store hours for:', storeHours);
+  
   if (storeHours.temporary_closure) {
+    console.log('Store is temporarily closed');
     return {
       isOpen: false,
       status: storeHours.closure_message || 'Temporarily Closed'
@@ -54,6 +57,7 @@ export function isStoreCurrentlyOpen(storeHours: StoreHours): {
   }
 
   if (storeHours.is_24_7) {
+    console.log('Store is open 24/7');
     return {
       isOpen: true,
       status: 'Open 24/7'
@@ -62,22 +66,27 @@ export function isStoreCurrentlyOpen(storeHours: StoreHours): {
 
   // Use the business timezone, defaulting to America/New_York if not set
   const businessTimezone = storeHours.timezone || 'America/New_York';
+  console.log('Business timezone:', businessTimezone);
   
   // Get current time in the business timezone
   const now = new Date();
   const timeInBusinessTimezone = new Date(now.toLocaleString("en-US", {timeZone: businessTimezone}));
+  console.log('Current time in business timezone:', timeInBusinessTimezone);
   
   const dayIndex = timeInBusinessTimezone.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const currentDay = DAYS_OF_WEEK[dayIndex];
   const currentTime = timeInBusinessTimezone.toTimeString().slice(0, 5); // HH:MM format
+  console.log('Current day:', currentDay, 'Current time:', currentTime);
 
   const openKey = `${currentDay}_open` as keyof StoreHours;
   const closeKey = `${currentDay}_close` as keyof StoreHours;
   
   const openTime = storeHours[openKey] as string | null;
   const closeTime = storeHours[closeKey] as string | null;
+  console.log('Today\'s hours:', openTime, '-', closeTime);
 
   if (!openTime || !closeTime) {
+    console.log('No hours set for today, store is closed');
     return {
       isOpen: false,
       status: 'Closed Today'
@@ -85,7 +94,11 @@ export function isStoreCurrentlyOpen(storeHours: StoreHours): {
   }
 
   // Check if current time is between open and close
-  const isCurrentlyOpen = currentTime >= openTime && currentTime <= closeTime;
+  // Fixed: Use < instead of <= for close time to avoid edge case issues
+  const isCurrentlyOpen = currentTime >= openTime && currentTime < closeTime;
+  console.log('Is currently open?', isCurrentlyOpen, '(', currentTime, '>=', openTime, '&&', currentTime, '<', closeTime, ')');
+
+  // Check if current time is between open and close
 
   if (isCurrentlyOpen) {
     return {
