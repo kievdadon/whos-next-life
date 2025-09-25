@@ -697,7 +697,11 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
           </Tabs>
 
           <div className="flex gap-2">
-            <Button onClick={() => onSave(config)} className="flex-1">
+            <Button onClick={() => {
+              console.log('Save Website button clicked!');
+              console.log('Current config:', config);
+              onSave(config);
+            }} className="flex-1">
               <Save className="mr-2 h-4 w-4" />
               Save Website
             </Button>

@@ -201,16 +201,32 @@ const BusinessDashboard = () => {
   }, [user]);
 
   const handleWebsiteSave = async (websiteConfig: any) => {
-    if (!business) return;
+    console.log('handleWebsiteSave called with config:', websiteConfig);
+    console.log('Business data:', business);
+    
+    if (!business) {
+      console.error('No business data available');
+      toast({
+        title: "Error",
+        description: "No business data available. Please try reloading the page.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log('Attempting to update business_applications table...');
       const { error } = await supabase
         .from('business_applications')
         .update({ website_config: websiteConfig })
         .eq('id', business.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
       
+      console.log('Website config saved successfully!');
       toast({
         title: "Website Saved",
         description: "Your business website configuration has been updated successfully!",
