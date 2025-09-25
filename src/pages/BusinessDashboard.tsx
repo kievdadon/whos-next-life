@@ -492,20 +492,26 @@ const BusinessDashboard = () => {
     if (!business) return;
     
     try {
+      console.log('Submitting store hours:', storeHoursForm);
       const { error } = await supabase
         .from('business_applications')
         .update(storeHoursForm)
         .eq('id', business.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Store hours update error:', error);
+        throw error;
+      }
       
+      console.log('Store hours updated successfully!');
       toast({
         title: "Success",
         description: "Store hours updated successfully",
       });
       
       setShowStoreHours(false);
-      loadBusinessData(); // Reload to get updated data
+      // Reload business data to see updated hours
+      await loadBusinessData();
     } catch (error) {
       console.error('Error updating store hours:', error);
       toast({
