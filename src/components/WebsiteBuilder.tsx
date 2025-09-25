@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { CameraCapture } from '@/components/CameraCapture';
 import { 
   Palette, 
   Type, 
@@ -17,7 +20,10 @@ import {
   Upload,
   Monitor,
   Smartphone,
-  Tablet
+  Tablet,
+  Camera,
+  Link,
+  X
 } from 'lucide-react';
 
 interface WebsiteConfig {
@@ -46,6 +52,7 @@ interface WebsiteBuilderProps {
 }
 
 const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave }) => {
+  const { toast } = useToast();
   const [config, setConfig] = useState<WebsiteConfig>({
     businessName,
     description: `Welcome to ${businessName} - Your trusted partner`,
@@ -67,6 +74,12 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
   });
 
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const [captureTarget, setCaptureTarget] = useState<'logo' | 'hero'>('logo');
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
+  const [logoUploadMethod, setLogoUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
+  const [heroUploadMethod, setHeroUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const colorOptions = [
     { name: 'Ocean Blue', value: '#667eea' },
@@ -107,6 +120,61 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
         [key]: value
       }
     }));
+  };
+
+  const uploadImageToStorage = async (file: File, folder: string = 'website-media'): Promise<string | null> => {
+    try {
+      setIsUploadingImage(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File, type: 'logo' | 'hero') => {
+    const imageUrl = await uploadImageToStorage(file, type === 'logo' ? 'logos' : 'hero-images');
+    if (imageUrl) {
+      if (type === 'logo') {
+        handleConfigChange('logoUrl', imageUrl);
+      } else {
+        handleConfigChange('heroImage', imageUrl);
+      }
+      toast({
+        title: "Image Uploaded",
+        description: `${type === 'logo' ? 'Logo' : 'Hero image'} uploaded successfully!`,
+      });
+    }
+  };
+
+  const handleCameraCapture = async (file: File) => {
+    await handleImageUpload(file, captureTarget);
+    setShowCameraCapture(false);
+  };
+
+  const openCameraForImage = (type: 'logo' | 'hero') => {
+    setCaptureTarget(type);
+    setShowCameraCapture(true);
   };
 
   const generatePreview = () => {
@@ -407,27 +475,222 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
                 <CardHeader>
                   <CardTitle>Images & Media</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
+                  {/* Logo Upload Section */}
                   <div>
-                    <Label>Logo URL</Label>
-                    <Input 
-                      value={config.logoUrl}
-                      onChange={(e) => handleConfigChange('logoUrl', e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                    />
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Business Logo
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      Upload your business logo that will appear on your website
+                    </p>
+                    
+                    {/* Logo Upload Method Selection */}
+                    <div className="flex gap-2 mb-3">
+                      <Button
+                        type="button"
+                        variant={logoUploadMethod === 'url' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setLogoUploadMethod('url')}
+                        className="flex items-center gap-1"
+                      >
+                        <Link className="h-3 w-3" />
+                        URL
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={logoUploadMethod === 'upload' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setLogoUploadMethod('upload')}
+                        className="flex items-center gap-1"
+                      >
+                        <Upload className="h-3 w-3" />
+                        Upload
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={logoUploadMethod === 'camera' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setLogoUploadMethod('camera')}
+                        className="flex items-center gap-1"
+                      >
+                        <Camera className="h-3 w-3" />
+                        Camera
+                      </Button>
+                    </div>
+
+                    {/* Logo URL Input */}
+                    {logoUploadMethod === 'url' && (
+                      <Input 
+                        value={config.logoUrl}
+                        onChange={(e) => handleConfigChange('logoUrl', e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                        className="w-full"
+                      />
+                    )}
+
+                    {/* Logo File Upload */}
+                    {logoUploadMethod === 'upload' && (
+                      <div className="space-y-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, 'logo');
+                            }
+                          }}
+                          className="w-full"
+                          disabled={isUploadingImage}
+                        />
+                        {isUploadingImage && (
+                          <p className="text-xs text-blue-600">Uploading logo...</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Logo Camera Capture */}
+                    {logoUploadMethod === 'camera' && (
+                      <Button
+                        type="button"
+                        onClick={() => openCameraForImage('logo')}
+                        className="w-full"
+                        disabled={isUploadingImage}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take Logo Photo
+                      </Button>
+                    )}
+
+                    {/* Logo Preview */}
+                    {config.logoUrl && (
+                      <div className="mt-3 relative">
+                        <img
+                          src={config.logoUrl}
+                          alt="Logo preview"
+                          className="w-full h-20 object-contain rounded-lg border bg-gray-50"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => handleConfigChange('logoUrl', '')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Hero Image Upload Section */}
                   <div>
-                    <Label>Hero Background Image URL</Label>
-                    <Input 
-                      value={config.heroImage}
-                      onChange={(e) => handleConfigChange('heroImage', e.target.value)}
-                      placeholder="https://example.com/hero-image.jpg"
-                    />
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Hero Background Image
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      Upload a background image for your website's hero section
+                    </p>
+                    
+                    {/* Hero Upload Method Selection */}
+                    <div className="flex gap-2 mb-3">
+                      <Button
+                        type="button"
+                        variant={heroUploadMethod === 'url' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setHeroUploadMethod('url')}
+                        className="flex items-center gap-1"
+                      >
+                        <Link className="h-3 w-3" />
+                        URL
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={heroUploadMethod === 'upload' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setHeroUploadMethod('upload')}
+                        className="flex items-center gap-1"
+                      >
+                        <Upload className="h-3 w-3" />
+                        Upload
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={heroUploadMethod === 'camera' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setHeroUploadMethod('camera')}
+                        className="flex items-center gap-1"
+                      >
+                        <Camera className="h-3 w-3" />
+                        Camera
+                      </Button>
+                    </div>
+
+                    {/* Hero URL Input */}
+                    {heroUploadMethod === 'url' && (
+                      <Input 
+                        value={config.heroImage}
+                        onChange={(e) => handleConfigChange('heroImage', e.target.value)}
+                        placeholder="https://example.com/hero-image.jpg"
+                        className="w-full"
+                      />
+                    )}
+
+                    {/* Hero File Upload */}
+                    {heroUploadMethod === 'upload' && (
+                      <div className="space-y-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, 'hero');
+                            }
+                          }}
+                          className="w-full"
+                          disabled={isUploadingImage}
+                        />
+                        {isUploadingImage && (
+                          <p className="text-xs text-blue-600">Uploading hero image...</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Hero Camera Capture */}
+                    {heroUploadMethod === 'camera' && (
+                      <Button
+                        type="button"
+                        onClick={() => openCameraForImage('hero')}
+                        className="w-full"
+                        disabled={isUploadingImage}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take Hero Photo
+                      </Button>
+                    )}
+
+                    {/* Hero Preview */}
+                    {config.heroImage && (
+                      <div className="mt-3 relative">
+                        <img
+                          src={config.heroImage}
+                          alt="Hero image preview"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => handleConfigChange('heroImage', '')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <Button variant="outline" className="w-full">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Images
-                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -624,6 +887,14 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
           </div>
         </div>
       </div>
+
+      {/* Camera Capture Component */}
+      <CameraCapture
+        isOpen={showCameraCapture}
+        onClose={() => setShowCameraCapture(false)}
+        onCapture={handleCameraCapture}
+        title={`Take ${captureTarget === 'logo' ? 'Logo' : 'Hero Image'} Photo`}
+      />
     </div>
   );
 };
