@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Globe, Palette, CreditCard, Building } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Globe, Palette, CreditCard, Building, Camera, Upload, Link, X } from 'lucide-react';
 import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
+import { CameraCapture } from '@/components/CameraCapture';
 
 interface Product {
   id: string;
@@ -71,6 +72,10 @@ const BusinessDashboard = () => {
   const [showStoreHours, setShowStoreHours] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showBankingForm, setShowBankingForm] = useState(false);
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
+  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [bankingForm, setBankingForm] = useState({
     routing_number: '',
     account_number: '',
@@ -281,17 +286,67 @@ const BusinessDashboard = () => {
     }
   };
 
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    try {
+      setIsUploadingImage(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${business?.id}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    const imageUrl = await uploadImageToStorage(file);
+    if (imageUrl) {
+      setProductForm(prev => ({ ...prev, image_url: imageUrl }));
+      setUploadedImageFile(file);
+    }
+  };
+
+  const handleCameraCapture = async (file: File) => {
+    await handleImageUpload(file);
+    setShowCameraCapture(false);
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!business || !user) return;
 
     try {
+      let finalImageUrl = productForm.image_url;
+
+      // If there's an uploaded image file and no URL yet, upload it first
+      if (uploadedImageFile && !finalImageUrl) {
+        finalImageUrl = await uploadImageToStorage(uploadedImageFile) || '';
+      }
+
       const productData = {
         name: productForm.name,
         description: productForm.description,
         price: parseFloat(productForm.price),
         category: productForm.category,
-        image_url: productForm.image_url,
+        image_url: finalImageUrl,
         stock_quantity: parseInt(productForm.stock_quantity) || 0,
         delivery_available: productForm.delivery_available,
         delivery_radius: parseInt(productForm.delivery_radius) || 10,
@@ -319,6 +374,8 @@ const BusinessDashboard = () => {
 
       setShowAddProduct(false);
       setEditingProduct(null);
+      setUploadedImageFile(null);
+      setUploadMethod('url');
       setProductForm({
         name: '',
         description: '',
@@ -354,6 +411,8 @@ const BusinessDashboard = () => {
   const cancelProductForm = () => {
     setShowAddProduct(false);
     setEditingProduct(null);
+    setUploadedImageFile(null);
+    setUploadMethod('url');
     setProductForm({
       name: '',
       description: '',
@@ -930,20 +989,115 @@ const BusinessDashboard = () => {
                     </Select>
                   </div>
                    <div>
-                     <Label htmlFor="image_url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                       Product Image URL
+                     <Label htmlFor="image_upload" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                       Product Image
                      </Label>
-                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                       Add a link to your product image. Use a clear, high-quality photo that shows your product well.
+                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                       Add a clear, high-quality photo of your product. Choose how you'd like to add the image:
                      </p>
-                     <Input
-                       id="image_url"
-                       type="url"
-                       value={productForm.image_url}
-                       onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
-                       placeholder="https://example.com/your-product-image.jpg"
-                       className="w-full"
-                     />
+                     
+                     {/* Upload Method Selection */}
+                     <div className="flex gap-2 mb-3">
+                       <Button
+                         type="button"
+                         variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                         size="sm"
+                         onClick={() => setUploadMethod('url')}
+                         className="flex items-center gap-1"
+                       >
+                         <Link className="h-3 w-3" />
+                         URL
+                       </Button>
+                       <Button
+                         type="button"
+                         variant={uploadMethod === 'upload' ? 'default' : 'outline'}
+                         size="sm"
+                         onClick={() => setUploadMethod('upload')}
+                         className="flex items-center gap-1"
+                       >
+                         <Upload className="h-3 w-3" />
+                         Upload
+                       </Button>
+                       <Button
+                         type="button"
+                         variant={uploadMethod === 'camera' ? 'default' : 'outline'}
+                         size="sm"
+                         onClick={() => setUploadMethod('camera')}
+                         className="flex items-center gap-1"
+                       >
+                         <Camera className="h-3 w-3" />
+                         Camera
+                       </Button>
+                     </div>
+
+                     {/* URL Input */}
+                     {uploadMethod === 'url' && (
+                       <Input
+                         id="image_url"
+                         type="url"
+                         value={productForm.image_url}
+                         onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
+                         placeholder="https://example.com/your-product-image.jpg"
+                         className="w-full"
+                       />
+                     )}
+
+                     {/* File Upload */}
+                     {uploadMethod === 'upload' && (
+                       <div className="space-y-2">
+                         <Input
+                           type="file"
+                           accept="image/*"
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               handleImageUpload(file);
+                             }
+                           }}
+                           className="w-full"
+                           disabled={isUploadingImage}
+                         />
+                         {isUploadingImage && (
+                           <p className="text-xs text-blue-600">Uploading image...</p>
+                         )}
+                       </div>
+                     )}
+
+                     {/* Camera Capture */}
+                     {uploadMethod === 'camera' && (
+                       <Button
+                         type="button"
+                         onClick={() => setShowCameraCapture(true)}
+                         className="w-full"
+                         disabled={isUploadingImage}
+                       >
+                         <Camera className="h-4 w-4 mr-2" />
+                         Take Photo
+                       </Button>
+                     )}
+
+                     {/* Image Preview */}
+                     {productForm.image_url && (
+                       <div className="mt-3 relative">
+                         <img
+                           src={productForm.image_url}
+                           alt="Product preview"
+                           className="w-full h-32 object-cover rounded-lg border"
+                         />
+                         <Button
+                           type="button"
+                           variant="outline"
+                           size="sm"
+                           className="absolute top-2 right-2"
+                           onClick={() => {
+                             setProductForm(prev => ({ ...prev, image_url: '' }));
+                             setUploadedImageFile(null);
+                           }}
+                         >
+                           <X className="h-3 w-3" />
+                         </Button>
+                       </div>
+                     )}
                    </div>
                    <div>
                      <Label htmlFor="stock_quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1077,6 +1231,14 @@ const BusinessDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Camera Capture Component */}
+        <CameraCapture
+          isOpen={showCameraCapture}
+          onClose={() => setShowCameraCapture(false)}
+          onCapture={handleCameraCapture}
+          title="Take Product Photo"
+        />
       </div>
     </div>
   );
