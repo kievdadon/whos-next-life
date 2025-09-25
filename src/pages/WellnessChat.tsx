@@ -45,29 +45,101 @@ const WellnessChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const todayMood = {
-    mood: "Calm",
-    emoji: "😌",
-    score: 7.5,
+  const [todayMood, setTodayMood] = useState({
+    mood: "Getting Started",
+    emoji: "🌟",
+    score: 5.0,
     color: "wellness-primary"
+  });
+
+  const [moodStats, setMoodStats] = useState([
+    { day: "Mon", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Tue", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Wed", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Thu", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Fri", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Sat", mood: 0, emoji: "⭐", hasData: false },
+    { day: "Sun", mood: 0, emoji: "⭐", hasData: false }
+  ]);
+
+  // Load mood statistics
+  const loadMoodStats = async () => {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const { data, error } = await supabase
+        .from('wellness_chat_messages')
+        .select('mood_score, mood_label, created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', oneWeekAgo.toISOString())
+        .not('mood_score', 'is', null)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Calculate daily averages
+        const dailyMoods = [
+          { day: "Mon", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Tue", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Wed", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Thu", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Fri", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Sat", mood: 0, emoji: "⭐", hasData: false },
+          { day: "Sun", mood: 0, emoji: "⭐", hasData: false }
+        ];
+
+        data.forEach((entry) => {
+          const date = new Date(entry.created_at);
+          const dayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+          
+          if (entry.mood_score) {
+            const score = parseFloat(entry.mood_score.toString());
+            dailyMoods[dayIndex].mood = Math.max(dailyMoods[dayIndex].mood, score);
+            dailyMoods[dayIndex].hasData = true;
+            
+            // Set emoji based on mood score
+            if (score >= 8) dailyMoods[dayIndex].emoji = "😄";
+            else if (score >= 7) dailyMoods[dayIndex].emoji = "😊";
+            else if (score >= 6) dailyMoods[dayIndex].emoji = "😌";
+            else if (score >= 5) dailyMoods[dayIndex].emoji = "😐";
+            else if (score >= 4) dailyMoods[dayIndex].emoji = "😔";
+            else dailyMoods[dayIndex].emoji = "😢";
+          }
+        });
+
+        setMoodStats(dailyMoods);
+
+        // Set today's mood
+        const today = new Date();
+        const todayIndex = (today.getDay() + 6) % 7;
+        if (dailyMoods[todayIndex].hasData) {
+          const todayScore = dailyMoods[todayIndex].mood;
+          setTodayMood({
+            mood: todayScore >= 8 ? "Great" : todayScore >= 7 ? "Good" : todayScore >= 6 ? "Okay" : todayScore >= 5 ? "Neutral" : todayScore >= 4 ? "Low" : "Struggling",
+            emoji: dailyMoods[todayIndex].emoji,
+            score: todayScore,
+            color: "wellness-primary"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading mood stats:', error);
+    }
   };
 
-
-  const moodStats = [
-    { day: "Mon", mood: 6.5, emoji: "😊" },
-    { day: "Tue", mood: 7.2, emoji: "😌" },
-    { day: "Wed", mood: 5.8, emoji: "😐" },
-    { day: "Thu", mood: 8.1, emoji: "😄" },
-    { day: "Fri", mood: 7.5, emoji: "😌" },
-    { day: "Sat", mood: 8.7, emoji: "😆" },
-    { day: "Sun", mood: 7.9, emoji: "😊" }
-  ];
+  const handleMoodCheck = async () => {
+    const moodPrompt = "I'd like to do a mood check. Can you help me reflect on how I'm feeling today and log my mood?";
+    setMessage(moodPrompt);
+    await handleSend();
+  };
 
   const quickActions = [
-    { icon: Heart, label: "Mood Check", color: "wellness-warm" },
-    { icon: Brain, label: "Meditation", color: "wellness-primary" },
-    { icon: Activity, label: "Breathing", color: "wellness-secondary" },
-    { icon: Moon, label: "Sleep Tips", color: "wellness-accent" }
+    { icon: Heart, label: "Mood Check", color: "wellness-warm", action: handleMoodCheck },
+    { icon: Brain, label: "Meditation", color: "wellness-primary", action: () => setMessage("I'd like some meditation guidance to help me relax and find inner peace.") },
+    { icon: Activity, label: "Breathing", color: "wellness-secondary", action: () => setMessage("Can you guide me through some breathing exercises to help me feel calmer?") },
+    { icon: Moon, label: "Sleep Tips", color: "wellness-accent", action: () => setMessage("I'm having trouble sleeping. Can you give me some tips for better sleep hygiene?") }
   ];
 
   // Create or get current wellness session
@@ -136,8 +208,9 @@ const WellnessChat = () => {
     }
   };
 
-  const handleSend = async () => {
-    if (!message.trim() || isLoading || !currentSession) return;
+  const handleSend = async (customMessage?: string) => {
+    const messageToSend = customMessage || message.trim();
+    if (!messageToSend || isLoading || !currentSession) return;
 
     setIsLoading(true);
 
@@ -148,31 +221,50 @@ const WellnessChat = () => {
         .insert({
           session_id: currentSession.id,
           user_id: user.id,
-          content: message.trim(),
+          content: messageToSend,
           message_type: 'user'
         });
 
       if (userMessageError) throw userMessageError;
 
-      const userMessageContent = message.trim();
-      setMessage("");
+      if (!customMessage) setMessage("");
 
-      // Get AI response
+      // Get AI response with mood analysis
       const { data, error } = await supabase.functions.invoke('wellness-chat', {
-        body: { message: userMessageContent }
+        body: { 
+          message: messageToSend,
+          includeMoodAnalysis: true,
+          userId: user.id
+        }
       });
 
       if (error) throw error;
 
-      // Add AI response to database
+      // Extract mood data if present
+      let moodScore = null;
+      let moodLabel = null;
+      
+      if (data.moodScore && data.moodLabel) {
+        moodScore = data.moodScore;
+        moodLabel = data.moodLabel;
+      }
+
+      // Add AI response to database with mood data
       await supabase
         .from('wellness_chat_messages')
         .insert({
           session_id: currentSession.id,
           user_id: null,
           content: data.response,
-          message_type: 'ai'
+          message_type: 'ai',
+          mood_score: moodScore,
+          mood_label: moodLabel
         });
+
+      // Reload mood stats if mood was tracked
+      if (moodScore) {
+        await loadMoodStats();
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -222,7 +314,10 @@ const WellnessChat = () => {
       setLoading(true);
       const session = await getOrCreateSession();
       if (session) {
-        await loadMessages(session.id);
+        await Promise.all([
+          loadMessages(session.id),
+          loadMoodStats()
+        ]);
       }
       setLoading(false);
     };
@@ -291,6 +386,7 @@ const WellnessChat = () => {
                 key={index}
                 variant="outline"
                 className="h-16 flex-col gap-1 border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={action.action}
               >
                 <action.icon className="h-5 w-5" />
                 <span className="text-xs">{action.label}</span>
@@ -318,11 +414,15 @@ const WellnessChat = () => {
                 <div className="flex items-center space-x-2">
                   <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-wellness-primary rounded-full transition-all duration-300"
-                      style={{ width: `${(stat.mood / 10) * 100}%` }}
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        stat.hasData ? 'bg-wellness-primary' : 'bg-muted'
+                      }`}
+                      style={{ width: stat.hasData ? `${(stat.mood / 10) * 100}%` : '0%' }}
                     />
                   </div>
-                  <span className="text-sm text-muted-foreground w-8">{stat.mood}</span>
+                  <span className="text-sm text-muted-foreground w-8">
+                    {stat.hasData ? stat.mood.toFixed(1) : '--'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -412,7 +512,7 @@ const WellnessChat = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Share how you're feeling or ask for wellness advice..."
                 className="pr-20 h-12 bg-background/50 border-border/50"
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                 <Button
@@ -427,7 +527,7 @@ const WellnessChat = () => {
             </div>
             
             <Button 
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!message.trim() || isLoading}
               className="h-12 px-6 bg-wellness-primary hover:bg-wellness-primary/90"
             >
