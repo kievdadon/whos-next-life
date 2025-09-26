@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Navigate } from 'react-router-dom';
-import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Globe, Palette, CreditCard, Building, Camera, Upload, Link, X } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
+import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Globe, Palette, CreditCard, Building, Camera, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { CameraCapture } from '@/components/CameraCapture';
@@ -132,7 +132,9 @@ const BusinessDashboard = () => {
     if (!user?.email) return;
 
     try {
-      // Check if user has an approved business application - use maybeSingle to handle multiple records
+      console.log('Loading business data for:', user.email);
+      
+      // Check if user has an approved business application
       const { data: businessData, error: businessError } = await supabase
         .from('business_applications')
         .select('*')
@@ -148,45 +150,28 @@ const BusinessDashboard = () => {
         return;
       }
 
+      console.log('Business data found:', businessData);
+
       if (!businessData) {
-        // No approved business found - create a test business for dashboard access
-        console.log('No approved business application found, creating test business');
-        const { data: tempBusiness, error: createError } = await supabase
-          .from('business_applications')
-          .insert({
-            business_name: `${user.email?.split('@')[0]}'s Business`,
-            business_type: 'other',
-            contact_name: user.email?.split('@')[0] || 'User',
-            email: user.email!,
-            description: 'Test business for dashboard access',
-            status: 'approved',
-            approved_at: new Date().toISOString()
-          })
-          .select('*')
-          .single();
-        
-        if (!createError && tempBusiness) {
-          setBusiness(tempBusiness);
-        }
+        console.log('No approved business application found for user');
         setIsLoading(false);
         return;
       }
 
-      if (businessData) {
-        setBusiness(businessData);
-        
-        // Load products for this business
-        const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('business_id', businessData.id)
-          .order('created_at', { ascending: false });
+      // Set the approved business data
+      setBusiness(businessData);
+      
+      // Load products for this business
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('business_id', businessData.id)
+        .order('created_at', { ascending: false });
 
-        if (productsError) {
-          console.error('Error loading products:', productsError);
-        } else {
-          setProducts(productsData || []);
-        }
+      if (productsError) {
+        console.error('Error loading products:', productsError);
+      } else {
+        setProducts(productsData || []);
       }
     } catch (error) {
       console.error('Error loading business data:', error);
@@ -538,9 +523,28 @@ const BusinessDashboard = () => {
       </div>
     );
   }
-  // For testing: Allow access even without approved business
+  // Show message if no approved business found
   if (!business) {
-    console.log('No approved business found, creating test business for dashboard access');
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Business Dashboard Access</CardTitle>
+            <CardDescription>
+              You need an approved business application to access this dashboard.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please submit a business application and wait for approval, or contact support if you believe this is an error.
+            </p>
+            <Button asChild>
+              <Link to="/business-registration">Submit Business Application</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -1038,7 +1042,7 @@ const BusinessDashboard = () => {
                          onClick={() => setUploadMethod('url')}
                          className="flex items-center gap-1"
                        >
-                         <Link className="h-3 w-3" />
+                         <LinkIcon className="h-3 w-3" />
                          URL
                        </Button>
                        <Button
