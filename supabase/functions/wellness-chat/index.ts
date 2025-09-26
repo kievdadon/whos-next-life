@@ -102,6 +102,34 @@ Remember: You're not just giving quick tips - you're providing comprehensive, Ch
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error response:', errorText);
+
+      // Graceful fallback when OpenAI quota is exceeded
+      if (response.status === 429 || /insufficient_quota/i.test(errorText)) {
+        console.warn('OpenAI quota exceeded, returning fallback wellness response');
+        const fallbackParts = [
+          "I’m here with you. I can’t reach the AI engine right now, but I’ve got you covered with a practical plan:",
+          `You shared: "${message}". Here’s a quick, evidence-informed toolkit you can use right away:`,
+          "1) 60-second reset: Inhale 4, hold 4, exhale 6 — repeat x6 (lowers heart rate).",
+          "2) Mood lift: 5-minute brisk walk + light stretch (activates dopamine/serotonin).",
+          "3) Music pick-me-up: Try ‘Here Comes the Sun’ (The Beatles) or ‘Good as Hell’ (Lizzo).",
+          "4) Thought reframe: Write the worry → write one helpful counter-thought you believe 60%+.",
+          "5) Tiny win: Choose a single 5-minute task and complete it (builds momentum).",
+          "Reply with ‘plan’ if you’d like a 7‑day micro‑plan tailored to your goals."
+        ];
+        const fallbackText = fallbackParts.join("\n");
+        const fallbackMoodScore = includeMoodAnalysis ? 5.5 : null;
+        const fallbackMoodLabel = includeMoodAnalysis ? 'reflective' : null;
+
+        return new Response(JSON.stringify({
+          response: fallbackText,
+          moodScore: fallbackMoodScore,
+          moodLabel: fallbackMoodLabel,
+          timestamp: new Date().toISOString()
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
