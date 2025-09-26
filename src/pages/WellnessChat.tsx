@@ -37,7 +37,7 @@ const WellnessChat = () => {
 
   // Redirect if not authenticated
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth?redirect=/wellness-chat" replace />;
   }
 
   // Scroll to bottom of messages

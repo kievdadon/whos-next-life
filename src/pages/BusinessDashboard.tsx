@@ -62,7 +62,7 @@ interface BusinessApplication {
 }
 
 const BusinessDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [business, setBusiness] = useState<BusinessApplication | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -123,7 +123,15 @@ const BusinessDashboard = () => {
     'Other'
   ];
 
-  // Redirect non-authenticated users to auth page
+  // Wait for auth to initialize, then guard
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   if (!user) {
     return <Navigate to={`/auth?redirect=/business-dashboard`} replace />;
   }
