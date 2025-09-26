@@ -125,7 +125,7 @@ const BusinessDashboard = () => {
 
   // Redirect non-authenticated users to auth page
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={`/auth?redirect=/business-dashboard`} replace />;
   }
 
   const loadBusinessData = async () => {
