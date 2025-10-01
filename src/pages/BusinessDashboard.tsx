@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,6 +124,66 @@ const BusinessDashboard = () => {
     'Other'
   ];
 
+  const loadBusinessData = useCallback(async () => {
+    if (!user?.email) return;
+
+    try {
+      console.log('Loading business data for:', user.email);
+      
+      // Check if user has an approved business application
+      const { data: businessData, error: businessError } = await supabase
+        .from('business_applications')
+        .select('*')
+        .eq('email', user.email)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (businessError) {
+        console.error('Error loading business:', businessError);
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Business data found:', businessData);
+
+      if (!businessData) {
+        console.log('No approved business application found for user');
+        // Retry a few times to allow session/status propagation
+        if (retryCount < 5) {
+          const delay = 400 + retryCount * 400; // backoff
+          setTimeout(() => {
+            setRetryCount((c) => c + 1);
+          }, delay);
+          return; // keep isLoading true during retry
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Set the approved business data
+      setBusiness(businessData);
+      
+      // Load products for this business
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('business_id', businessData.id)
+        .order('created_at', { ascending: false });
+
+      if (productsError) {
+        console.error('Error loading products:', productsError);
+      } else {
+        setProducts(productsData || []);
+      }
+    } catch (error) {
+      console.error('Error loading business data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.email, retryCount]);
+
   // Wait for both auth and business data to load
   if (authLoading || isLoading) {
     return (
@@ -164,83 +224,19 @@ const BusinessDashboard = () => {
     );
   }
 
-  const loadBusinessData = async () => {
-    if (!user?.email) return;
-
-    try {
-      console.log('Loading business data for:', user.email);
-      
-      // Check if user has an approved business application
-      const { data: businessData, error: businessError } = await supabase
-        .from('business_applications')
-        .select('*')
-        .eq('email', user.email)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (businessError) {
-        console.error('Error loading business:', businessError);
-        setIsLoading(false);
-        return;
-      }
-
-      console.log('Business data found:', businessData);
-
-      if (!businessData) {
-        console.log('No approved business application found for user');
-        // Retry a few times to allow session/status propagation
-        if (retryCount < 5) {
-          const delay = 400 + retryCount * 400; // backoff
-          setTimeout(() => {
-            setRetryCount((c) => c + 1);
-            loadBusinessData();
-          }, delay);
-          return; // keep isLoading true during retry
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      // Set the approved business data
-      setBusiness(businessData);
-      
-      // Load products for this business
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('business_id', businessData.id)
-        .order('created_at', { ascending: false });
-
-      if (productsError) {
-        console.error('Error loading products:', productsError);
-      } else {
-        setProducts(productsData || []);
-      }
-    } catch (error) {
-      console.error('Error loading business data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (user?.email && !authLoading) {
       loadBusinessData();
     }
-  }, [user, authLoading, hasApprovedBusiness]);
+  }, [user?.email, authLoading, loadBusinessData]);
 
-  // Safety: if still loading after a few seconds, try again once
+  // Retry when retryCount changes
   useEffect(() => {
-    if (isLoading && user?.email) {
-      const t = setTimeout(() => {
-        console.log('Safety retry: reloading business data after timeout');
-        loadBusinessData();
-      }, 6000);
-      return () => clearTimeout(t);
+    if (retryCount > 0 && retryCount < 5 && user?.email) {
+      loadBusinessData();
     }
-  }, [isLoading, user?.email]);
+  }, [retryCount, user?.email, loadBusinessData]);
 
   // Update current time every minute to keep store status accurate
   useEffect(() => {
