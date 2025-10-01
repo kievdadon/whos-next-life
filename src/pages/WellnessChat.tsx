@@ -83,10 +83,25 @@ const WellnessChat = () => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+      // First get user's sessions
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('wellness_chat_sessions')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (sessionsError) throw sessionsError;
+
+      const sessionIds = sessions?.map(s => s.id) || [];
+
+      if (sessionIds.length === 0) {
+        return; // No sessions yet
+      }
+
+      // Then get mood data from those sessions
       const { data, error } = await supabase
         .from('wellness_chat_messages')
         .select('mood_score, mood_label, created_at')
-        .eq('user_id', user.id)
+        .in('session_id', sessionIds)
         .gte('created_at', oneWeekAgo.toISOString())
         .not('mood_score', 'is', null)
         .order('created_at', { ascending: true });
@@ -96,31 +111,41 @@ const WellnessChat = () => {
       if (data && data.length > 0) {
         // Calculate daily averages
         const dailyMoods = [
-          { day: "Mon", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Tue", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Wed", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Thu", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Fri", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Sat", mood: 0, emoji: "⭐", hasData: false },
-          { day: "Sun", mood: 0, emoji: "⭐", hasData: false }
+          { day: "Mon", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Tue", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Wed", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Thu", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Fri", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Sat", mood: 0, count: 0, emoji: "⭐", hasData: false },
+          { day: "Sun", mood: 0, count: 0, emoji: "⭐", hasData: false }
         ];
 
+        // Sum up all mood scores per day
         data.forEach((entry) => {
           const date = new Date(entry.created_at);
           const dayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
           
           if (entry.mood_score) {
             const score = parseFloat(entry.mood_score.toString());
-            dailyMoods[dayIndex].mood = Math.max(dailyMoods[dayIndex].mood, score);
+            dailyMoods[dayIndex].mood += score;
+            dailyMoods[dayIndex].count += 1;
             dailyMoods[dayIndex].hasData = true;
+          }
+        });
+
+        // Calculate averages and set emojis
+        dailyMoods.forEach((day) => {
+          if (day.count > 0) {
+            day.mood = day.mood / day.count; // Average mood
+            const score = day.mood;
             
-            // Set emoji based on mood score
-            if (score >= 8) dailyMoods[dayIndex].emoji = "😄";
-            else if (score >= 7) dailyMoods[dayIndex].emoji = "😊";
-            else if (score >= 6) dailyMoods[dayIndex].emoji = "😌";
-            else if (score >= 5) dailyMoods[dayIndex].emoji = "😐";
-            else if (score >= 4) dailyMoods[dayIndex].emoji = "😔";
-            else dailyMoods[dayIndex].emoji = "😢";
+            // Set emoji based on average mood score
+            if (score >= 8) day.emoji = "😄";
+            else if (score >= 7) day.emoji = "😊";
+            else if (score >= 6) day.emoji = "😌";
+            else if (score >= 5) day.emoji = "😐";
+            else if (score >= 4) day.emoji = "😔";
+            else day.emoji = "😢";
           }
         });
 
