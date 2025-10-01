@@ -530,6 +530,7 @@ const BusinessDashboard = () => {
     });
   };
 
+  // Loading state
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -541,10 +542,12 @@ const BusinessDashboard = () => {
     );
   }
 
+  // Not authenticated
   if (!user) {
     return <Navigate to={`/auth?redirect=/business-dashboard`} replace />;
   }
 
+  // No approved business
   if (!business) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">

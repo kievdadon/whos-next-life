@@ -47,7 +47,7 @@ serve(async (req) => {
     }
 
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const stripePublicKey = Deno.env.get("STRIPE_PUBLIC_KEY");
+    const stripePublicKey = Deno.env.get("STRIPE_PUBLISHABLE_KEY");
     if (!stripeSecretKey || !stripePublicKey) {
       console.error("❌ Missing Stripe keys");
       return new Response(
