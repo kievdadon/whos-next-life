@@ -8,9 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Palette, CreditCard, Building, Camera, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
 import { CameraCapture } from '@/components/CameraCapture';
@@ -63,6 +74,7 @@ interface BusinessApplication {
 const BusinessDashboard = () => {
   const { user, loading: authLoading, hasApprovedBusiness } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [business, setBusiness] = useState<BusinessApplication | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -529,6 +541,34 @@ const BusinessDashboard = () => {
     });
   };
 
+  const handleDeleteBusiness = async () => {
+    if (!business) return;
+
+    try {
+      const { error } = await supabase
+        .from('business_applications')
+        .delete()
+        .eq('id', business.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Business Deleted",
+        description: "Your business has been successfully deleted.",
+      });
+
+      // Navigate to home page
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting business:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete business. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Loading state
   if (authLoading || isLoading) {
     return (
@@ -867,6 +907,44 @@ const BusinessDashboard = () => {
                     </Button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                <CardDescription>
+                  Permanently delete your business and all associated data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Business
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your
+                        business account and remove all associated data including products,
+                        orders, and settings from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteBusiness}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete Business
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardContent>
             </Card>
           </TabsContent>
