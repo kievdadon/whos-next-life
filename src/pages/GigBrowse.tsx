@@ -346,7 +346,11 @@ const GigBrowse = () => {
                 <Briefcase className="h-4 w-4 mr-2" />
                 {hasWorkerProfile ? "My Profile" : "Create Profile"}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/my-gig-applications")}
+              >
                 <Briefcase className="h-4 w-4 mr-2" />
                 My Applications
               </Button>
