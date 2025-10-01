@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { 
-  Search, 
+  Search,
   Filter,
   MapPin,
   Clock,
@@ -51,11 +52,15 @@ const GigBrowse = () => {
     proposed_rate: "",
     estimated_completion_time: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
+const [searchTerm, setSearchTerm] = useState("");
   const [showFiltersDialog, setShowFiltersDialog] = useState(false);
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [budgetRange, setBudgetRange] = useState({ min: "", max: "" });
   const [urgencyFilter, setUrgencyFilter] = useState<string | null>(null);
+  const [budgetTypeFilter, setBudgetTypeFilter] = useState<string | null>(null);
+  const [nearMeEnabled, setNearMeEnabled] = useState(false);
+  const [nearMeRadius, setNearMeRadius] = useState<number>(10);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     checkWorkerProfile();
@@ -106,15 +111,46 @@ const GigBrowse = () => {
       return false;
     }
 
+    // Budget type filter
+    if (budgetTypeFilter && gig.budget_type !== budgetTypeFilter) {
+      return false;
+    }
+
     // Urgency filter
     if (urgencyFilter && gig.urgency !== urgencyFilter) {
       return false;
+    }
+
+    // Near Me filter (distance in miles)
+    if (nearMeEnabled) {
+      if (!userLocation || gig.latitude == null || gig.longitude == null) return false;
+      const toRad = (deg: number) => (deg * Math.PI) / 180;
+      const R = 3958.8; // earth radius in miles
+      const lat1 = userLocation.lat;
+      const lon1 = userLocation.lng;
+      const lat2 = typeof gig.latitude === 'number' ? gig.latitude : parseFloat(gig.latitude);
+      const lon2 = typeof gig.longitude === 'number' ? gig.longitude : parseFloat(gig.longitude);
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+      if (distance > nearMeRadius) return false;
     }
 
     return true;
   });
 
   const handleNearMe = () => {
+    if (nearMeEnabled) {
+      setNearMeEnabled(false);
+      setUserLocation(null);
+      toast({ title: "Near Me Disabled", description: "Showing all gigs" });
+      return;
+    }
+
     if (!navigator.geolocation) {
       toast({
         title: "Not Supported",
@@ -124,20 +160,19 @@ const GigBrowse = () => {
       return;
     }
 
-    toast({
-      title: "Getting your location...",
-      description: "Please allow location access",
-    });
+    toast({ title: "Getting your location...", description: "Please allow location access" });
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setNearMeEnabled(true);
         toast({
-          title: "Location Found",
-          description: "Filtering gigs near you (feature coming soon)",
+          title: "Near Me Enabled",
+          description: `Filtering within ${nearMeRadius} miles of your location`,
         });
-        // TODO: Implement actual distance-based filtering when gigs have coordinates
       },
-      (error) => {
+      () => {
         toast({
           title: "Location Error",
           description: "Unable to get your location",
@@ -527,7 +562,7 @@ const GigBrowse = () => {
                 onClick={handleNearMe}
               >
                 <MapPin className="h-4 w-4 mr-2" />
-                Near Me
+                {nearMeEnabled ? `Near Me • ${nearMeRadius}mi` : "Near Me"}
               </Button>
               <Button 
                 variant="outline" 
