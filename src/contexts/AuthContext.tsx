@@ -17,6 +17,9 @@ interface AuthContextType {
   hasApprovedBusiness: boolean;
   businessName: string | null;
   checkBusinessStatus: () => Promise<void>;
+  hasApprovedDriver: boolean;
+  driverName: string | null;
+  checkDriverStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [hasApprovedBusiness, setHasApprovedBusiness] = useState(false);
   const [businessName, setBusinessName] = useState<string | null>(null);
+  const [hasApprovedDriver, setHasApprovedDriver] = useState(false);
+  const [driverName, setDriverName] = useState<string | null>(null);
   const { toast } = useToast();
 
   const checkSubscription = async () => {
@@ -84,6 +89,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const checkDriverStatus = async () => {
+    if (!session?.user?.email) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('driver_applications')
+        .select('id, full_name, status')
+        .eq('email', session.user.email)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking driver status:', error);
+        return;
+      }
+
+      const hasApproved = !!data;
+      setHasApprovedDriver(hasApproved);
+      setDriverName(data?.full_name || null);
+    } catch (error) {
+      console.error('Error checking driver status:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -97,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => {
             checkSubscription();
             checkBusinessStatus();
+            checkDriverStatus();
           }, 0);
         } else {
           setSubscribed(false);
@@ -104,6 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSubscriptionEnd(null);
           setHasApprovedBusiness(false);
           setBusinessName(null);
+          setHasApprovedDriver(false);
+          setDriverName(null);
         }
       }
     );
@@ -118,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(() => {
           checkSubscription();
           checkBusinessStatus();
+          checkDriverStatus();
         }, 0);
       }
     });
@@ -173,6 +208,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSubscriptionEnd(null);
     setHasApprovedBusiness(false);
     setBusinessName(null);
+    setHasApprovedDriver(false);
+    setDriverName(null);
   };
 
   const value = {
@@ -189,6 +226,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasApprovedBusiness,
     businessName,
     checkBusinessStatus,
+    hasApprovedDriver,
+    driverName,
+    checkDriverStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

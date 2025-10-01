@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Crown, Shield, Star, Store } from "lucide-react";
+import { Crown, Shield, Star, Store, Car } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Header = () => {
-  const { user, subscribed, subscriptionTier, hasApprovedBusiness, businessName } = useAuth();
+  const { user, subscribed, subscriptionTier, hasApprovedBusiness, businessName, hasApprovedDriver, driverName } = useAuth();
 
   const getTierDisplay = (tier: string | null) => {
     switch (tier?.toLowerCase()) {
@@ -20,8 +20,8 @@ const Header = () => {
     }
   };
 
-  // Show header if user is logged in and either subscribed or has approved business
-  if (!user || (!subscribed && !hasApprovedBusiness)) {
+  // Show header if user is logged in and has either subscription, business, or driver status
+  if (!user || (!subscribed && !hasApprovedBusiness && !hasApprovedDriver)) {
     return null;
   }
 
@@ -29,6 +29,16 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 right-0 z-50 p-4 flex items-center gap-3">
+      {/* Driver Dashboard Link */}
+      {hasApprovedDriver && (
+        <Link to="/driver-dashboard">
+          <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100">
+            <Car className="mr-2 h-4 w-4" />
+            {driverName ? `${driverName.split(' ')[0]} - Driver` : 'Driver Dashboard'}
+          </Button>
+        </Link>
+      )}
+
       {/* Business Dashboard Link */}
       {hasApprovedBusiness && (
         <Link to="/business-dashboard">
