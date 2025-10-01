@@ -33,6 +33,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 import Header from "./components/Header";
+import AutoFeatureLauncher from "./components/AutoFeatureLauncher";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Header />
+          <AutoFeatureLauncher />
           <div className="pb-16 md:pb-0">
             <Routes>
               <Route path="/" element={<Index />} />
