@@ -1083,6 +1083,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_user_banned: {
         Args: { _ban_type?: string; _user_email: string }
         Returns: boolean
