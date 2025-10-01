@@ -709,6 +709,8 @@ export type Database = {
           description: string
           duration_estimate: string | null
           id: string
+          image_url: string | null
+          image_urls: string[] | null
           latitude: number | null
           location: string
           longitude: number | null
@@ -729,6 +731,8 @@ export type Database = {
           description: string
           duration_estimate?: string | null
           id?: string
+          image_url?: string | null
+          image_urls?: string[] | null
           latitude?: number | null
           location: string
           longitude?: number | null
@@ -749,6 +753,8 @@ export type Database = {
           description?: string
           duration_estimate?: string | null
           id?: string
+          image_url?: string | null
+          image_urls?: string[] | null
           latitude?: number | null
           location?: string
           longitude?: number | null

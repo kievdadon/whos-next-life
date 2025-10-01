@@ -354,7 +354,11 @@ const GigBrowse = () => {
                 <Briefcase className="h-4 w-4 mr-2" />
                 My Applications
               </Button>
-              <Button size="sm" className="bg-wellness-primary hover:bg-wellness-primary/90">
+              <Button 
+                size="sm" 
+                className="bg-wellness-primary hover:bg-wellness-primary/90"
+                onClick={() => navigate("/post-gig")}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Post a Gig
               </Button>
