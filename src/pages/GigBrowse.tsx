@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Search, 
   Filter,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 const GigBrowse = () => {
+  const { toast } = useToast();
   const categories = [
     { name: "Home Repair", icon: Home, count: 45, color: "wellness-primary" },
     { name: "Moving Help", icon: Car, count: 32, color: "wellness-secondary" },
@@ -119,6 +121,20 @@ const GigBrowse = () => {
       case "Next Week": return "wellness-primary";
       default: return "wellness-secondary";
     }
+  };
+
+  const handleApplyToGig = (gigId: number, gigTitle: string) => {
+    toast({
+      title: "Application Submitted!",
+      description: `Your application for "${gigTitle}" has been submitted successfully.`,
+    });
+  };
+
+  const handleMessagePoster = (posterName: string) => {
+    toast({
+      title: "Opening Chat",
+      description: `Starting conversation with ${posterName}...`,
+    });
   };
 
   return (
@@ -304,10 +320,17 @@ const GigBrowse = () => {
                   
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-2">
-                    <Button className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90">
+                    <Button 
+                      className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
+                      onClick={() => handleApplyToGig(gig.id, gig.title)}
+                    >
                       Apply Now
                     </Button>
-                    <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                    <Button 
+                      variant="outline" 
+                      className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                      onClick={() => handleMessagePoster(gig.poster.name)}
+                    >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message
                     </Button>
