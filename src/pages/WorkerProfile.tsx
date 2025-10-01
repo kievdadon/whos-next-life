@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Camera, Star, Briefcase, Clock, DollarSign, Award, Plus, X } from "lucide-react";
+import { User, Camera, Upload, Star, Briefcase, Clock, DollarSign, Award, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const WorkerProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
@@ -90,6 +93,89 @@ const WorkerProfile = () => {
       ...profileData,
       skills: profileData.skills.filter((s) => s !== skill),
     });
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a JPG, PNG, or WEBP image",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please upload an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUploading(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Delete old photo if exists
+      if (profileData.profile_photo_url) {
+        const oldPath = profileData.profile_photo_url.split("/").pop();
+        if (oldPath) {
+          await supabase.storage
+            .from("worker-profiles")
+            .remove([`${user.id}/${oldPath}`]);
+        }
+      }
+
+      // Upload new photo
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("worker-profiles")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("worker-profiles")
+        .getPublicUrl(filePath);
+
+      setProfileData({
+        ...profileData,
+        profile_photo_url: publicUrl,
+      });
+
+      toast({
+        title: "Photo Uploaded!",
+        description: "Your profile photo has been uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -206,14 +292,41 @@ const WorkerProfile = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="profile_photo_url">Profile Photo URL</Label>
-                <Input
-                  id="profile_photo_url"
-                  value={profileData.profile_photo_url}
-                  onChange={(e) => setProfileData({ ...profileData, profile_photo_url: e.target.value })}
-                  placeholder="https://example.com/photo.jpg"
-                />
+              <div className="space-y-3">
+                <Label>Profile Photo</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-24 w-24">
+                    {profileData.profile_photo_url ? (
+                      <AvatarImage src={profileData.profile_photo_url} alt="Profile photo" />
+                    ) : (
+                      <AvatarFallback className="bg-wellness-primary/10">
+                        <Camera className="h-8 w-8 text-wellness-primary" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full sm:w-auto"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploading ? "Uploading..." : "Upload Photo"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG or WEBP. Max 5MB.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
