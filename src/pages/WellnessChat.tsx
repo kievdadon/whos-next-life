@@ -356,35 +356,46 @@ const WellnessChat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-wellness-calm flex">
-      {/* Sidebar */}
-      <div className="w-80 border-r border-border/50 bg-card/30 backdrop-blur-lg">
+    <div className="min-h-screen bg-gradient-to-br from-background via-wellness-calm/20 to-background flex">
+      {/* Enhanced Sidebar */}
+      <div className="w-80 border-r border-border/30 bg-gradient-to-b from-card/40 to-card/20 backdrop-blur-xl">
         {/* Header */}
-        <div className="p-6 border-b border-border/30">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-wellness-primary to-wellness-secondary bg-clip-text text-transparent">
-              💬 Wellness AI
-            </h1>
-            <Button variant="outline" size="sm">
+        <div className="p-6 border-b border-border/20">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-wellness-primary via-wellness-secondary to-wellness-accent bg-clip-text text-transparent">
+                Wellness AI
+              </h1>
+              <p className="text-xs text-muted-foreground mt-1">Your personal wellness companion</p>
+            </div>
+            <Button variant="ghost" size="sm" className="rounded-full">
               <Settings className="h-4 w-4" />
             </Button>
           </div>
           
-          {/* Today's Mood */}
-          <Card className="bg-gradient-to-r from-wellness-primary/10 to-wellness-secondary/10 border-wellness-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+          {/* Today's Mood Card */}
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-wellness-primary/20 via-wellness-secondary/15 to-wellness-accent/20">
+            <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(white,transparent_85%)]" />
+            <CardContent className="p-5 relative">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Today's Mood</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Today</p>
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{todayMood.emoji}</span>
-                    <span className="font-semibold">{todayMood.mood}</span>
+                    <span className="text-3xl">{todayMood.emoji}</span>
+                    <div>
+                      <p className="font-bold text-lg">{todayMood.mood}</p>
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        <span>Mood Score</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-wellness-primary">
-                    {todayMood.score}/10
+                  <div className="text-3xl font-bold bg-gradient-to-br from-wellness-primary to-wellness-secondary bg-clip-text text-transparent">
+                    {todayMood.score}
                   </div>
+                  <p className="text-xs text-muted-foreground">/10</p>
                 </div>
               </div>
             </CardContent>
@@ -392,18 +403,18 @@ const WellnessChat = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="p-6 border-b border-border/30">
-          <h3 className="font-semibold mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="p-6 border-b border-border/20">
+          <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-2">
             {quickActions.map((action, index) => (
               <Button
                 key={index}
                 variant="outline"
-                className="h-16 flex-col gap-1 border-wellness-primary/20 hover:bg-wellness-primary/5"
+                className="h-20 flex-col gap-2 border-border/30 hover:border-wellness-primary/30 hover:bg-wellness-primary/5 transition-all group"
                 onClick={action.action}
               >
-                <action.icon className="h-5 w-5" />
-                <span className="text-xs">{action.label}</span>
+                <action.icon className="h-5 w-5 text-wellness-primary group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">{action.label}</span>
               </Button>
             ))}
           </div>
@@ -412,31 +423,33 @@ const WellnessChat = () => {
         {/* Week Overview */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">This Week</h3>
-            <Button variant="outline" size="sm">
-              <TrendingUp className="h-4 w-4" />
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">This Week</h3>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full">
+              <Calendar className="h-3 w-3" />
             </Button>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-2">
             {moodStats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium w-8">{stat.day}</span>
-                  <span className="text-lg">{stat.emoji}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        stat.hasData ? 'bg-wellness-primary' : 'bg-muted'
-                      }`}
-                      style={{ width: stat.hasData ? `${(stat.mood / 10) * 100}%` : '0%' }}
-                    />
+              <div key={index} className="group p-2 rounded-lg hover:bg-muted/30 transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xs font-semibold w-8 text-muted-foreground">{stat.day}</span>
+                    <span className="text-xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground w-8">
-                    {stat.hasData ? stat.mood.toFixed(1) : '--'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          stat.hasData ? 'bg-gradient-to-r from-wellness-primary to-wellness-secondary' : 'bg-muted'
+                        }`}
+                        style={{ width: stat.hasData ? `${(stat.mood / 10) * 100}%` : '0%' }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium w-6 text-right">
+                      {stat.hasData ? stat.mood.toFixed(1) : '--'}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -444,122 +457,152 @@ const WellnessChat = () => {
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="p-6 border-b border-border/30 bg-card/30 backdrop-blur-lg">
+        {/* Enhanced Header */}
+        <div className="p-6 border-b border-border/20 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-wellness-primary to-wellness-secondary rounded-full flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-wellness-primary via-wellness-secondary to-wellness-accent rounded-2xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
               </div>
               <div>
-                <h2 className="font-semibold">Wellness Assistant</h2>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Online • AI-powered support</span>
+                <h2 className="font-bold text-lg">Wellness Assistant</h2>
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                  <Brain className="h-3 w-3" />
+                  <span>AI-Powered • Evidence-Based Support</span>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20">
-                24/7 Available
+              <Badge variant="outline" className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/30 font-medium">
+                <Activity className="h-3 w-3 mr-1" />
+                Active Session
               </Badge>
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule
-              </Button>
-              <Button variant="outline" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {chatHistory.map((chat) => (
-            <div key={chat.id} className={`flex ${chat.message_type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-2xl ${chat.message_type === 'user' ? 'order-2' : ''}`}>
+        {/* Conversation Area */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+          {chatHistory.map((chat, idx) => (
+            <div key={chat.id} className={`flex ${chat.message_type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+              <div className={`max-w-3xl ${chat.message_type === 'user' ? '' : 'w-full'}`}>
                 {chat.message_type === 'ai' && (
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-wellness-primary rounded-full flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-white" />
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-wellness-primary to-wellness-secondary rounded-xl flex items-center justify-center shadow-md">
+                      <Sparkles className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-sm text-muted-foreground">Wellness AI</span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(chat.created_at).toLocaleTimeString()}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold">Wellness AI</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
                 )}
                 
-                <Card className={`${
+                <div className={`relative ${
                   chat.message_type === 'user' 
-                    ? 'bg-wellness-primary text-primary-foreground ml-12' 
-                    : 'bg-card mr-12'
+                    ? 'ml-12' 
+                    : ''
                 }`}>
-                  <CardContent className="p-4">
-                    <p className="leading-relaxed">{chat.content}</p>
-                  </CardContent>
-                </Card>
-                
-                {chat.message_type === 'user' && (
-                  <div className="flex items-center justify-end space-x-2 mt-1 mr-4">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(chat.created_at).toLocaleTimeString()}
-                    </span>
-                  </div>
-                )}
+                  {chat.message_type === 'user' ? (
+                    <Card className="border-0 bg-gradient-to-br from-wellness-primary to-wellness-secondary text-white shadow-lg">
+                      <CardContent className="p-5">
+                        <p className="leading-relaxed font-medium">{chat.content}</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <p className="leading-relaxed text-foreground whitespace-pre-wrap">{chat.content}</p>
+                        {chat.mood_score && (
+                          <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Heart className="h-4 w-4 text-wellness-warm" />
+                              <span className="text-xs text-muted-foreground">Mood detected:</span>
+                              <Badge variant="outline" className="text-xs">
+                                {chat.mood_label}
+                              </Badge>
+                            </div>
+                            <div className="text-sm font-semibold text-wellness-primary">
+                              {chat.mood_score}/10
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {chat.message_type === 'user' && (
+                    <div className="flex items-center justify-end space-x-2 mt-2 mr-2">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Chat Input */}
-        <div className="p-6 border-t border-border/30 bg-card/30 backdrop-blur-lg">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 relative">
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Share how you're feeling or ask for wellness advice..."
-                className="pr-20 h-12 bg-background/50 border-border/50"
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className={`p-2 ${isListening ? 'bg-wellness-accent/20 border-wellness-accent' : 'border-border/50'}`}
-                  onClick={handleVoiceInput}
-                >
-                  <Mic className={`h-4 w-4 ${isListening ? 'text-wellness-accent' : ''}`} />
-                </Button>
+        {/* Enhanced Input Area */}
+        <div className="p-6 border-t border-border/20 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-end space-x-3">
+              <div className="flex-1 relative">
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Share how you're feeling, or ask me anything about wellness..."
+                  className="pr-14 h-14 bg-background/80 border-border/40 rounded-2xl text-base focus:ring-2 focus:ring-wellness-primary/20 transition-all"
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-8 w-8 p-0 rounded-full ${isListening ? 'bg-wellness-accent/20 text-wellness-accent' : ''}`}
+                    onClick={handleVoiceInput}
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+              
+              <Button 
+                onClick={() => handleSend()}
+                disabled={!message.trim() || isLoading}
+                size="lg"
+                className="h-14 w-14 rounded-2xl bg-gradient-to-br from-wellness-primary to-wellness-secondary hover:shadow-lg transition-all p-0"
+              >
+                {isLoading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
             </div>
             
-            <Button 
-              onClick={() => handleSend()}
-              disabled={!message.trim() || isLoading}
-              className="h-12 px-6 bg-wellness-primary hover:bg-wellness-primary/90"
-            >
-              {isLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          
-          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <span>💡 Try: "I feel stressed" or "Help me sleep better"</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Heart className="h-3 w-3 text-wellness-warm" />
-              <span>Confidential & secure</span>
+            <div className="flex items-center justify-between mt-4 px-2">
+              <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                <div className="flex items-center space-x-1.5">
+                  <Sparkles className="h-3 w-3 text-wellness-primary" />
+                  <span>AI-powered responses</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <Heart className="h-3 w-3 text-wellness-warm" />
+                  <span>100% confidential</span>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">Press Enter to send</span>
             </div>
           </div>
         </div>
