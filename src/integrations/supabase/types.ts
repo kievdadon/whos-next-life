@@ -634,6 +634,123 @@ export type Database = {
         }
         Relationships: []
       }
+      gig_applications: {
+        Row: {
+          applicant_user_id: string
+          cover_message: string | null
+          created_at: string | null
+          estimated_completion_time: string | null
+          gig_id: string
+          id: string
+          proposed_rate: number | null
+          status: string | null
+          updated_at: string | null
+          worker_profile_id: string | null
+        }
+        Insert: {
+          applicant_user_id: string
+          cover_message?: string | null
+          created_at?: string | null
+          estimated_completion_time?: string | null
+          gig_id: string
+          id?: string
+          proposed_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          worker_profile_id?: string | null
+        }
+        Update: {
+          applicant_user_id?: string
+          cover_message?: string | null
+          created_at?: string | null
+          estimated_completion_time?: string | null
+          gig_id?: string
+          id?: string
+          proposed_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          worker_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gig_applications_gig_id_fkey"
+            columns: ["gig_id"]
+            isOneToOne: false
+            referencedRelation: "gigs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gig_applications_worker_profile_id_fkey"
+            columns: ["worker_profile_id"]
+            isOneToOne: false
+            referencedRelation: "worker_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gigs: {
+        Row: {
+          assigned_to_user_id: string | null
+          budget_max: number | null
+          budget_min: number
+          budget_type: string
+          category: string
+          created_at: string | null
+          description: string
+          duration_estimate: string | null
+          id: string
+          latitude: number | null
+          location: string
+          longitude: number | null
+          posted_by_user_id: string
+          requirements: string[] | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          urgency: string | null
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          budget_max?: number | null
+          budget_min: number
+          budget_type?: string
+          category: string
+          created_at?: string | null
+          description: string
+          duration_estimate?: string | null
+          id?: string
+          latitude?: number | null
+          location: string
+          longitude?: number | null
+          posted_by_user_id: string
+          requirements?: string[] | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          budget_max?: number | null
+          budget_min?: number
+          budget_type?: string
+          category?: string
+          created_at?: string | null
+          description?: string
+          duration_estimate?: string | null
+          id?: string
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          posted_by_user_id?: string
+          requirements?: string[] | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1060,6 +1177,69 @@ export type Database = {
           session_name?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      worker_profiles: {
+        Row: {
+          availability: string | null
+          bio: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          full_name: string
+          hourly_rate_max: number | null
+          hourly_rate_min: number | null
+          id: string
+          is_verified: boolean | null
+          phone: string | null
+          portfolio_url: string | null
+          profile_photo_url: string | null
+          rating: number | null
+          skills: string[] | null
+          total_jobs_completed: number | null
+          updated_at: string | null
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          availability?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          full_name: string
+          hourly_rate_max?: number | null
+          hourly_rate_min?: number | null
+          id?: string
+          is_verified?: boolean | null
+          phone?: string | null
+          portfolio_url?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          total_jobs_completed?: number | null
+          updated_at?: string | null
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          availability?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          full_name?: string
+          hourly_rate_max?: number | null
+          hourly_rate_min?: number | null
+          id?: string
+          is_verified?: boolean | null
+          phone?: string | null
+          portfolio_url?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          total_jobs_completed?: number | null
+          updated_at?: string | null
+          user_id?: string
+          years_experience?: number | null
         }
         Relationships: []
       }
