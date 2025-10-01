@@ -190,12 +190,13 @@ const BusinessDashboard = () => {
 
       if (!businessData) {
         console.log('No approved business application found for user');
-        // If auth already knows we're approved, retry a few times to wait for session propagation
-        if (hasApprovedBusiness && retryCount < 3) {
+        // Retry a few times to allow session/status propagation
+        if (retryCount < 5) {
+          const delay = 400 + retryCount * 400; // backoff
           setTimeout(() => {
             setRetryCount((c) => c + 1);
             loadBusinessData();
-          }, 600);
+          }, delay);
           return; // keep isLoading true during retry
         }
         setIsLoading(false);
@@ -229,6 +230,17 @@ const BusinessDashboard = () => {
       loadBusinessData();
     }
   }, [user, authLoading, hasApprovedBusiness]);
+
+  // Safety: if still loading after a few seconds, try again once
+  useEffect(() => {
+    if (isLoading && user?.email) {
+      const t = setTimeout(() => {
+        console.log('Safety retry: reloading business data after timeout');
+        loadBusinessData();
+      }, 6000);
+      return () => clearTimeout(t);
+    }
+  }, [isLoading, user?.email]);
 
   // Update current time every minute to keep store status accurate
   useEffect(() => {
