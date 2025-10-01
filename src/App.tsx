@@ -13,6 +13,7 @@ import Delivery from "./pages/Delivery";
 import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
 import WorkerProfile from "./pages/WorkerProfile";
+import BrowseWorkers from "./pages/BrowseWorkers";
 import MyGigApplications from "./pages/MyGigApplications";
 import PostGig from "./pages/PostGig";
 import FamilyGroupChat from "./pages/FamilyGroupChat";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/wellness-chat" element={<WellnessChat />} />
               <Route path="/gig-browse" element={<GigBrowse />} />
               <Route path="/worker-profile" element={<WorkerProfile />} />
+              <Route path="/browse-workers" element={<BrowseWorkers />} />
               <Route path="/my-gig-applications" element={<MyGigApplications />} />
               <Route path="/post-gig" element={<PostGig />} />
               <Route path="/family-chat" element={<FamilyGroupChat />} />

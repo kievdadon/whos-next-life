@@ -686,7 +686,7 @@ const GigBrowse = () => {
                 variant="outline" 
                 size="lg" 
                 className="border-wellness-primary/20 hover:bg-wellness-primary/5"
-                onClick={() => navigate("/worker-profile")}
+                onClick={() => navigate("/browse-workers")}
               >
                 <Wrench className="mr-2 h-5 w-5" />
                 Browse Workers
