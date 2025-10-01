@@ -121,7 +121,7 @@ const Index = () => {
     },
     {
       icon: Briefcase,
-      title: "WHOSENXT JOB",
+      title: "WHOSENXT DRIVER APPLICATION",
       description: "Worker dashboard with integrated payouts system",
       color: "wellness-accent",
       emoji: "🧰",
