@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { CameraCapture } from '@/components/CameraCapture';
 import { 
   Palette, 
@@ -64,6 +65,7 @@ interface WebsiteBuilderProps {
 
 const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, businessId, onSave }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [products, setProducts] = React.useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
   const [config, setConfig] = useState<WebsiteConfig>({
@@ -120,34 +122,66 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, businessI
     }
   }, [businessId]);
 
-  const handleBuyProduct = async (productId: string, productPrice: number) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create-marketplace-payment', {
-        body: {
-          productId,
-          sellerId: businessId,
-          amount: productPrice,
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast({
-          title: "Redirecting to checkout",
-          description: "Opening secure payment page...",
-        });
-      }
-    } catch (error) {
-      console.error('Error creating payment:', error);
+const handleBuyProduct = async (productId: string, productPrice: number) => {
+  try {
+    if (!user) {
       toast({
-        title: "Payment Error",
-        description: "Failed to create checkout session. Please try again.",
-        variant: "destructive"
+        title: "Sign In Required",
+        description: "Please sign in to purchase products.",
+        variant: "destructive",
       });
+      return;
     }
-  };
+
+    // 1) Create an order record
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        customer_id: user.id,
+        business_id: businessId,
+        product_id: productId,
+        quantity: 1,
+        total_amount: productPrice,
+        payment_status: 'pending',
+        order_status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (orderError || !order?.id) {
+      throw new Error(orderError?.message || 'Failed to create order');
+    }
+
+    // 2) Create the Stripe Checkout session via Edge Function
+    const { data, error } = await supabase.functions.invoke('create-marketplace-payment', {
+      body: {
+        orderType: 'product',
+        orderId: order.id,
+        totalAmount: Math.round(productPrice * 100), // cents
+        businessId,
+      },
+    });
+
+    if (error) throw error;
+
+    if (data?.url) {
+      window.open(data.url, '_blank');
+      toast({
+        title: 'Redirecting to checkout',
+        description: 'Opening secure payment page...',
+      });
+    } else {
+      throw new Error('Checkout session URL not returned');
+    }
+  } catch (error) {
+    console.error('Error creating payment:', error);
+    toast({
+      title: 'Payment Error',
+      description: 'Failed to create checkout session. Please try again.',
+      variant: 'destructive',
+    });
+  }
+};
 
   const colorOptions = [
     { name: 'Ocean Blue', value: '#667eea' },
