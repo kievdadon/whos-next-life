@@ -1,8 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-console.log('OpenAI API Key status:', openAIApiKey ? 'Present' : 'Missing');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+console.log('Lovable AI Key status:', lovableApiKey ? 'Present' : 'Missing');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,9 +18,9 @@ serve(async (req) => {
   try {
     console.log('Function started, checking API key...');
     
-    if (!openAIApiKey) {
-      console.error('OPENAI_API_KEY is not set');
-      throw new Error('OpenAI API key is not configured');
+    if (!lovableApiKey) {
+      console.error('LOVABLE_API_KEY is not set');
+      throw new Error('Lovable AI key is not configured');
     }
     
     console.log('API key found, parsing request body...');
@@ -79,29 +79,28 @@ When the user is doing a mood check or expressing feelings, analyze their emotio
 Remember: You're not just giving quick tips - you're providing comprehensive, ChatGPT-level responses focused on wellness and mental health solutions.`;
 
     const requestBody = {
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
-      ],
-      max_completion_tokens: 800,
+      ]
     };
 
-    console.log('Making request to OpenAI API...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('Making request to Lovable AI Gateway...');
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
-    console.log('OpenAI response status:', response.status);
+    console.log('AI Gateway response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error response:', errorText);
+      console.error('AI Gateway error response:', errorText);
 
       // Graceful fallback for any OpenAI error (including quota)
       const fallbackParts = [
@@ -129,10 +128,10 @@ Remember: You're not just giving quick tips - you're providing comprehensive, Ch
     }
 
     const data = await response.json();
-    console.log('OpenAI response data received');
+    console.log('AI response data received');
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid OpenAI response structure:', data);
+      console.error('Invalid AI response structure:', data);
       throw new Error('Invalid response from OpenAI API');
     }
     
