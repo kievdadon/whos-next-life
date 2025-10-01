@@ -158,6 +158,7 @@ const PostGig = () => {
   const handlePostGig = async () => {
     try {
       setLoading(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
@@ -176,6 +177,7 @@ const PostGig = () => {
           description: "Please fill in all required fields",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
