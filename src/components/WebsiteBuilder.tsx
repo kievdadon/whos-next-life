@@ -375,12 +375,12 @@ const handleBuyProduct = async (productId: string, productPrice: number) => {
                       )}
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold" style={{ color: config.primaryColor }}>
-                          ${product.price.toFixed(2)}
+                          ${Number(product.price).toFixed(2)}
                         </span>
                         {product.stock_quantity > 0 ? (
                           <Button 
                             size="sm"
-                            onClick={() => handleBuyProduct(product.id, product.price)}
+                            onClick={() => handleBuyProduct(product.id, Number(product.price))}
                             style={{ 
                               backgroundColor: config.primaryColor,
                               color: 'white'
