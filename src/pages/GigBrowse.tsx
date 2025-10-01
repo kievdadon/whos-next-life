@@ -682,7 +682,12 @@ const GigBrowse = () => {
                 <Plus className="mr-2 h-5 w-5" />
                 Post Your Gig
               </Button>
-              <Button variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={() => navigate("/worker-profile")}
+              >
                 <Wrench className="mr-2 h-5 w-5" />
                 Browse Workers
               </Button>
