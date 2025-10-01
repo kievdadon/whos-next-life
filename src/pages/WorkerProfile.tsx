@@ -184,6 +184,16 @@ const WorkerProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Validate required fields
+      if (!profileData.full_name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter your full name",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const profilePayload = {
         user_id: user.id,
         full_name: profileData.full_name,
@@ -199,22 +209,46 @@ const WorkerProfile = () => {
         portfolio_url: profileData.portfolio_url,
       };
 
-      const { error } = hasProfile
-        ? await supabase
-            .from("worker_profiles")
-            .update(profilePayload)
-            .eq("user_id", user.id)
-        : await supabase
-            .from("worker_profiles")
-            .insert(profilePayload);
+      let savedProfile;
 
-      if (error) throw error;
+      if (hasProfile) {
+        const { data, error } = await supabase
+          .from("worker_profiles")
+          .update(profilePayload)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedProfile = data;
+      } else {
+        const { data, error } = await supabase
+          .from("worker_profiles")
+          .insert(profilePayload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedProfile = data;
+      }
 
       toast({
         title: "Success!",
-        description: hasProfile ? "Profile updated successfully" : "Profile created successfully",
+        description: hasProfile 
+          ? "Your worker profile has been updated. Gig posters can now see your updated information." 
+          : "Your worker profile has been created! You can now apply to gigs and let posters see your qualifications.",
       });
+      
       setHasProfile(true);
+      
+      // Optional: redirect to gigs after a short delay
+      setTimeout(() => {
+        toast({
+          title: "Ready to Apply!",
+          description: "Browse gigs and start applying with your new profile.",
+        });
+      }, 2000);
+      
     } catch (error: any) {
       toast({
         title: "Error",
