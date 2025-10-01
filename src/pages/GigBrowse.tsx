@@ -43,6 +43,8 @@ const GigBrowse = () => {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [showApplicationDialog, setShowApplicationDialog] = useState(false);
   const [selectedGig, setSelectedGig] = useState<any>(null);
+  const [gigs, setGigs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [applicationData, setApplicationData] = useState({
     cover_message: "",
     proposed_rate: "",
@@ -51,7 +53,31 @@ const GigBrowse = () => {
 
   useEffect(() => {
     checkWorkerProfile();
+    fetchGigs();
   }, []);
+
+  const fetchGigs = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("gigs")
+        .select("*")
+        .eq("status", "open")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGigs(data || []);
+    } catch (error) {
+      console.error("Error fetching gigs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load gigs",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkWorkerProfile = async () => {
     try {
@@ -426,125 +452,127 @@ const GigBrowse = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Featured Gigs</h2>
-            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
-              View All
+            <h2 className="text-2xl font-bold">Available Gigs</h2>
+            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5" onClick={fetchGigs}>
+              Refresh
             </Button>
           </div>
           
-          <div className="grid lg:grid-cols-2 gap-6">
-            {featuredGigs.map((gig) => (
-              <Card key={gig.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <Badge className={`bg-${getUrgencyColor(gig.urgency)}/10 text-${getUrgencyColor(gig.urgency)} border-${getUrgencyColor(gig.urgency)}/20`}>
-                      {gig.urgency}
-                    </Badge>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{gig.timePosted}</span>
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading gigs...</p>
+            </div>
+          ) : gigs.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No gigs available yet. Be the first to post one!</p>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-6">
+              {gigs.map((gig) => (
+                <Card key={gig.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/30">
+                  {gig.image_url && (
+                    <div className="aspect-video overflow-hidden">
+                      <img 
+                        src={gig.image_url} 
+                        alt={gig.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                  </div>
-                  
-                  <CardTitle className="text-xl line-clamp-2 group-hover:text-wellness-primary transition-colors">
-                    {gig.title}
-                  </CardTitle>
-                  
-                  <CardDescription className="line-clamp-2">
-                    {gig.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Budget and Duration */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4 text-wellness-primary" />
-                      <span className="font-semibold text-lg">
-                        ${gig.budget.min}
-                        {gig.budget.max && gig.budget.max !== gig.budget.min && `-$${gig.budget.max}`}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {gig.budget.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      <span>{gig.duration}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Location and Distance */}
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-1 text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span>{gig.location}</span>
-                    </div>
-                    <span className="text-wellness-primary font-medium">{gig.distance} away</span>
-                  </div>
-                  
-                  {/* Requirements */}
-                  <div>
-                    <p className="text-sm font-medium mb-2">Requirements:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {gig.requirements.map((req, index) => (
-                        <Badge key={index} variant="outline" className="text-xs border-wellness-primary/30">
-                          {req}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Poster Info */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-wellness-primary/10 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-wellness-primary" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">{gig.poster.name}</span>
-                          {gig.poster.verified && (
-                            <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                              ✓ Verified
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs text-muted-foreground">{gig.poster.rating}</span>
-                        </div>
+                  )}
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge className={`bg-${getUrgencyColor(gig.urgency)}/10 text-${getUrgencyColor(gig.urgency)} border-${getUrgencyColor(gig.urgency)}/20`}>
+                        {gig.urgency}
+                      </Badge>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{new Date(gig.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                      <Eye className="h-3 w-3" />
-                      <span>{gig.applicants} applied</span>
-                    </div>
-                  </div>
+                    <CardTitle className="text-xl line-clamp-2 group-hover:text-wellness-primary transition-colors">
+                      {gig.title}
+                    </CardTitle>
+                    
+                    <CardDescription className="line-clamp-2">
+                      {gig.description}
+                    </CardDescription>
+                  </CardHeader>
                   
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    <Button 
-                      className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
-                      onClick={() => handleApplyToGig(gig)}
-                      disabled={checkingProfile}
-                    >
-                      Apply Now
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-wellness-primary/20 hover:bg-wellness-primary/5"
-                      onClick={() => handleMessagePoster(gig)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Message
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="space-y-4">
+                    {/* Budget and Duration */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4 text-wellness-primary" />
+                        <span className="font-semibold text-lg">
+                          ${gig.budget_min}
+                          {gig.budget_max && gig.budget_max !== gig.budget_min && `-$${gig.budget_max}`}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {gig.budget_type}
+                        </span>
+                      </div>
+                      {gig.duration_estimate && (
+                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{gig.duration_estimate}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Location */}
+                    <div className="flex items-center text-sm">
+                      <div className="flex items-center space-x-1 text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{gig.location}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Requirements */}
+                    {gig.requirements && gig.requirements.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Requirements:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {gig.requirements.map((req: string, index: number) => (
+                            <Badge key={index} variant="outline" className="text-xs border-wellness-primary/30">
+                              {req}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Category */}
+                    <div className="pt-2 border-t border-border/50">
+                      <Badge variant="secondary" className="text-xs">
+                        {gig.category}
+                      </Badge>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90" 
+                        size="sm"
+                        onClick={() => handleApplyToGig(gig)}
+                      >
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        Apply
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleMessagePoster(gig)}
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Message
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
