@@ -216,16 +216,22 @@ const WellnessChat = () => {
 
     try {
       // Add user message to database
-      const { error: userMessageError } = await supabase
+      const { data: userRow, error: userMessageError } = await supabase
         .from('wellness_chat_messages')
         .insert({
           session_id: currentSession.id,
           user_id: user.id,
           content: messageToSend,
           message_type: 'user'
-        });
+        })
+        .select()
+        .single();
 
       if (userMessageError) throw userMessageError;
+
+      // Optimistically update UI in case realtime is unavailable
+      setChatHistory(prev => [...prev, userRow]);
+      scrollToBottom();
 
       if (!customMessage) setMessage("");
 
@@ -250,7 +256,7 @@ const WellnessChat = () => {
       }
 
       // Add AI response to database with mood data
-      await supabase
+      const { data: aiRow, error: aiInsertError } = await supabase
         .from('wellness_chat_messages')
         .insert({
           session_id: currentSession.id,
@@ -259,7 +265,15 @@ const WellnessChat = () => {
           message_type: 'ai',
           mood_score: moodScore,
           mood_label: moodLabel
-        });
+        })
+        .select()
+        .single();
+
+      if (aiInsertError) throw aiInsertError;
+
+      // Update UI immediately
+      setChatHistory(prev => [...prev, aiRow]);
+      scrollToBottom();
 
       // Reload mood stats if mood was tracked
       if (moodScore) {
@@ -512,7 +526,7 @@ const WellnessChat = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Share how you're feeling or ask for wellness advice..."
                 className="pr-20 h-12 bg-background/50 border-border/50"
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                 <Button
