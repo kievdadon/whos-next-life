@@ -269,7 +269,7 @@ const GigBrowse = () => {
 
       if (existingConversation) {
         // Navigate to existing conversation
-        navigate(`/marketplace-chat/${existingConversation.id}`);
+        navigate(`/marketplace/chat/${existingConversation.id}`);
         return;
       }
 
@@ -293,7 +293,7 @@ const GigBrowse = () => {
         description: `Opening conversation about "${gig.title}"`,
       });
 
-      navigate(`/marketplace-chat/${newConversation.id}`);
+      navigate(`/marketplace/chat/${newConversation.id}`);
     } catch (error: any) {
       toast({
         title: "Error",
