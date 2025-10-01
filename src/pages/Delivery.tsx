@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import LocationPicker from "@/components/LocationPicker";
+import StoreProducts from "@/components/StoreProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -34,6 +35,10 @@ const Delivery = () => {
   } | null>(null);
   const [nearbyBusinesses, setNearbyBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<{
+    businessId: string;
+    businessName: string;
+  } | null>(null);
 
   // Calculate distance between two coordinates in miles
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -147,7 +152,7 @@ const Delivery = () => {
     navigate(`/category-stores?category=${encodeURIComponent(categoryName)}`);
   };
 
-  const handleStoreClick = (storeName: string) => {
+  const handleStoreClick = (businessId: string, businessName: string) => {
     if (!userLocation) {
       toast({
         title: "Location Required", 
@@ -157,7 +162,7 @@ const Delivery = () => {
       setShowLocationPicker(true);
       return;
     }
-    navigate(`/store/${encodeURIComponent(storeName)}`);
+    setSelectedStore({ businessId, businessName });
   };
 
 
@@ -480,7 +485,7 @@ const Delivery = () => {
               </div>
             ) : nearbyBusinesses.length > 0 ? (
               nearbyBusinesses.map((business, index) => (
-                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(business.business_name)}>
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(business.id, business.business_name)}>
                   <div className="relative">
                     <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
                       {business.business_type === 'restaurant' ? '🍽️' : 
@@ -518,42 +523,11 @@ const Delivery = () => {
                 </Card>
               ))
             ) : (
-              nearbyStores.map((store, index) => (
-                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(store.name)}>
-                  <div className="relative">
-                    <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
-                      {store.image}
-                    </div>
-                    <Badge className="absolute top-3 left-3 bg-wellness-warm/90 text-primary-foreground">
-                      {store.promo}
-                    </Badge>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-lg group-hover:text-wellness-primary transition-colors">
-                        {store.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{store.category}</p>
-                      
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{store.rating}</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{store.deliveryTime}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs text-wellness-primary">
-                        Delivery: ${store.deliveryFee}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              <div className="col-span-full text-center py-12">
+                <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No businesses found near your location.</p>
+                <p className="text-sm text-muted-foreground mt-2">Try setting a different location.</p>
+              </div>
             )}
           </div>
         </div>

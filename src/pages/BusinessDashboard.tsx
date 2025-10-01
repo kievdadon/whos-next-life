@@ -11,9 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate, Link } from 'react-router-dom';
-import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Globe, Palette, CreditCard, Building, Camera, Upload, Link as LinkIcon, X } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Palette, CreditCard, Building, Camera, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
-import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { CameraCapture } from '@/components/CameraCapture';
 
 interface Product {
@@ -208,13 +207,6 @@ const BusinessDashboard = () => {
 
     return () => clearInterval(timer);
   }, []);
-
-  // Auto-switch to Website tab when business data becomes available
-  useEffect(() => {
-    if (business && activeTab !== 'website') {
-      setActiveTab('website');
-    }
-  }, [business]);
 
   const handleWebsiteSave = async (websiteConfig: any) => {
     console.log('handleWebsiteSave called with config:', websiteConfig);
@@ -614,7 +606,7 @@ const BusinessDashboard = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               Overview
@@ -622,10 +614,6 @@ const BusinessDashboard = () => {
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Products
-            </TabsTrigger>
-            <TabsTrigger value="website" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Website Builder
             </TabsTrigger>
             <TabsTrigger value="hours" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
@@ -636,15 +624,6 @@ const BusinessDashboard = () => {
               Settings
             </TabsTrigger>
           </TabsList>
-
-          {/* Website Builder Tab */}
-          <TabsContent value="website" className="space-y-6">
-            <WebsiteBuilder 
-              businessName={business?.business_name || 'Your Business'}
-              businessId={business?.id || ''}
-              onSave={handleWebsiteSave}
-            />
-          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -685,20 +664,6 @@ const BusinessDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Website</CardTitle>
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm font-bold text-primary">
-                    WHOSENXT_{business?.business_name?.toUpperCase().replace(/\s+/g, '_')}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Your branded website
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             <Card>
