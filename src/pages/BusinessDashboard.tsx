@@ -928,10 +928,16 @@ const BusinessDashboard = () => {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        business account and remove all associated data including products,
-                        orders, and settings from our servers.
+                      <AlertDialogDescription className="space-y-2">
+                        <p>
+                          This action cannot be undone. This will permanently delete your
+                          business account and remove all associated data including products,
+                          orders, and settings from our servers.
+                        </p>
+                        <p className="font-semibold text-destructive">
+                          To use the platform again, you will need to submit a new business
+                          application and wait for admin approval.
+                        </p>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
