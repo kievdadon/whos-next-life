@@ -625,6 +625,7 @@ const BusinessDashboard = () => {
           <TabsContent value="website" className="space-y-6">
             <WebsiteBuilder 
               businessName={business?.business_name || 'Your Business'}
+              businessId={business?.id || ''}
               onSave={handleWebsiteSave}
             />
           </TabsContent>

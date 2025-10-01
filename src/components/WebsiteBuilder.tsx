@@ -46,13 +46,26 @@ interface WebsiteConfig {
   };
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  stock_quantity: number;
+  is_active: boolean;
+}
+
 interface WebsiteBuilderProps {
   businessName: string;
+  businessId: string;
   onSave: (config: WebsiteConfig) => void;
 }
 
-const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave }) => {
+const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, businessId, onSave }) => {
   const { toast } = useToast();
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
   const [config, setConfig] = useState<WebsiteConfig>({
     businessName,
     description: `Welcome to ${businessName} - Your trusted partner`,
@@ -80,6 +93,61 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
   const [logoUploadMethod, setLogoUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
   const [heroUploadMethod, setHeroUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Load products for this business
+  React.useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    if (businessId) {
+      loadProducts();
+    }
+  }, [businessId]);
+
+  const handleBuyProduct = async (productId: string, productPrice: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-marketplace-payment', {
+        body: {
+          productId,
+          sellerId: businessId,
+          amount: productPrice,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast({
+          title: "Redirecting to checkout",
+          description: "Opening secure payment page...",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      toast({
+        title: "Payment Error",
+        description: "Failed to create checkout session. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const colorOptions = [
     { name: 'Ocean Blue', value: '#667eea' },
@@ -228,6 +296,58 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ businessName, onSave })
             </Button>
           </div>
         </section>
+
+        {/* Products Section */}
+        {products.length > 0 && (
+          <section className="px-6 py-12 bg-gray-50" style={{ backgroundColor: `${config.backgroundColor}f0` }}>
+            <div className="max-w-6xl mx-auto">
+              <h3 className="text-3xl font-bold mb-8 text-center" style={{ color: config.primaryColor }}>
+                Our Products
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.slice(0, 6).map((product) => (
+                  <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden border">
+                    {product.image_url && (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-full h-48 object-cover"
+                      />
+                    )}
+                    <div className="p-4">
+                      <h4 className="font-bold text-lg mb-2">{product.name}</h4>
+                      {product.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold" style={{ color: config.primaryColor }}>
+                          ${product.price.toFixed(2)}
+                        </span>
+                        {product.stock_quantity > 0 ? (
+                          <Button 
+                            size="sm"
+                            onClick={() => handleBuyProduct(product.id, product.price)}
+                            style={{ 
+                              backgroundColor: config.primaryColor,
+                              color: 'white'
+                            }}
+                            className="hover:opacity-90"
+                          >
+                            Buy Now
+                          </Button>
+                        ) : (
+                          <Badge variant="secondary">Out of Stock</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* About Section */}
         <section className="px-6 py-12">
