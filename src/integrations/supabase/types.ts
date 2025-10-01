@@ -225,6 +225,7 @@ export type Database = {
         Row: {
           buyer_id: string
           created_at: string
+          gig_id: string | null
           id: string
           product_id: string | null
           seller_id: string
@@ -235,6 +236,7 @@ export type Database = {
         Insert: {
           buyer_id: string
           created_at?: string
+          gig_id?: string | null
           id?: string
           product_id?: string | null
           seller_id: string
@@ -245,6 +247,7 @@ export type Database = {
         Update: {
           buyer_id?: string
           created_at?: string
+          gig_id?: string | null
           id?: string
           product_id?: string | null
           seller_id?: string
@@ -253,6 +256,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_gig_id_fkey"
+            columns: ["gig_id"]
+            isOneToOne: false
+            referencedRelation: "gigs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_product_id_fkey"
             columns: ["product_id"]

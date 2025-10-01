@@ -87,6 +87,7 @@ const GigBrowse = () => {
   const featuredGigs = [
     {
       id: 1,
+      posted_by_user_id: "00000000-0000-0000-0000-000000000001", // Mock user ID
       title: "Help me move my furniture this weekend",
       description: "Need 2-3 people to help move furniture from my apartment to a new house. Heavy lifting involved.",
       category: "Moving Help",
@@ -106,6 +107,7 @@ const GigBrowse = () => {
     },
     {
       id: 2,
+      posted_by_user_id: "00000000-0000-0000-0000-000000000002", // Mock user ID
       title: "Fix my leaky kitchen faucet",
       description: "Kitchen faucet has been dripping for weeks. Need someone experienced with plumbing repairs.",
       category: "Home Repair",
@@ -125,6 +127,7 @@ const GigBrowse = () => {
     },
     {
       id: 3,
+      posted_by_user_id: "00000000-0000-0000-0000-000000000003", // Mock user ID
       title: "Dog walking for the week",
       description: "Going out of town and need someone reliable to walk my golden retriever twice daily.",
       category: "Pet Care",
@@ -144,6 +147,7 @@ const GigBrowse = () => {
     },
     {
       id: 4,
+      posted_by_user_id: "00000000-0000-0000-0000-000000000004", // Mock user ID
       title: "Event photography for birthday party",
       description: "Need a photographer for my daughter's 10th birthday party. 2-3 hours of coverage needed.",
       category: "Photography",
@@ -196,6 +200,64 @@ const GigBrowse = () => {
 
     setSelectedGig(gig);
     setShowApplicationDialog(true);
+  };
+
+  const handleMessagePoster = async (gig: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to message gig posters.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      // Check if conversation already exists for this gig
+      const { data: existingConversation } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("gig_id", gig.id)
+        .eq("buyer_id", user.id)
+        .maybeSingle();
+
+      if (existingConversation) {
+        // Navigate to existing conversation
+        navigate(`/marketplace-chat/${existingConversation.id}`);
+        return;
+      }
+
+      // Create new conversation
+      const { data: newConversation, error } = await supabase
+        .from("conversations")
+        .insert({
+          buyer_id: user.id,
+          seller_id: gig.posted_by_user_id,
+          gig_id: gig.id,
+          subject: `Regarding: ${gig.title}`,
+          status: "active",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Chat Started",
+        description: `Opening conversation about "${gig.title}"`,
+      });
+
+      navigate(`/marketplace-chat/${newConversation.id}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const submitApplication = async () => {
@@ -465,7 +527,7 @@ const GigBrowse = () => {
                     <Button 
                       variant="outline" 
                       className="border-wellness-primary/20 hover:bg-wellness-primary/5"
-                      onClick={() => navigate("/marketplace-chat")}
+                      onClick={() => handleMessagePoster(gig)}
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message
