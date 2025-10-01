@@ -7,6 +7,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Send, 
   Mic,
@@ -21,7 +31,9 @@ import {
   Sparkles,
   Activity,
   Moon,
-  Sun
+  Sun,
+  Bell,
+  Shield
 } from "lucide-react";
 
 const WellnessChat = () => {
@@ -34,6 +46,9 @@ const WellnessChat = () => {
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [moodReminders, setMoodReminders] = useState(true);
 
   // Redirect if not authenticated
   if (!user) {
@@ -368,9 +383,75 @@ const WellnessChat = () => {
               </h1>
               <p className="text-xs text-muted-foreground mt-1">Your personal wellness companion</p>
             </div>
-            <Button variant="ghost" size="sm" className="rounded-full">
-              <Settings className="h-4 w-4" />
-            </Button>
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded-full hover:bg-wellness-primary/10">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center space-x-2">
+                    <Settings className="h-5 w-5 text-wellness-primary" />
+                    <span>Wellness Settings</span>
+                  </DialogTitle>
+                  <DialogDescription>
+                    Customize your wellness experience and preferences
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <Label htmlFor="notifications" className="text-sm font-medium">
+                            Notifications
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Receive wellness tips and updates
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="notifications"
+                        checked={notifications}
+                        onCheckedChange={setNotifications}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Heart className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <Label htmlFor="mood-reminders" className="text-sm font-medium">
+                            Mood Check Reminders
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Daily reminders to log your mood
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="mood-reminders"
+                        checked={moodReminders}
+                        onCheckedChange={setMoodReminders}
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <div className="flex items-center space-x-3 text-muted-foreground">
+                        <Shield className="h-4 w-4" />
+                        <div className="text-xs">
+                          <p className="font-medium">Privacy & Security</p>
+                          <p>All conversations are encrypted and confidential</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           {/* Today's Mood Card */}
