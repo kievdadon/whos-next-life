@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -682,14 +682,11 @@ const GigBrowse = () => {
                 <Plus className="mr-2 h-5 w-5" />
                 Post Your Gig
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
-                onClick={() => navigate("/browse-workers")}
-              >
-                <Wrench className="mr-2 h-5 w-5" />
-                Browse Workers
+              <Button asChild variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                <Link to="/browse-workers" aria-label="Browse Workers">
+                  <Wrench className="mr-2 h-5 w-5" />
+                  Browse Workers
+                </Link>
               </Button>
             </div>
           </div>
