@@ -521,6 +521,14 @@ const [searchTerm, setSearchTerm] = useState("");
                 My Applications
               </Button>
               <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/my-posted-gigs")}
+              >
+                <Briefcase className="h-4 w-4 mr-2" />
+                My Posted Gigs
+              </Button>
+              <Button 
                 size="sm" 
                 className="bg-wellness-primary hover:bg-wellness-primary/90"
                 onClick={() => navigate("/post-gig")}

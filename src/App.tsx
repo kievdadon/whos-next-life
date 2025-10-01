@@ -15,6 +15,7 @@ import GigBrowse from "./pages/GigBrowse";
 import WorkerProfile from "./pages/WorkerProfile";
 import BrowseWorkers from "./pages/BrowseWorkers";
 import MyGigApplications from "./pages/MyGigApplications";
+import MyPostedGigs from "./pages/MyPostedGigs";
 import PostGig from "./pages/PostGig";
 import FamilyGroupChat from "./pages/FamilyGroupChat";
 import DeliveryDriverApplication from "./pages/DeliveryDriverApplication";
@@ -77,8 +78,10 @@ const App = () => (
               <Route path="/wellness-chat" element={<WellnessChat />} />
               <Route path="/gig-browse" element={<GigBrowse />} />
               <Route path="/worker-profile" element={<WorkerProfile />} />
+              <Route path="/worker-profile/:workerId" element={<WorkerProfile />} />
               <Route path="/browse-workers" element={<BrowseWorkers />} />
               <Route path="/my-gig-applications" element={<MyGigApplications />} />
+              <Route path="/my-posted-gigs" element={<MyPostedGigs />} />
               <Route path="/post-gig" element={<PostGig />} />
               <Route path="/family-chat" element={<FamilyGroupChat />} />
               <Route path="/driver-application" element={<DeliveryDriverApplication />} />
