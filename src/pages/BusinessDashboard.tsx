@@ -184,45 +184,7 @@ const BusinessDashboard = () => {
     }
   }, [user?.email, retryCount]);
 
-  // Wait for both auth and business data to load
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading business dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
-  if (!user) {
-    return <Navigate to={`/auth?redirect=/business-dashboard`} replace />;
-  }
-
-  // Show message if no approved business found after loading
-  if (!business) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Business Dashboard Access</CardTitle>
-            <CardDescription>
-              You need an approved business application to access this dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Please submit a business application and wait for approval, or contact support if you believe this is an error.
-            </p>
-            <Button asChild>
-              <Link to="/business-registration">Submit Business Application</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
 
   useEffect(() => {
@@ -568,13 +530,40 @@ const BusinessDashboard = () => {
     });
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
           <p className="text-muted-foreground">Loading business dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to={`/auth?redirect=/business-dashboard`} replace />;
+  }
+
+  if (!business) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Business Dashboard Access</CardTitle>
+            <CardDescription>
+              You need an approved business application to access this dashboard.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please submit a business application and wait for approval, or contact support if you believe this is an error.
+            </p>
+            <Button asChild>
+              <Link to="/business-registration">Submit Business Application</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
