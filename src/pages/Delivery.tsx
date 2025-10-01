@@ -60,8 +60,7 @@ const Delivery = () => {
       const { data: businesses, error } = await supabase
         .from('business_applications')
         .select('*')
-        .eq('status', 'approved')
-        .or('is_brand_partner.eq.true,and(has_physical_location.eq.true,location_verified.eq.true)');
+        .eq('status', 'approved');
 
       if (error) throw error;
 
