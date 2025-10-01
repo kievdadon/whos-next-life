@@ -1,8 +1,20 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, 
   Filter,
@@ -26,6 +38,43 @@ import {
 
 const GigBrowse = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [hasWorkerProfile, setHasWorkerProfile] = useState(false);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [showApplicationDialog, setShowApplicationDialog] = useState(false);
+  const [selectedGig, setSelectedGig] = useState<any>(null);
+  const [applicationData, setApplicationData] = useState({
+    cover_message: "",
+    proposed_rate: "",
+    estimated_completion_time: "",
+  });
+
+  useEffect(() => {
+    checkWorkerProfile();
+  }, []);
+
+  const checkWorkerProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setCheckingProfile(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("worker_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setHasWorkerProfile(!!data);
+    } catch (error) {
+      console.error("Error checking profile:", error);
+    } finally {
+      setCheckingProfile(false);
+    }
+  };
   const categories = [
     { name: "Home Repair", icon: Home, count: 45, color: "wellness-primary" },
     { name: "Moving Help", icon: Car, count: 32, color: "wellness-secondary" },
@@ -123,18 +172,96 @@ const GigBrowse = () => {
     }
   };
 
-  const handleApplyToGig = (gigId: number, gigTitle: string) => {
-    toast({
-      title: "Application Submitted!",
-      description: `Your application for "${gigTitle}" has been submitted successfully.`,
-    });
+  const handleApplyToGig = async (gig: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for gigs.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!hasWorkerProfile) {
+      toast({
+        title: "Profile Required",
+        description: "Create your worker profile first to apply for gigs.",
+      });
+      navigate("/worker-profile");
+      return;
+    }
+
+    setSelectedGig(gig);
+    setShowApplicationDialog(true);
   };
 
-  const handleMessagePoster = (posterName: string) => {
-    toast({
-      title: "Opening Chat",
-      description: `Starting conversation with ${posterName}...`,
-    });
+  const submitApplication = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get worker profile
+      const { data: profile } = await supabase
+        .from("worker_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) {
+        toast({
+          title: "Error",
+          description: "Worker profile not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Submit application
+      const { error } = await supabase
+        .from("gig_applications")
+        .insert({
+          gig_id: selectedGig.id,
+          applicant_user_id: user.id,
+          worker_profile_id: profile.id,
+          cover_message: applicationData.cover_message,
+          proposed_rate: applicationData.proposed_rate ? parseFloat(applicationData.proposed_rate) : null,
+          estimated_completion_time: applicationData.estimated_completion_time,
+        });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast({
+            title: "Already Applied",
+            description: "You've already applied to this gig.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast({
+        title: "Application Submitted!",
+        description: `Your application for "${selectedGig.title}" has been submitted successfully.`,
+      });
+
+      setShowApplicationDialog(false);
+      setApplicationData({
+        cover_message: "",
+        proposed_rate: "",
+        estimated_completion_time: "",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -149,6 +276,14 @@ const GigBrowse = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/worker-profile")}
+              >
+                <Briefcase className="h-4 w-4 mr-2" />
+                {hasWorkerProfile ? "My Profile" : "Create Profile"}
+              </Button>
               <Button variant="outline" size="sm">
                 <Briefcase className="h-4 w-4 mr-2" />
                 My Applications
@@ -322,14 +457,15 @@ const GigBrowse = () => {
                   <div className="flex gap-3 pt-2">
                     <Button 
                       className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
-                      onClick={() => handleApplyToGig(gig.id, gig.title)}
+                      onClick={() => handleApplyToGig(gig)}
+                      disabled={checkingProfile}
                     >
                       Apply Now
                     </Button>
                     <Button 
                       variant="outline" 
                       className="border-wellness-primary/20 hover:bg-wellness-primary/5"
-                      onClick={() => handleMessagePoster(gig.poster.name)}
+                      onClick={() => navigate("/marketplace-chat")}
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message
@@ -341,6 +477,67 @@ const GigBrowse = () => {
           </div>
         </div>
       </section>
+
+      {/* Application Dialog */}
+      <Dialog open={showApplicationDialog} onOpenChange={setShowApplicationDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Apply for Gig</DialogTitle>
+            <DialogDescription>
+              Submit your application for: {selectedGig?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cover_message">Cover Message *</Label>
+              <Textarea
+                id="cover_message"
+                value={applicationData.cover_message}
+                onChange={(e) => setApplicationData({ ...applicationData, cover_message: e.target.value })}
+                placeholder="Tell them why you're the right person for this job..."
+                rows={5}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="proposed_rate">Your Proposed Rate ($)</Label>
+              <Input
+                id="proposed_rate"
+                type="number"
+                min="0"
+                step="0.01"
+                value={applicationData.proposed_rate}
+                onChange={(e) => setApplicationData({ ...applicationData, proposed_rate: e.target.value })}
+                placeholder="25.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estimated_completion_time">Estimated Completion Time</Label>
+              <Input
+                id="estimated_completion_time"
+                value={applicationData.estimated_completion_time}
+                onChange={(e) => setApplicationData({ ...applicationData, estimated_completion_time: e.target.value })}
+                placeholder="2-3 hours"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={submitApplication}
+                disabled={!applicationData.cover_message}
+                className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
+              >
+                Submit Application
+              </Button>
+              <Button variant="outline" onClick={() => setShowApplicationDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Post Gig CTA */}
       <section className="py-12 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">

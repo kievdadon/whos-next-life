@@ -12,6 +12,7 @@ import SellItem from "./pages/SellItem";
 import Delivery from "./pages/Delivery";
 import WellnessChat from "./pages/WellnessChat";
 import GigBrowse from "./pages/GigBrowse";
+import WorkerProfile from "./pages/WorkerProfile";
 import FamilyGroupChat from "./pages/FamilyGroupChat";
 import DeliveryDriverApplication from "./pages/DeliveryDriverApplication";
 import AdminDriverApplications from "./pages/AdminDriverApplications";
@@ -72,6 +73,7 @@ const App = () => (
         <Route path="/order-success" element={<OrderSuccess />} />
               <Route path="/wellness-chat" element={<WellnessChat />} />
               <Route path="/gig-browse" element={<GigBrowse />} />
+              <Route path="/worker-profile" element={<WorkerProfile />} />
               <Route path="/family-chat" element={<FamilyGroupChat />} />
               <Route path="/driver-application" element={<DeliveryDriverApplication />} />
               <Route path="/driver-dashboard" element={<DriverDashboard />} />
