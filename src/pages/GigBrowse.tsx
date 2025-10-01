@@ -51,6 +51,11 @@ const GigBrowse = () => {
     proposed_rate: "",
     estimated_completion_time: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFiltersDialog, setShowFiltersDialog] = useState(false);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [budgetRange, setBudgetRange] = useState({ min: "", max: "" });
+  const [urgencyFilter, setUrgencyFilter] = useState<string | null>(null);
 
   useEffect(() => {
     checkWorkerProfile();
@@ -83,6 +88,89 @@ const GigBrowse = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filteredGigs = gigs.filter((gig) => {
+    // Search filter
+    if (searchTerm && !gig.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !gig.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !gig.location.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+
+    // Budget filter
+    if (budgetRange.min && gig.budget_min < parseFloat(budgetRange.min)) {
+      return false;
+    }
+    if (budgetRange.max && gig.budget_min > parseFloat(budgetRange.max)) {
+      return false;
+    }
+
+    // Urgency filter
+    if (urgencyFilter && gig.urgency !== urgencyFilter) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Not Supported",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Getting your location...",
+      description: "Please allow location access",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        toast({
+          title: "Location Found",
+          description: "Filtering gigs near you (feature coming soon)",
+        });
+        // TODO: Implement actual distance-based filtering when gigs have coordinates
+      },
+      (error) => {
+        toast({
+          title: "Location Error",
+          description: "Unable to get your location",
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
+  const applyBudgetFilter = () => {
+    setShowBudgetDialog(false);
+    toast({
+      title: "Budget Filter Applied",
+      description: `Showing gigs between $${budgetRange.min || "0"} - $${budgetRange.max || "∞"}`,
+    });
+  };
+
+  const clearBudgetFilter = () => {
+    setBudgetRange({ min: "", max: "" });
+    setShowBudgetDialog(false);
+  };
+
+  const applyFilters = () => {
+    setShowFiltersDialog(false);
+    toast({
+      title: "Filters Applied",
+      description: urgencyFilter ? `Showing ${urgencyFilter} gigs` : "All filters cleared",
+    });
+  };
+
+  const clearFilters = () => {
+    setUrgencyFilter(null);
+    setShowFiltersDialog(false);
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -419,20 +507,36 @@ const GigBrowse = () => {
               <Input 
                 placeholder="Search gigs by skill, location, or keyword..." 
                 className="pl-10 h-12 bg-card/50 border-border/50"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+              <Button 
+                variant="outline" 
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={() => setShowFiltersDialog(true)}
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
+                {urgencyFilter && <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">1</Badge>}
               </Button>
-              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+              <Button 
+                variant="outline" 
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={handleNearMe}
+              >
                 <MapPin className="h-4 w-4 mr-2" />
                 Near Me
               </Button>
-              <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+              <Button 
+                variant="outline" 
+                className="border-wellness-primary/20 hover:bg-wellness-primary/5"
+                onClick={() => setShowBudgetDialog(true)}
+              >
                 <DollarSign className="h-4 w-4 mr-2" />
                 Budget
+                {(budgetRange.min || budgetRange.max) && <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">1</Badge>}
               </Button>
             </div>
           </div>
@@ -494,13 +598,15 @@ const GigBrowse = () => {
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading gigs...</p>
             </div>
-          ) : gigs.length === 0 ? (
+          ) : filteredGigs.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No gigs available yet. Be the first to post one!</p>
+              <p className="text-muted-foreground">
+                {gigs.length === 0 ? "No gigs available yet. Be the first to post one!" : "No gigs match your filters. Try adjusting your search."}
+              </p>
             </div>
           ) : (
             <div className="grid lg:grid-cols-2 gap-6">
-              {gigs.map((gig) => (
+              {filteredGigs.map((gig) => (
                 <Card key={gig.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/30">
                   {gig.image_url && (
                     <div className="aspect-video overflow-hidden">
@@ -607,6 +713,94 @@ const GigBrowse = () => {
           )}
         </div>
       </section>
+
+      {/* Filters Dialog */}
+      <Dialog open={showFiltersDialog} onOpenChange={setShowFiltersDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filter Gigs</DialogTitle>
+            <DialogDescription>
+              Refine your search with additional filters
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Urgency</Label>
+              <div className="flex flex-wrap gap-2">
+                {["ASAP", "This Weekend", "Next Week", "Flexible"].map((urgency) => (
+                  <Badge
+                    key={urgency}
+                    variant={urgencyFilter === urgency ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setUrgencyFilter(urgencyFilter === urgency ? null : urgency)}
+                  >
+                    {urgency}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={applyFilters} className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90">
+                Apply Filters
+              </Button>
+              <Button variant="outline" onClick={clearFilters}>
+                Clear
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Budget Dialog */}
+      <Dialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Budget Range</DialogTitle>
+            <DialogDescription>
+              Filter gigs by your budget range
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="min_budget">Minimum Budget ($)</Label>
+              <Input
+                id="min_budget"
+                type="number"
+                min="0"
+                step="1"
+                value={budgetRange.min}
+                onChange={(e) => setBudgetRange({ ...budgetRange, min: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="max_budget">Maximum Budget ($)</Label>
+              <Input
+                id="max_budget"
+                type="number"
+                min="0"
+                step="1"
+                value={budgetRange.max}
+                onChange={(e) => setBudgetRange({ ...budgetRange, max: e.target.value })}
+                placeholder="1000"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={applyBudgetFilter} className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90">
+                Apply
+              </Button>
+              <Button variant="outline" onClick={clearBudgetFilter}>
+                Clear
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Application Dialog */}
       <Dialog open={showApplicationDialog} onOpenChange={setShowApplicationDialog}>
