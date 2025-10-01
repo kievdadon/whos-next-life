@@ -62,11 +62,12 @@ interface BusinessApplication {
 }
 
 const BusinessDashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasApprovedBusiness } = useAuth();
   const { toast } = useToast();
   const [business, setBusiness] = useState<BusinessApplication | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showStoreHours, setShowStoreHours] = useState(false);
@@ -189,6 +190,14 @@ const BusinessDashboard = () => {
 
       if (!businessData) {
         console.log('No approved business application found for user');
+        // If auth already knows we're approved, retry a few times to wait for session propagation
+        if (hasApprovedBusiness && retryCount < 3) {
+          setTimeout(() => {
+            setRetryCount((c) => c + 1);
+            loadBusinessData();
+          }, 600);
+          return; // keep isLoading true during retry
+        }
         setIsLoading(false);
         return;
       }
@@ -219,7 +228,7 @@ const BusinessDashboard = () => {
     if (user?.email && !authLoading) {
       loadBusinessData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, hasApprovedBusiness]);
 
   // Update current time every minute to keep store status accurate
   useEffect(() => {
