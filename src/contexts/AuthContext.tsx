@@ -44,6 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasApprovedDriver, setHasApprovedDriver] = useState(false);
   const [driverName, setDriverName] = useState<string | null>(null);
   const { toast } = useToast();
+  const prevHasApprovedBusiness = React.useRef(false);
+  const prevHasApprovedDriver = React.useRef(false);
 
   const checkSubscription = async () => {
     if (!session) return;
@@ -71,10 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from('business_applications')
-        .select('id, business_name, status')
+        .select('id, business_name, status, created_at')
         .eq('email', session.user.email)
         .eq('status', 'approved')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking business status:', error);
@@ -84,6 +88,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const hasApproved = !!data;
       setHasApprovedBusiness(hasApproved);
       setBusinessName(data?.business_name || null);
+
+      if (!prevHasApprovedBusiness.current && hasApproved) {
+        toast({
+          title: "Business Approved",
+          description: "Your Business Dashboard is now available.",
+        });
+      }
+      prevHasApprovedBusiness.current = hasApproved;
     } catch (error) {
       console.error('Error checking business status:', error);
     }
@@ -110,6 +122,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const hasApproved = !!data;
       setHasApprovedDriver(hasApproved);
       setDriverName(data?.full_name || null);
+
+      if (!prevHasApprovedDriver.current && hasApproved) {
+        toast({
+          title: "Driver Approved",
+          description: "Your Driver Dashboard is now available.",
+        });
+      }
+      prevHasApprovedDriver.current = hasApproved;
     } catch (error) {
       console.error('Error checking driver status:', error);
     }
