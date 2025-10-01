@@ -77,7 +77,7 @@ const Navigation = () => {
     { to: "/marketplace-chat", icon: MessageSquare, label: "Chat" },
     { to: "/sell-item", icon: PlusCircle, label: "Sell" },
     { to: "/gig-browse", icon: Wrench, label: "Gigs" },
-    { to: "/family-chat", icon: Users, label: "Family" },
+    { to: "/family-chat", icon: Users, label: "Messaging" },
   ];
 
   // Add driver dashboard if user is approved driver

@@ -284,8 +284,8 @@ const FamilyGroupChat = () => {
       <div className="min-h-screen bg-gradient-to-br from-background via-wellness-accent/10 to-wellness-secondary/10 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome to Family Chat</CardTitle>
-            <p className="text-muted-foreground">Create or join a family group to start chatting</p>
+            <CardTitle className="text-2xl">Welcome to Messaging</CardTitle>
+            <p className="text-muted-foreground">Create or join a group to start chatting</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button 
@@ -392,7 +392,7 @@ const FamilyGroupChat = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle>{currentGroup?.name || 'Family Chat'}</CardTitle>
+                  <CardTitle>{currentGroup?.name || 'Messaging'}</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {messages.length > 0 
                       ? `Last message ${new Date(messages[messages.length - 1]?.created_at).toLocaleTimeString()}`

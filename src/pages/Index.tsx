@@ -145,7 +145,7 @@ const Index = () => {
     },
     {
       icon: Users,
-      title: "Family Group Chat",
+      title: "Messaging",
       description: "Stay connected with real-time location sharing",
       color: "wellness-secondary",
       emoji: "👨‍👩‍👧",
