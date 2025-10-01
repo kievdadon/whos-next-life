@@ -45,6 +45,7 @@ const GigBrowse = () => {
   const [selectedGig, setSelectedGig] = useState<any>(null);
   const [gigs, setGigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [applicationData, setApplicationData] = useState({
     cover_message: "",
     proposed_rate: "",
@@ -56,14 +57,19 @@ const GigBrowse = () => {
     fetchGigs();
   }, []);
 
-  const fetchGigs = async () => {
+  const fetchGigs = async (category?: string | null) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("gigs")
         .select("*")
-        .eq("status", "open")
-        .order("created_at", { ascending: false });
+        .eq("status", "open");
+
+      if (category) {
+        query = query.eq("category", category);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       setGigs(data || []);
@@ -76,6 +82,17 @@ const GigBrowse = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    if (selectedCategory === categoryName) {
+      // If clicking the same category, clear the filter
+      setSelectedCategory(null);
+      fetchGigs(null);
+    } else {
+      setSelectedCategory(categoryName);
+      fetchGigs(categoryName);
     }
   };
 
@@ -428,7 +445,15 @@ const GigBrowse = () => {
           <h2 className="text-2xl font-bold mb-6">Browse by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 bg-gradient-to-br from-card to-wellness-calm/20">
+              <Card 
+                key={index} 
+                className={`group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 ${
+                  selectedCategory === category.name 
+                    ? 'bg-gradient-to-br from-wellness-primary/20 to-wellness-secondary/20 border-wellness-primary' 
+                    : 'bg-gradient-to-br from-card to-wellness-calm/20'
+                }`}
+                onClick={() => handleCategoryClick(category.name)}
+              >
                 <CardContent className="p-6 text-center">
                   <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
                     {typeof category.icon === 'string' ? (
@@ -452,8 +477,15 @@ const GigBrowse = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Available Gigs</h2>
-            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5" onClick={fetchGigs}>
+            <div>
+              <h2 className="text-2xl font-bold">Available Gigs</h2>
+              {selectedCategory && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Showing {selectedCategory} gigs • <button onClick={() => handleCategoryClick(selectedCategory)} className="text-wellness-primary hover:underline">Clear filter</button>
+                </p>
+              )}
+            </div>
+            <Button variant="outline" className="border-wellness-primary/20 hover:bg-wellness-primary/5" onClick={() => fetchGigs(selectedCategory)}>
               Refresh
             </Button>
           </div>
