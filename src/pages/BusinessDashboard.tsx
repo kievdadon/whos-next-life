@@ -209,6 +209,13 @@ const BusinessDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-switch to Website tab when business data becomes available
+  useEffect(() => {
+    if (business && activeTab !== 'website') {
+      setActiveTab('website');
+    }
+  }, [business]);
+
   const handleWebsiteSave = async (websiteConfig: any) => {
     console.log('handleWebsiteSave called with config:', websiteConfig);
     console.log('Business data:', business);

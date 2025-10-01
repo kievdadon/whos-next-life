@@ -133,6 +133,15 @@ const handleBuyProduct = async (productId: string, productPrice: number) => {
       return;
     }
 
+    if (!businessId) {
+      toast({
+        title: 'Missing business info',
+        description: 'Please reload the dashboard and try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // 1) Create an order record
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -163,6 +172,15 @@ const handleBuyProduct = async (productId: string, productPrice: number) => {
     });
 
     if (error) throw error;
+
+    if (data?.error?.toString().includes('No Connect account')) {
+      toast({
+        title: 'Seller not ready to accept payments',
+        description: 'Please open Payment & Banking Setup in your dashboard to connect Stripe.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (data?.url) {
       window.open(data.url, '_blank');
