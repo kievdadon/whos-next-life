@@ -12,6 +12,27 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CONNECT-ACCOUNT] ${step}${detailsStr}`);
 };
 
+// Validate US routing number (9 digits with ABA checksum)
+const validateRoutingNumber = (routing: string): boolean => {
+  if (!/^\d{9}$/.test(routing)) return false;
+  
+  const digits = routing.split('').map(Number);
+  const checksum = (3 * (digits[0] + digits[3] + digits[6]) +
+                   7 * (digits[1] + digits[4] + digits[7]) +
+                   (digits[2] + digits[5] + digits[8])) % 10;
+  return checksum === 0;
+};
+
+// Validate account number (8-17 digits for US banks)
+const validateAccountNumber = (account: string): boolean => {
+  return /^\d{8,17}$/.test(account);
+};
+
+// Sanitize account holder name
+const sanitizeAccountHolderName = (name: string): string => {
+  return name.trim().replace(/[^a-zA-Z0-9\s\-']/g, '').substring(0, 100);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,7 +59,39 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { accountType, businessData } = await req.json();
-    logStep("Request data received", { accountType, businessData });
+    logStep("Request data received", { accountType });
+
+    // Validate banking information
+    if (!businessData.routing_number || !validateRoutingNumber(businessData.routing_number)) {
+      logStep("Invalid routing number provided");
+      return new Response(JSON.stringify({ 
+        error: "Invalid routing number format. Must be a valid 9-digit ABA routing number." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    if (!businessData.account_number || !validateAccountNumber(businessData.account_number)) {
+      logStep("Invalid account number provided");
+      return new Response(JSON.stringify({ 
+        error: "Invalid account number format. Must be 8-17 digits." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    const sanitizedHolderName = sanitizeAccountHolderName(businessData.account_holder_name || '');
+    if (!sanitizedHolderName || sanitizedHolderName.length < 2) {
+      logStep("Invalid account holder name provided");
+      return new Response(JSON.stringify({ 
+        error: "Invalid account holder name." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -75,7 +128,7 @@ serve(async (req) => {
         stripe_connect_account_id: account.id,
         routing_number: businessData.routing_number,
         account_number: businessData.account_number,
-        account_holder_name: businessData.account_holder_name
+        account_holder_name: sanitizedHolderName
       })
       .eq('email', user.email);
 
