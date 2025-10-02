@@ -38,6 +38,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+      );
+    }
+
     const applicationData: DriverApplicationRequest = await req.json();
     
     console.log("Received driver application:", applicationData);
@@ -106,21 +115,8 @@ const handler = async (req: Request): Promise<Response> => {
         ` : ''}
 
         <div style="background-color: #4f46e5; color: white; padding: 20px; border-radius: 8px; text-align: center;">
-          <p style="margin: 0 0 20px 0;">Application submitted on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-          
-          <div style="margin-top: 20px;">
-            <h3 style="margin: 0 0 15px 0; color: white;">Quick Actions:</h3>
-            <div style="display: inline-flex; gap: 15px;">
-              <a href="https://iosdtunxezeccsfxvvqn.supabase.co/functions/v1/send-driver-status-update?email=${encodeURIComponent(applicationData.email)}&status=approved&name=${encodeURIComponent(applicationData.fullName)}" 
-                 style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                ✅ APPROVE DRIVER
-              </a>
-              <a href="https://iosdtunxezeccsfxvvqn.supabase.co/functions/v1/send-driver-status-update?email=${encodeURIComponent(applicationData.email)}&status=rejected&name=${encodeURIComponent(applicationData.fullName)}" 
-                 style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                ❌ REJECT DRIVER
-              </a>
-            </div>
-          </div>
+          <p style="margin: 0;">Application submitted on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+          <p style="margin: 10px 0 0 0; font-size: 14px;">Please review this application in the admin dashboard.</p>
         </div>
       </div>
     `;
@@ -184,13 +180,18 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-driver-application function:", error);
+    
+    const errorMessage = error.message?.includes('Authentication')
+      ? error.message
+      : "Unable to submit application";
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: errorMessage
       }),
       {
-        status: 500,
+        status: error.message?.includes('Authentication') ? 401 : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

@@ -27,25 +27,27 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    let email: string, fullName: string, status: 'approved' | 'rejected';
-
-    if (req.method === "GET") {
-      // Handle URL parameters for email link clicks
-      const url = new URL(req.url);
-      email = url.searchParams.get('email') || '';
-      fullName = url.searchParams.get('name') || '';
-      status = url.searchParams.get('status') as 'approved' | 'rejected';
-      
-      if (!email || !status) {
-        throw new Error("Missing required parameters");
-      }
-    } else {
-      // Handle POST requests
-      const body: StatusUpdateRequest = await req.json();
-      email = body.email;
-      fullName = body.fullName;
-      status = body.status;
+    // Require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+      );
     }
+
+    // Only accept POST requests
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 405 },
+      );
+    }
+
+    const body: StatusUpdateRequest = await req.json();
+    const email = body.email;
+    const fullName = body.fullName;
+    const status = body.status;
     
     console.log("Processing driver status update:", { email, fullName, status });
 
@@ -127,42 +129,9 @@ const handler = async (req: Request): Promise<Response> => {
       html: htmlContent,
     });
 
-    console.log("Status update email sent successfully:", emailResponse);
+    console.log("Status update email sent successfully");
 
-    // If this was a GET request (email link click), return an HTML response
-    if (req.method === "GET") {
-      const successPage = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Driver Application ${statusText}</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-            .success { background-color: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor}; }
-            .button { background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="success">
-            <h1 style="color: ${statusColor};">✅ Driver Application ${statusText}</h1>
-            <p><strong>${fullName}</strong> has been ${status} successfully!</p>
-            <p>The driver has been notified via email and their status has been updated in the system.</p>
-            <a href="mailto:jameskiev16@gmail.com" class="button">Back to Email</a>
-          </div>
-        </body>
-        </html>
-      `;
-      
-      return new Response(successPage, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html",
-          ...corsHeaders,
-        },
-      });
-    }
-
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: true, 
       message: "Status update processed successfully"
     }), {
@@ -174,13 +143,18 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-driver-status-update function:", error);
+    
+    const errorMessage = error.message?.includes('Authentication')
+      ? error.message
+      : "Unable to process status update";
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: errorMessage
       }),
       {
-        status: 500,
+        status: error.message?.includes('Authentication') ? 401 : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

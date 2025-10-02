@@ -28,25 +28,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    let email: string, companyName: string, contactName: string, status: 'approved' | 'rejected', messageType: 'exciting' | 'sincere' = 'sincere';
-
-    if (req.method === "GET") {
-      // Extract query parameters for email link clicks
-      const url = new URL(req.url);
-      email = url.searchParams.get("email") || "";
-      companyName = url.searchParams.get("companyName") || "";
-      contactName = url.searchParams.get("contactName") || "";
-      status = (url.searchParams.get("status") as 'approved' | 'rejected') || 'rejected';
-      messageType = (url.searchParams.get("messageType") as 'exciting' | 'sincere') || 'sincere';
-    } else {
-      // Parse JSON body for POST requests
-      const body: StatusUpdateRequest = await req.json();
-      email = body.email;
-      companyName = body.companyName;
-      contactName = body.contactName;
-      status = body.status;
-      messageType = body.messageType || 'sincere';
+    // Require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+      );
     }
+
+    // Only accept POST requests
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 405 },
+      );
+    }
+
+    const body: StatusUpdateRequest = await req.json();
+    const email = body.email;
+    const companyName = body.companyName;
+    const contactName = body.contactName;
+    const status = body.status;
+    const messageType = body.messageType || 'sincere';
 
     console.log(`Processing brand partnership ${status} for ${companyName} (${email}) with ${messageType} tone`);
 
@@ -228,41 +232,9 @@ const handler = async (req: Request): Promise<Response> => {
       html: emailContent,
     });
 
-    console.log("Brand partnership status email sent successfully:", emailResponse);
+    console.log("Brand partnership status email sent successfully");
 
-    // Return appropriate response
-    if (req.method === "GET") {
-      // For GET requests (email link clicks), return a simple HTML success page
-      return new Response(`
-        <html>
-          <head>
-            <title>Partnership ${status === 'approved' ? 'Approved' : 'Declined'}</title>
-            <style>
-              body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
-              .success { color: #059669; }
-              .declined { color: #dc2626; }
-              .card { background: #f8fafc; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <h1 class="${status === 'approved' ? 'success' : 'declined'}">
-                ${status === 'approved' ? '✅ Partnership Approved!' : '❌ Partnership Declined'}
-              </h1>
-              <p>The ${status} notification has been sent to <strong>${companyName}</strong> (${email}).</p>
-              <p><em>Status: ${status} with ${messageType} tone</em></p>
-            </div>
-          </body>
-        </html>
-      `, {
-        headers: {
-          "Content-Type": "text/html",
-          ...corsHeaders,
-        },
-      });
-    }
-
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: true, 
       message: "Brand partnership status update sent successfully"
     }), {
@@ -274,11 +246,16 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-brand-status-update function:", error);
+    
+    const errorMessage = error.message?.includes('Authentication')
+      ? error.message
+      : "Unable to process status update";
+    
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: errorMessage
     }), {
-      status: 500,
+      status: error.message?.includes('Authentication') ? 401 : 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }

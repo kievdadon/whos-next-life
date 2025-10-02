@@ -80,13 +80,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.send-driver-application]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-brand-status-update]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-driver-status-update]
-verify_jwt = false
+verify_jwt = true
 
 # Public function for embedded payments via Payment Intent
 [functions.create-order-payment-intent]

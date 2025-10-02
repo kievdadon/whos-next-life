@@ -75,20 +75,94 @@ serve(async (req) => {
     }
 
     const user = data.user;
-    console.log("✅ User authenticated:", user.id);
+    console.log("✅ User authenticated");
+
+    // SERVER-SIDE VALIDATION: Fetch actual product prices from database
+    console.log("🔍 Validating cart items against database");
+    const productIds = cartItems.map((item: any) => item.productId).filter(Boolean);
+    
+    if (productIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Cart cannot be empty" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+      );
+    }
+
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, name, price, stock_quantity, is_active')
+      .in('id', productIds);
+
+    if (productsError) {
+      console.error("❌ Error fetching products:", productsError);
+      return new Response(
+        JSON.stringify({ error: "Unable to validate order" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
+      );
+    }
+
+    // Validate each cart item and calculate server-side subtotal
+    let serverSubtotal = 0;
+    for (const item of cartItems) {
+      const product = products?.find((p: any) => p.id === item.productId);
+      
+      if (!product) {
+        console.error("❌ Product not found in database");
+        return new Response(
+          JSON.stringify({ error: "Invalid product in cart" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+        );
+      }
+
+      if (!product.is_active) {
+        console.error("❌ Product no longer active");
+        return new Response(
+          JSON.stringify({ error: "Some products are no longer available" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+        );
+      }
+
+      if (product.stock_quantity < item.quantity) {
+        console.error("❌ Insufficient stock");
+        return new Response(
+          JSON.stringify({ error: "Insufficient stock for requested quantity" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+        );
+      }
+
+      // Use database price, not client-provided price
+      serverSubtotal += Number(product.price) * item.quantity;
+    }
+
+    // Calculate server-side totals
+    const serverDeliveryFee = Number(totals?.deliveryFee ?? 5);
+    const serverTax = serverSubtotal * 0.08; // 8% tax
+    const serverTotal = serverSubtotal + serverDeliveryFee + serverTax;
+
+    // Validate client total matches server calculation (1 cent tolerance for rounding)
+    const clientTotal = Number(totals?.total ?? 0);
+    if (Math.abs(serverTotal - clientTotal) > 0.01) {
+      console.error("❌ Price mismatch detected");
+      return new Response(
+        JSON.stringify({ error: "Price validation failed. Please refresh your cart." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+      );
+    }
+
+    console.log("✅ Server-side validation passed");
 
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
-      console.error("❌ Missing Stripe secret key");
+      console.error("❌ Missing Stripe configuration");
       return new Response(
-        JSON.stringify({ error: "Payment system configuration error" }),
+        JSON.stringify({ error: "Payment system unavailable" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
       );
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-    // Ensure customer
+    // Ensure Stripe customer exists
     let customerId: string | undefined;
     const customers = await stripe.customers.list({ email: deliveryInfo.email, limit: 1 });
     if (customers.data.length > 0) customerId = customers.data[0].id;
@@ -102,14 +176,8 @@ serve(async (req) => {
       customerId = created.id;
     }
 
-    // Create PaymentIntent for total amount
-    const amount = Math.round((totals?.total ?? 0) * 100);
-    if (!amount || amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: "Invalid amount" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
-      );
-    }
+    // Use SERVER-CALCULATED total for payment
+    const amount = Math.round(serverTotal * 100);
 
     const paymentIntent = await stripe.paymentIntents.create({
       customer: customerId,
@@ -120,7 +188,6 @@ serve(async (req) => {
       metadata: {
         store_name: storeInfo?.name ?? "",
         customer_name: deliveryInfo.name,
-        delivery_address: deliveryInfo.address,
       },
     });
 
@@ -128,10 +195,9 @@ serve(async (req) => {
     const estimatedDeliveryTime = new Date();
     estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + 35);
 
-    // Compute earnings split from delivery fee (80% driver / 20% company)
-    const deliveryFeeNum = Number(totals?.deliveryFee ?? 0);
-    const driverEarning = Math.max(0, Math.round(deliveryFeeNum * 0.8 * 100) / 100);
-    const companyCommission = Math.max(0, Math.round((deliveryFeeNum - driverEarning) * 100) / 100);
+    // Compute earnings split using SERVER-CALCULATED delivery fee
+    const driverEarning = Math.max(0, Math.round(serverDeliveryFee * 0.8 * 100) / 100);
+    const companyCommission = Math.max(0, Math.round((serverDeliveryFee - driverEarning) * 100) / 100);
 
     // Record order
     const { data: order, error: orderError } = await supabase
@@ -146,12 +212,12 @@ serve(async (req) => {
         customer_address: deliveryInfo.address,
         restaurant_address: storeInfo?.address || storeInfo?.name || "N/A",
         cart_items: cartItems,
-        subtotal: totals?.subtotal ?? null,
-        delivery_fee: deliveryFeeNum,
+        subtotal: serverSubtotal,
+        delivery_fee: serverDeliveryFee,
         driver_earning: driverEarning,
         company_commission: companyCommission,
-        tax: totals?.tax ?? null,
-        total_amount: totals?.total ?? null,
+        tax: serverTax,
+        total_amount: serverTotal,
         payment_status: "pending",
         order_status: "pending",
         stripe_session_id: paymentIntent.id, // reuse column to store PI id
