@@ -84,11 +84,19 @@ serve(async (req) => {
       throw new Error(`Failed to update database: ${updateError.message}`);
     }
 
-    // Create account link for onboarding
+    // Create account link for onboarding with proper return URLs
+    const origin = req.headers.get("origin") || "https://iosdtunxezeccsfxvvqn.supabase.co";
+    const returnUrl = accountType === 'business' 
+      ? `${origin}/business-dashboard?setup=complete`
+      : `${origin}/driver-dashboard?setup=complete`;
+    const refreshUrl = accountType === 'business'
+      ? `${origin}/business-dashboard?refresh=true`
+      : `${origin}/driver-dashboard?refresh=true`;
+
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `${req.headers.get("origin")}/business-dashboard?refresh=true`,
-      return_url: `${req.headers.get("origin")}/business-dashboard?setup=complete`,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
       type: "account_onboarding",
     });
 

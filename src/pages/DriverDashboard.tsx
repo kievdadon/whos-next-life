@@ -699,7 +699,11 @@ const DriverDashboard = () => {
       });
     } catch (error) {
       console.error('Error setting up banking:', error);
-      toast({ title: 'Error setting up banking information', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to set up banking information. Please try again.',
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -711,6 +715,7 @@ const DriverDashboard = () => {
       account_holder_name: ''
     });
   };
+
 
   if (isLoading) {
     return (
