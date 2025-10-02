@@ -21,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
@@ -57,6 +57,8 @@ const WellnessChat = () => {
   const [notifications, setNotifications] = useState(true);
   const [moodReminders, setMoodReminders] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedWeekMoodData, setSelectedWeekMoodData] = useState<{ average: number; count: number } | null>(null);
+  const [moodDataByDate, setMoodDataByDate] = useState<Map<string, number>>(new Map());
 
   // Redirect if not authenticated
   if (!user) {
@@ -84,6 +86,46 @@ const WellnessChat = () => {
     { day: "Sat", mood: 0, emoji: "⭐", hasData: false },
     { day: "Sun", mood: 0, emoji: "⭐", hasData: false }
   ]);
+
+  // Load all mood data for calendar indicators
+  const loadAllMoodData = async () => {
+    try {
+      const { data: sessions } = await supabase
+        .from('wellness_chat_sessions')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (!sessions?.length) return;
+
+      const sessionIds = sessions.map(s => s.id);
+      const { data: messages } = await supabase
+        .from('wellness_chat_messages')
+        .select('created_at, mood_score')
+        .in('session_id', sessionIds)
+        .not('mood_score', 'is', null);
+
+      if (messages) {
+        const moodMap = new Map<string, number[]>();
+        messages.forEach(msg => {
+          const date = format(new Date(msg.created_at), 'yyyy-MM-dd');
+          if (!moodMap.has(date)) {
+            moodMap.set(date, []);
+          }
+          moodMap.get(date)!.push(msg.mood_score);
+        });
+
+        const avgMap = new Map<string, number>();
+        moodMap.forEach((scores, date) => {
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          avgMap.set(date, avg);
+        });
+        
+        setMoodDataByDate(avgMap);
+      }
+    } catch (error) {
+      console.error('Error loading mood data:', error);
+    }
+  };
 
   // Load mood statistics
   const loadMoodStats = async () => {
@@ -174,6 +216,29 @@ const WellnessChat = () => {
       }
     } catch (error) {
       console.error('Error loading mood stats:', error);
+    }
+  };
+
+  // Calculate mood data for selected week
+  const calculateWeekMoodData = (date: Date) => {
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 }); // Sunday
+    const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    const moodScores: number[] = [];
+    daysInWeek.forEach(day => {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      const score = moodDataByDate.get(dateKey);
+      if (score !== undefined) {
+        moodScores.push(score);
+      }
+    });
+
+    if (moodScores.length > 0) {
+      const average = moodScores.reduce((a, b) => a + b, 0) / moodScores.length;
+      setSelectedWeekMoodData({ average, count: moodScores.length });
+    } else {
+      setSelectedWeekMoodData(null);
     }
   };
 
@@ -372,20 +437,27 @@ const WellnessChat = () => {
 
   // Load initial data
   useEffect(() => {
-    const initializeChat = async () => {
+    const initializeSession = async () => {
       setLoading(true);
       const session = await getOrCreateSession();
       if (session) {
         await Promise.all([
           loadMessages(session.id),
-          loadMoodStats()
+          loadMoodStats(),
+          loadAllMoodData()
         ]);
       }
       setLoading(false);
     };
 
-    initializeChat();
+    initializeSession();
   }, [user.id]);
+
+  useEffect(() => {
+    if (selectedDate) {
+      calculateWeekMoodData(selectedDate);
+    }
+  }, [selectedDate, moodDataByDate]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -537,7 +609,9 @@ const WellnessChat = () => {
         {/* Week Overview */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">This Week</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'This Week'}
+            </h3>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full hover:bg-wellness-primary/10">
@@ -550,10 +624,35 @@ const WellnessChat = () => {
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
+                  modifiers={{
+                    hasMood: (date) => {
+                      const dateKey = format(date, 'yyyy-MM-dd');
+                      return moodDataByDate.has(dateKey);
+                    }
+                  }}
+                  modifiersClassNames={{
+                    hasMood: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-wellness-primary"
+                  }}
                 />
               </PopoverContent>
             </Popover>
           </div>
+
+          {selectedWeekMoodData && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-wellness-primary/10 to-wellness-secondary/10 rounded-lg border border-wellness-primary/20">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Week Average</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-bold text-wellness-primary">
+                    {selectedWeekMoodData.average.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    ({selectedWeekMoodData.count} {selectedWeekMoodData.count === 1 ? 'entry' : 'entries'})
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-2">
             {moodStats.map((stat, index) => (
