@@ -15,6 +15,15 @@ serve(async (req) => {
   try {
     console.log("🚀 create-order-payment-intent started");
 
+    // Require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+      );
+    }
+
     const {
       deliveryInfo,
       cartItems,
@@ -22,10 +31,27 @@ serve(async (req) => {
       totals,
     } = await req.json();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validate email format
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!deliveryInfo?.email || !emailRegex.test(deliveryInfo.email)) {
       return new Response(
         JSON.stringify({ error: "Invalid email address format" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+      );
+    }
+
+    // Validate required delivery information
+    if (!deliveryInfo.name || !deliveryInfo.phone || !deliveryInfo.address) {
+      return new Response(
+        JSON.stringify({ error: "Complete delivery information required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+      );
+    }
+
+    // Validate cart items
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Cart cannot be empty" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
       );
     }
@@ -37,19 +63,23 @@ serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    // Optional auth (guest checkout allowed)
-    let user = null as any;
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data } = await supabase.auth.getUser(token);
-      user = data.user;
+    // Authenticate user (required)
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !data.user) {
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+      );
     }
 
+    const user = data.user;
+    console.log("✅ User authenticated:", user.id);
+
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const stripePublicKey = Deno.env.get("STRIPE_PUBLISHABLE_KEY");
-    if (!stripeSecretKey || !stripePublicKey) {
-      console.error("❌ Missing Stripe keys");
+    if (!stripeSecretKey) {
+      console.error("❌ Missing Stripe secret key");
       return new Response(
         JSON.stringify({ error: "Payment system configuration error" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
@@ -141,7 +171,6 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         clientSecret: paymentIntent.client_secret,
-        publishableKey: stripePublicKey,
         orderId: order.id,
         estimatedDeliveryTime: estimatedDeliveryTime.toISOString(),
       }),
@@ -149,8 +178,10 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("❌ Error in create-order-payment-intent:", error);
+    
+    // Return generic error message to client, log details server-side
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Payment processing failed. Please try again." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
     );
   }

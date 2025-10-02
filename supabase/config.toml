@@ -90,7 +90,10 @@ verify_jwt = false
 
 # Public function for embedded payments via Payment Intent
 [functions.create-order-payment-intent]
-verify_jwt = false
+verify_jwt = true
+
+[functions.verify-order-payment]
+verify_jwt = true
 
 [analytics]
 enabled = false

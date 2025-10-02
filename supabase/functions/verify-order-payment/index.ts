@@ -15,6 +15,11 @@ serve(async (req) => {
   try {
     console.log("🔍 Payment verification function started");
     
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authentication required');
+    }
+
     const { sessionId } = await req.json();
 
     if (!sessionId) {
@@ -32,6 +37,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
+
+    // Authenticate user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error('Authentication failed');
+    }
+
+    console.log("✅ User authenticated:", user.id);
 
     // Retrieve session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -79,11 +94,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("❌ Error in payment verification:", error);
+    
+    // Return generic error message to client
+    const errorMessage = error instanceof Error && error.message.includes('Authentication')
+      ? error.message
+      : "Payment verification failed. Please try again.";
+    
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error" 
+      error: errorMessage
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: error instanceof Error && error.message.includes('Authentication') ? 401 : 500,
     });
   }
 });
