@@ -77,6 +77,9 @@ export type Database = {
           saturday_close: string | null
           saturday_open: string | null
           status: string | null
+          store_accent_color: string | null
+          store_primary_color: string | null
+          store_secondary_color: string | null
           stripe_connect_account_id: string | null
           sunday_close: string | null
           sunday_open: string | null
@@ -120,6 +123,9 @@ export type Database = {
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
+          store_accent_color?: string | null
+          store_primary_color?: string | null
+          store_secondary_color?: string | null
           stripe_connect_account_id?: string | null
           sunday_close?: string | null
           sunday_open?: string | null
@@ -163,6 +169,9 @@ export type Database = {
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
+          store_accent_color?: string | null
+          store_primary_color?: string | null
+          store_secondary_color?: string | null
           stripe_connect_account_id?: string | null
           sunday_close?: string | null
           sunday_open?: string | null

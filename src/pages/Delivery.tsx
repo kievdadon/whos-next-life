@@ -59,7 +59,7 @@ const Delivery = () => {
     try {
       const { data: businesses, error } = await supabase
         .from('business_applications')
-        .select('*')
+        .select('id, business_name, business_type, address, store_primary_color, store_secondary_color, store_accent_color')
         .eq('status', 'approved');
 
       if (error) throw error;
@@ -78,7 +78,10 @@ const Delivery = () => {
             coordinates: [lon, lat] as [number, number],
             deliveryTime: distance < 5 ? "20-35 min" : "45-60 min",
             deliveryFee: distance < 5 ? 2.99 : 4.99,
-            rating: 4.0 + Math.random() * 1 // Mock rating
+            rating: 4.0 + Math.random() * 1, // Mock rating
+            primaryColor: business.store_primary_color || '#8B5CF6',
+            secondaryColor: business.store_secondary_color || '#EC4899',
+            accentColor: business.store_accent_color || '#10B981'
           };
         })
         .filter(business => business.distance <= 10)
@@ -484,18 +487,37 @@ const Delivery = () => {
               </div>
             ) : nearbyBusinesses.length > 0 ? (
               nearbyBusinesses.map((business, index) => (
-                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-card to-wellness-calm/30 overflow-hidden cursor-pointer" onClick={() => handleStoreClick(business.id, business.business_name)}>
+                <Card 
+                  key={index} 
+                  className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer" 
+                  onClick={() => handleStoreClick(business.id, business.business_name)}
+                  style={{
+                    background: `linear-gradient(135deg, ${business.primaryColor}10, ${business.secondaryColor}10)`,
+                    borderColor: `${business.primaryColor}30`
+                  }}
+                >
                   <div className="relative">
-                    <div className="aspect-video bg-gradient-to-br from-wellness-primary/10 to-wellness-secondary/10 flex items-center justify-center text-6xl">
+                    <div 
+                      className="aspect-video flex items-center justify-center text-6xl"
+                      style={{
+                        background: `linear-gradient(135deg, ${business.primaryColor}15, ${business.secondaryColor}15)`
+                      }}
+                    >
                       {business.business_type === 'restaurant' ? '🍽️' : 
                        business.business_type === 'grocery' ? '🛒' : 
                        business.business_type === 'electronics' ? '📱' : 
                        business.business_type === 'pharmacy' ? '💊' : '🏪'}
                     </div>
-                    <Badge className="absolute top-3 left-3 bg-wellness-accent/90 text-primary-foreground">
+                    <Badge 
+                      className="absolute top-3 left-3 text-primary-foreground"
+                      style={{ backgroundColor: `${business.accentColor}90` }}
+                    >
                       {business.distance?.toFixed(1)} mi
                     </Badge>
-                    <Badge className="absolute top-3 right-3 bg-wellness-warm/90 text-primary-foreground">
+                    <Badge 
+                      className="absolute top-3 right-3 text-primary-foreground"
+                      style={{ backgroundColor: `${business.secondaryColor}90` }}
+                    >
                       ${business.deliveryFee}
                     </Badge>
                   </div>

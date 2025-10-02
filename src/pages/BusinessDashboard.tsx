@@ -69,6 +69,9 @@ interface BusinessApplication {
   account_holder_name: string | null;
   stripe_connect_account_id: string | null;
   payout_enabled: boolean;
+  store_primary_color: string | null;
+  store_secondary_color: string | null;
+  store_accent_color: string | null;
 }
 
 const BusinessDashboard = () => {
@@ -89,6 +92,11 @@ const BusinessDashboard = () => {
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [storeColors, setStoreColors] = useState({
+    primary: '#8B5CF6',
+    secondary: '#EC4899',
+    accent: '#10B981'
+  });
   const [bankingForm, setBankingForm] = useState({
     routing_number: '',
     account_number: '',
@@ -175,6 +183,13 @@ const BusinessDashboard = () => {
 
       // Set the approved business data
       setBusiness(businessData);
+      
+      // Load store colors
+      setStoreColors({
+        primary: businessData.store_primary_color || '#8B5CF6',
+        secondary: businessData.store_secondary_color || '#EC4899',
+        accent: businessData.store_accent_color || '#10B981'
+      });
       
       // Load products for this business
       const { data: productsData, error: productsError } = await supabase
@@ -496,6 +511,37 @@ const BusinessDashboard = () => {
     }
   };
 
+  const handleSaveStoreColors = async () => {
+    if (!business) return;
+
+    try {
+      const { error } = await supabase
+        .from('business_applications')
+        .update({
+          store_primary_color: storeColors.primary,
+          store_secondary_color: storeColors.secondary,
+          store_accent_color: storeColors.accent
+        })
+        .eq('id', business.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Colors Updated',
+        description: 'Your store colors have been saved successfully!',
+      });
+      
+      loadBusinessData();
+    } catch (error) {
+      console.error('Error saving store colors:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save store colors. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleStoreHoursSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -716,13 +762,13 @@ const BusinessDashboard = () => {
                   <Plus className="mr-2 h-4 w-4" />
                   Add Product
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('website')}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  Customize Website
-                </Button>
                 <Button variant="outline" onClick={() => setActiveTab('hours')}>
                   <Clock className="mr-2 h-4 w-4" />
                   Update Hours
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('settings')}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Store Appearance
                 </Button>
               </CardContent>
             </Card>
@@ -862,6 +908,87 @@ const BusinessDashboard = () => {
                   <Label>Business Type</Label>
                   <Input value={business?.business_type || ''} disabled />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Delivery Store Appearance
+                </CardTitle>
+                <CardDescription>
+                  Customize your store's colors to stand out in the delivery marketplace
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="primary_color">Primary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="primary_color"
+                        type="color"
+                        value={storeColors.primary}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, primary: e.target.value }))}
+                        className="h-10 w-20"
+                      />
+                      <Input
+                        type="text"
+                        value={storeColors.primary}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, primary: e.target.value }))}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="secondary_color">Secondary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="secondary_color"
+                        type="color"
+                        value={storeColors.secondary}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, secondary: e.target.value }))}
+                        className="h-10 w-20"
+                      />
+                      <Input
+                        type="text"
+                        value={storeColors.secondary}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, secondary: e.target.value }))}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accent_color">Accent Color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="accent_color"
+                        type="color"
+                        value={storeColors.accent}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, accent: e.target.value }))}
+                        className="h-10 w-20"
+                      />
+                      <Input
+                        type="text"
+                        value={storeColors.accent}
+                        onChange={(e) => setStoreColors(prev => ({ ...prev, accent: e.target.value }))}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 border rounded-lg" style={{ background: `linear-gradient(135deg, ${storeColors.primary}15, ${storeColors.secondary}15)` }}>
+                  <p className="text-sm font-medium mb-2">Preview</p>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded" style={{ backgroundColor: storeColors.primary }} />
+                    <div className="h-8 w-8 rounded" style={{ backgroundColor: storeColors.secondary }} />
+                    <div className="h-8 w-8 rounded" style={{ backgroundColor: storeColors.accent }} />
+                  </div>
+                </div>
+                <Button onClick={handleSaveStoreColors} className="w-full">
+                  Save Store Colors
+                </Button>
               </CardContent>
             </Card>
 
