@@ -17,11 +17,7 @@ import {
   Package,
   Star,
   Phone,
-  CheckCircle,
-  ShoppingBag,
-  Utensils,
-  Zap,
-  Smartphone
+  ShoppingBag
 } from "lucide-react";
 
 const Delivery = () => {
@@ -179,13 +175,6 @@ const Delivery = () => {
       return;
     }
     navigate('/marketplace');
-  };
-
-  const handleVoiceSetup = () => {
-    toast({
-      title: "Voice Setup",
-      description: "Starting voice confirmation setup...",
-    });
   };
 
   const categories = [
@@ -554,72 +543,6 @@ const Delivery = () => {
         </div>
       </section>
 
-      {/* Voice Confirmation Section */}
-      <section className="py-12 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold">🎤 Voice Confirmation System</h2>
-              <p className="text-xl text-muted-foreground">
-                Secure deliveries with AI-powered voice verification for peace of mind
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6 text-left">
-              <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-wellness-primary/10 rounded-full flex items-center justify-center">
-                      <Smartphone className="h-6 w-6 text-wellness-primary" />
-                    </div>
-                    <h3 className="font-semibold">Smart Pickup</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Driver confirms pickup with voice verification before leaving the restaurant
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-wellness-secondary/10 rounded-full flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-wellness-secondary" />
-                    </div>
-                    <h3 className="font-semibold">Secure Delivery</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Customer confirms receipt through voice and photo verification system
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-card to-wellness-calm/30">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-wellness-accent/10 rounded-full flex items-center justify-center">
-                      <Zap className="h-6 w-6 text-wellness-accent" />
-                    </div>
-                    <h3 className="font-semibold">Real-time Updates</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Get instant notifications at every step of your delivery journey
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <Button 
-              size="lg" 
-              className="bg-wellness-primary hover:bg-wellness-primary/90 text-lg px-8"
-              onClick={handleVoiceSetup}
-            >
-              <Smartphone className="h-5 w-5 mr-3" />
-              Set Up Voice Profile
-            </Button>
-          </div>
-        </div>
-      </section>
 
       <LocationPicker
         isOpen={showLocationPicker}
