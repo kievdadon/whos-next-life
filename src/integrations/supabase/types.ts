@@ -1270,7 +1270,231 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      business_applications_safe: {
+        Row: {
+          address: string | null
+          approved_at: string | null
+          brand_partnership_date: string | null
+          business_name: string | null
+          business_size: string | null
+          business_type: string | null
+          closure_message: string | null
+          contact_name: string | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          friday_close: string | null
+          friday_open: string | null
+          has_physical_location: boolean | null
+          id: string | null
+          is_24_7: boolean | null
+          is_brand_partner: boolean | null
+          location_verified: boolean | null
+          monday_close: string | null
+          monday_open: string | null
+          payout_enabled: boolean | null
+          phone: string | null
+          saturday_close: string | null
+          saturday_open: string | null
+          status: string | null
+          store_accent_color: string | null
+          store_primary_color: string | null
+          store_secondary_color: string | null
+          stripe_connect_account_id: string | null
+          sunday_close: string | null
+          sunday_open: string | null
+          temporary_closure: boolean | null
+          thursday_close: string | null
+          thursday_open: string | null
+          timezone: string | null
+          tuesday_close: string | null
+          tuesday_open: string | null
+          updated_at: string | null
+          website_config: Json | null
+          wednesday_close: string | null
+          wednesday_open: string | null
+        }
+        Insert: {
+          address?: string | null
+          approved_at?: string | null
+          brand_partnership_date?: string | null
+          business_name?: string | null
+          business_size?: string | null
+          business_type?: string | null
+          closure_message?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          friday_close?: string | null
+          friday_open?: string | null
+          has_physical_location?: boolean | null
+          id?: string | null
+          is_24_7?: boolean | null
+          is_brand_partner?: boolean | null
+          location_verified?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
+          payout_enabled?: boolean | null
+          phone?: string | null
+          saturday_close?: string | null
+          saturday_open?: string | null
+          status?: string | null
+          store_accent_color?: string | null
+          store_primary_color?: string | null
+          store_secondary_color?: string | null
+          stripe_connect_account_id?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
+          temporary_closure?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
+          updated_at?: string | null
+          website_config?: Json | null
+          wednesday_close?: string | null
+          wednesday_open?: string | null
+        }
+        Update: {
+          address?: string | null
+          approved_at?: string | null
+          brand_partnership_date?: string | null
+          business_name?: string | null
+          business_size?: string | null
+          business_type?: string | null
+          closure_message?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          friday_close?: string | null
+          friday_open?: string | null
+          has_physical_location?: boolean | null
+          id?: string | null
+          is_24_7?: boolean | null
+          is_brand_partner?: boolean | null
+          location_verified?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
+          payout_enabled?: boolean | null
+          phone?: string | null
+          saturday_close?: string | null
+          saturday_open?: string | null
+          status?: string | null
+          store_accent_color?: string | null
+          store_primary_color?: string | null
+          store_secondary_color?: string | null
+          stripe_connect_account_id?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
+          temporary_closure?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
+          updated_at?: string | null
+          website_config?: Json | null
+          wednesday_close?: string | null
+          wednesday_open?: string | null
+        }
+        Relationships: []
+      }
+      driver_applications_safe: {
+        Row: {
+          address: string | null
+          approved_at: string | null
+          availability: string | null
+          city: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          drivers_license_url: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          experience: string | null
+          full_name: string | null
+          id: string | null
+          insurance_policy: string | null
+          insurance_provider: string | null
+          license_number: string | null
+          payout_enabled: boolean | null
+          phone: string | null
+          secondary_id_url: string | null
+          state: string | null
+          status: string | null
+          stripe_connect_account_id: string | null
+          updated_at: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_type: string | null
+          vehicle_year: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          approved_at?: string | null
+          availability?: string | null
+          city?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          drivers_license_url?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          experience?: string | null
+          full_name?: string | null
+          id?: string | null
+          insurance_policy?: string | null
+          insurance_provider?: string | null
+          license_number?: string | null
+          payout_enabled?: boolean | null
+          phone?: string | null
+          secondary_id_url?: string | null
+          state?: string | null
+          status?: string | null
+          stripe_connect_account_id?: string | null
+          updated_at?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          approved_at?: string | null
+          availability?: string | null
+          city?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          drivers_license_url?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          experience?: string | null
+          full_name?: string | null
+          id?: string | null
+          insurance_policy?: string | null
+          insurance_provider?: string | null
+          license_number?: string | null
+          payout_enabled?: boolean | null
+          phone?: string | null
+          secondary_id_url?: string | null
+          state?: string | null
+          status?: string | null
+          stripe_connect_account_id?: string | null
+          updated_at?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_current_user_role: {
