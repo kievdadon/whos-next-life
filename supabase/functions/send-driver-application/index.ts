@@ -47,7 +47,47 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Input validation
     const applicationData: DriverApplicationRequest = await req.json();
+    
+    if (!applicationData || typeof applicationData !== 'object') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid application data' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate required fields
+    const requiredFields = ['fullName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'vehicleType'];
+    for (const field of requiredFields) {
+      if (!applicationData[field as keyof DriverApplicationRequest] || 
+          typeof applicationData[field as keyof DriverApplicationRequest] !== 'string') {
+        return new Response(
+          JSON.stringify({ error: `Missing or invalid required field: ${field}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(applicationData.email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate field lengths
+    if (applicationData.fullName.length > 200 || 
+        applicationData.email.length > 255 ||
+        applicationData.phone.length > 50 ||
+        applicationData.address.length > 500) {
+      return new Response(
+        JSON.stringify({ error: 'One or more fields exceed maximum length' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log("Received driver application:", applicationData);
 

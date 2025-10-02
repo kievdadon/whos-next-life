@@ -30,10 +30,49 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { content, contentType, userEmail } = await req.json();
+    // Input validation
+    const body = await req.json();
     
-    if (!content || !contentType || !userEmail) {
-      throw new Error("Missing required fields: content, contentType, userEmail");
+    if (!body || typeof body !== 'object') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { content, contentType, userEmail } = body;
+
+    // Validate content
+    if (!content || typeof content !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Content must be a non-empty string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (content.length > 50000) {
+      return new Response(
+        JSON.stringify({ error: 'Content exceeds maximum length of 50000 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate contentType
+    const validContentTypes = ['gig_post', 'marketplace_listing', 'chat_message', 'profile', 'review'];
+    if (!contentType || !validContentTypes.includes(contentType)) {
+      return new Response(
+        JSON.stringify({ error: `Content type must be one of: ${validContentTypes.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate userEmail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!userEmail || typeof userEmail !== 'string' || !emailRegex.test(userEmail)) {
+      return new Response(
+        JSON.stringify({ error: 'Valid email address required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     logStep("Moderating content", { contentType, userEmail, contentLength: content.length });

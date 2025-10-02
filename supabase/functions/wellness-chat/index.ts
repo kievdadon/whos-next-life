@@ -24,10 +24,42 @@ serve(async (req) => {
     }
     
     console.log('API key found, parsing request body...');
-    const { message, includeMoodAnalysis, userId } = await req.json();
+    
+    // Input validation
+    const body = await req.json();
+    
+    if (!body || typeof body !== 'object') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (!message) {
-      throw new Error('Message is required');
+    const { message, includeMoodAnalysis, userId } = body;
+
+    if (!message || typeof message !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Message must be a non-empty string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (message.length > 10000) {
+      return new Response(
+        JSON.stringify({ error: 'Message exceeds maximum length of 10000 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate userId if provided
+    if (userId) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (typeof userId !== 'string' || !uuidRegex.test(userId)) {
+        return new Response(
+          JSON.stringify({ error: 'userId must be a valid UUID if provided' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     console.log('Wellness chat request:', { message, includeMoodAnalysis, userId });

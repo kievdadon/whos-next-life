@@ -49,14 +49,33 @@ serve(async (req) => {
       });
     }
 
-    const { applicationId, action } = await req.json();
+    // Input validation
+    const body = await req.json();
     
-    if (!applicationId || !action) {
-      throw new Error("Missing required fields: applicationId and action");
+    if (!body || typeof body !== 'object') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (!['approve', 'reject'].includes(action)) {
-      throw new Error("Invalid action. Must be 'approve' or 'reject'");
+    const { applicationId, action } = body;
+
+    // Validate applicationId (UUID format)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!applicationId || typeof applicationId !== 'string' || !uuidRegex.test(applicationId)) {
+      return new Response(
+        JSON.stringify({ error: 'Valid applicationId (UUID) required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate action
+    if (!action || (action !== 'approve' && action !== 'reject')) {
+      return new Response(
+        JSON.stringify({ error: 'Action must be "approve" or "reject"' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     logStep("Processing business application", { applicationId, action });
