@@ -15,6 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
@@ -49,6 +56,7 @@ const WellnessChat = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [moodReminders, setMoodReminders] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>();
 
   // Redirect if not authenticated
   if (!user) {
@@ -530,9 +538,21 @@ const WellnessChat = () => {
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">This Week</h3>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full">
-              <Calendar className="h-3 w-3" />
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full hover:bg-wellness-primary/10">
+                  <Calendar className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           
           <div className="space-y-2">
