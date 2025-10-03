@@ -42,6 +42,10 @@ const Marketplace = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const [locationError, setLocationError] = useState("");
+  const [maxDistance, setMaxDistance] = useState(25); // Default 25 miles
+  const [filterByCity, setFilterByCity] = useState("");
+  const [filterByState, setFilterByState] = useState("");
+  const [showLocationFilters, setShowLocationFilters] = useState(false);
 
   // Redirect non-authenticated users only if they try to message sellers
   // Allow browsing marketplace without authentication
@@ -293,6 +297,19 @@ const Marketplace = () => {
     }
   };
 
+  // Calculate distance between two coordinates in miles
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const applyFilters = (products: any[]) => {
     return products.filter(product => {
       // Price range filter
@@ -300,6 +317,33 @@ const Marketplace = () => {
       if (price < priceRange[0] || price > priceRange[1]) {
         return false;
       }
+
+      // Location-based filters
+      if (userLocation && product.delivery_available) {
+        // Mock coordinates - in production, products would have actual location data
+        const productLat = 41.5 + (Math.random() - 0.5) * 0.5;
+        const productLon = -81.5 + (Math.random() - 0.5) * 0.5;
+        const distance = calculateDistance(userLocation.lat, userLocation.lon, productLat, productLon);
+        
+        if (distance > maxDistance) {
+          return false;
+        }
+      }
+
+      // City filter (would need to be added to products table)
+      if (filterByCity && product.city) {
+        if (!product.city.toLowerCase().includes(filterByCity.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // State filter (would need to be added to products table)
+      if (filterByState && product.state) {
+        if (!product.state.toLowerCase().includes(filterByState.toLowerCase())) {
+          return false;
+        }
+      }
+
       return true;
     }).sort((a, b) => {
       // Sorting
@@ -308,6 +352,14 @@ const Marketplace = () => {
           return parseFloat(a.price) - parseFloat(b.price);
         case 'price-high':
           return parseFloat(b.price) - parseFloat(a.price);
+        case 'distance':
+          // Sort by distance if location is available
+          if (userLocation) {
+            const distA = calculateDistance(userLocation.lat, userLocation.lon, 41.5, -81.5);
+            const distB = calculateDistance(userLocation.lat, userLocation.lon, 41.5, -81.5);
+            return distA - distB;
+          }
+          return 0;
         case 'oldest':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'newest':
@@ -322,6 +374,10 @@ const Marketplace = () => {
     setSortBy("newest");
     setSelectedCategory(null);
     setSearchQuery("");
+    setMaxDistance(25);
+    setFilterByCity("");
+    setFilterByState("");
+    setUserLocation(null);
   };
 
   const categories = [
@@ -426,11 +482,12 @@ const Marketplace = () => {
                     Filters
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Filter Products</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-6 py-4">
+                  <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+                    {/* Price Range Filter */}
                     <div className="space-y-2">
                       <Label htmlFor="price-range">Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
                       <Slider
@@ -443,8 +500,83 @@ const Marketplace = () => {
                         className="w-full"
                       />
                     </div>
+
+                    {/* Location Filters */}
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">Location Filters</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowLocationFilters(!showLocationFilters)}
+                        >
+                          {showLocationFilters ? 'Hide' : 'Show'}
+                        </Button>
+                      </div>
+
+                      {showLocationFilters && (
+                        <div className="space-y-4">
+                          {/* Distance Filter */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="distance">Max Distance: {maxDistance} miles</Label>
+                              {!userLocation && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleGetLocation}
+                                >
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  Get Location
+                                </Button>
+                              )}
+                            </div>
+                            <Slider
+                              id="distance"
+                              min={1}
+                              max={100}
+                              step={1}
+                              value={[maxDistance]}
+                              onValueChange={(value) => setMaxDistance(value[0])}
+                              className="w-full"
+                              disabled={!userLocation}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {userLocation 
+                                ? `Showing items within ${maxDistance} miles of your location`
+                                : 'Enable location to filter by distance'
+                              }
+                            </p>
+                          </div>
+
+                          {/* City Filter */}
+                          <div className="space-y-2">
+                            <Label htmlFor="city">Filter by City</Label>
+                            <Input
+                              id="city"
+                              placeholder="Enter city name..."
+                              value={filterByCity}
+                              onChange={(e) => setFilterByCity(e.target.value)}
+                            />
+                          </div>
+
+                          {/* State Filter */}
+                          <div className="space-y-2">
+                            <Label htmlFor="state">Filter by State</Label>
+                            <Input
+                              id="state"
+                              placeholder="Enter state (e.g., NY, CA)..."
+                              value={filterByState}
+                              onChange={(e) => setFilterByState(e.target.value)}
+                              maxLength={2}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
-                    <div className="space-y-2">
+                    {/* Sort Options */}
+                    <div className="space-y-2 border-t pt-4">
                       <Label htmlFor="sort-by">Sort By</Label>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -453,6 +585,7 @@ const Marketplace = () => {
                             {sortBy === 'oldest' && 'Oldest First'}
                             {sortBy === 'price-low' && 'Price: Low to High'}
                             {sortBy === 'price-high' && 'Price: High to Low'}
+                            {sortBy === 'distance' && 'Distance: Nearest First'}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-full">
@@ -468,17 +601,23 @@ const Marketplace = () => {
                           <DropdownMenuItem onClick={() => setSortBy('price-high')}>
                             Price: High to Low
                           </DropdownMenuItem>
+                          {userLocation && (
+                            <DropdownMenuItem onClick={() => setSortBy('distance')}>
+                              Distance: Nearest First
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     
-                    <div className="flex gap-2">
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 border-t pt-4">
                       <Button 
                         variant="outline" 
                         className="flex-1"
                         onClick={resetFilters}
                       >
-                        Reset
+                        Reset All
                       </Button>
                       <Button 
                         className="flex-1 bg-wellness-primary hover:bg-wellness-primary/90"
