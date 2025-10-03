@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Crown, Shield, Star, Store, Car } from "lucide-react";
+import { Crown, Shield, Star, Store, Car, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Header = () => {
@@ -29,6 +29,14 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 right-0 z-50 p-4 flex items-center gap-3">
+      {/* Mission Control Dashboard Link */}
+      <Link to="/mission-control">
+        <Button variant="outline" size="sm" className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/20">
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Mission Control
+        </Button>
+      </Link>
+
       {/* Driver Dashboard Link */}
       {hasApprovedDriver && (
         <Link to="/driver-dashboard">
