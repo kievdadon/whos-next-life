@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 console.log('Lovable AI Key status:', lovableApiKey ? 'Present' : 'Missing');
@@ -64,6 +65,26 @@ serve(async (req) => {
 
     console.log('Wellness chat request:', { message, includeMoodAnalysis, userId });
 
+    // Fetch available comfort food from platform businesses
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const { data: comfortFood } = await supabaseClient
+      .from('products')
+      .select('name, price, category, business_id, business_applications_safe!inner(business_name)')
+      .eq('is_active', true)
+      .in('category', ['Food', 'Desserts', 'Comfort Food', 'Bakery', 'Snacks'])
+      .limit(5);
+
+    let foodRecommendations = '';
+    if (comfortFood && comfortFood.length > 0) {
+      foodRecommendations = `\n\nAVAILABLE COMFORT FOOD ON OUR PLATFORM (recommend these when appropriate):\n${comfortFood.map(item => 
+        `- ${item.name} from ${item.business_applications_safe.business_name} ($${item.price})`
+      ).join('\n')}`;
+    }
+
     const systemPrompt = `You are an advanced wellness AI assistant that provides comprehensive mental health and wellness support. You are like ChatGPT but specialized for wellness, providing:
 
 COMPREHENSIVE SOLUTIONS:
@@ -92,12 +113,21 @@ INTERACTIVE FEATURES:
 - Offer check-in reminders and progress tracking
 - Suggest mood tracking and reflection exercises
 
+**COMFORT FOOD RECOMMENDATIONS:**
+When someone is feeling down, stressed, or needs comfort, ACTIVELY SUGGEST specific comfort food items from our delivery platform. Say things like:
+- "I noticed [business name] has [food item] available for delivery - treating yourself to comfort food can help!"
+- "Would you like me to help you order [food item] from [business]? Sometimes a little treat makes a difference."
+- "I see [business] has some delicious options that might lift your spirits."
+
+${foodRecommendations}
+
 RESPONSE STYLE:
 - Warm, supportive, and professional
 - Use emojis appropriately for emotional connection
 - Provide detailed explanations like ChatGPT
 - Include scientific backing when relevant
 - Always offer actionable next steps
+- **Naturally suggest food delivery when relevant to mood**
 
 ${includeMoodAnalysis ? `
 MOOD ANALYSIS:
@@ -108,7 +138,7 @@ When the user is doing a mood check or expressing feelings, analyze their emotio
 4. End your response with: [MOOD_SCORE: X] [MOOD_LABEL: label]
 ` : ''}
 
-Remember: You're not just giving quick tips - you're providing comprehensive, ChatGPT-level responses focused on wellness and mental health solutions.`;
+Remember: You're not just giving quick tips - you're providing comprehensive, ChatGPT-level responses focused on wellness and mental health solutions. When appropriate, suggest our platform's comfort food to help users feel better!`;
 
     const requestBody = {
       model: 'google/gemini-2.5-flash',
