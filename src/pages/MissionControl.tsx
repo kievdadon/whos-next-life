@@ -20,7 +20,6 @@ export default function MissionControl() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [activeBundle, setActiveBundle] = useState<any>(null);
   const [deliveryOrders, setDeliveryOrders] = useState<any[]>([]);
   const [gigs, setGigs] = useState<any[]>([]);
   const [marketplaceActivity, setMarketplaceActivity] = useState<any[]>([]);
@@ -38,16 +37,6 @@ export default function MissionControl() {
         navigate('/auth');
         return;
       }
-
-      // Load active service bundle
-      const { data: bundle } = await supabase
-        .from('service_bundles')
-        .select('*, bundle_items(*)')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-      
-      setActiveBundle(bundle);
 
       // Load delivery orders
       const { data: orders } = await supabase
@@ -108,13 +97,6 @@ export default function MissionControl() {
     }
   };
 
-  const calculateBundleDiscount = () => {
-    if (!activeBundle?.bundle_items) return 0;
-    const itemCount = activeBundle.bundle_items.length;
-    if (itemCount >= 3) return 15;
-    if (itemCount >= 2) return 10;
-    return 0;
-  };
 
   if (loading) {
     return (
@@ -137,39 +119,6 @@ export default function MissionControl() {
           </h1>
           <p className="text-muted-foreground">Your unified dashboard for all WHOSENXT services</p>
         </div>
-
-        {/* Active Bundle */}
-        {activeBundle && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <CardTitle>Active Bundle - {calculateBundleDiscount()}% Off</CardTitle>
-                </div>
-                <Badge variant="secondary">
-                  {activeBundle.bundle_items?.length || 0} Services
-                </Badge>
-              </div>
-              <CardDescription>
-                Bundle services together and save up to 15%
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {activeBundle.bundle_items?.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-2 p-3 bg-background rounded-lg">
-                    {item.service_type === 'delivery' && <Package className="h-4 w-4" />}
-                    {item.service_type === 'gig' && <Briefcase className="h-4 w-4" />}
-                    {item.service_type === 'marketplace' && <ShoppingBag className="h-4 w-4" />}
-                    <span className="capitalize">{item.service_type}</span>
-                    <span className="ml-auto text-sm text-muted-foreground">${item.price}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Wellness Recommendations */}
         {recommendations.length > 0 && (
