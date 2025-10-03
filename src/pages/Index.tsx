@@ -360,13 +360,17 @@ const Index = () => {
               Join thousands who've already discovered the perfect balance of technology and wellness.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90 shadow-lg">
-                <Smartphone className="mr-2 h-4 w-4" />
-                Download App
+              <Button asChild size="lg" className="bg-wellness-primary hover:bg-wellness-primary/90 shadow-lg">
+                <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
+                  <Smartphone className="mr-2 h-4 w-4" />
+                  Download App
+                </a>
               </Button>
-              <Button variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
-                <MapPin className="mr-2 h-4 w-4" />
-                Find Local Services
+              <Button asChild variant="outline" size="lg" className="border-wellness-primary/20 hover:bg-wellness-primary/5">
+                <Link to="/delivery">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Find Local Services
+                </Link>
               </Button>
             </div>
           </div>
