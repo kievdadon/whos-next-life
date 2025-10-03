@@ -72,7 +72,7 @@ const Delivery = () => {
 
       if (error) throw error;
 
-      // Calculate distances and filter within 10 miles
+      // Calculate distances and filter within 25 miles
       const locationsWithDistance = (locations || [])
         .filter(loc => loc.business)
         .map(location => {
@@ -93,15 +93,15 @@ const Delivery = () => {
             phone: location.phone,
             distance,
             coordinates: [lon, lat] as [number, number],
-            deliveryTime: distance < 5 ? "20-35 min" : "45-60 min",
-            deliveryFee: distance < 5 ? 2.99 : 4.99,
+            deliveryTime: distance < 5 ? "20-35 min" : distance < 15 ? "45-60 min" : "60-90 min",
+            deliveryFee: distance < 5 ? 2.99 : distance < 15 ? 4.99 : 7.99,
             rating: 4.0 + Math.random() * 1, // Mock rating
             primaryColor: location.business.store_primary_color || '#8B5CF6',
             secondaryColor: location.business.store_secondary_color || '#EC4899',
             accentColor: location.business.store_accent_color || '#10B981'
           };
         })
-        .filter(loc => loc.distance <= 10)
+        .filter(loc => loc.distance <= 25)
         .sort((a, b) => a.distance - b.distance);
 
       setNearbyBusinesses(locationsWithDistance);
