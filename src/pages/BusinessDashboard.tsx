@@ -25,6 +25,7 @@ import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { Package, Plus, Edit, Trash2, Store, DollarSign, Eye, EyeOff, Clock, Palette, CreditCard, Building, Camera, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { StoreHours, DAY_NAMES, isStoreCurrentlyOpen } from '@/lib/storeHours';
 import { CameraCapture } from '@/components/CameraCapture';
+import { ManageBusinessLocations } from '@/components/ManageBusinessLocations';
 
 interface Product {
   id: string;
@@ -692,7 +693,7 @@ const BusinessDashboard = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               Overview
@@ -700,6 +701,10 @@ const BusinessDashboard = () => {
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Products
+            </TabsTrigger>
+            <TabsTrigger value="locations" className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Locations
             </TabsTrigger>
             <TabsTrigger value="hours" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
@@ -1080,6 +1085,11 @@ const BusinessDashboard = () => {
                 </AlertDialog>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Locations Tab */}
+          <TabsContent value="locations" className="space-y-6">
+            {business && <ManageBusinessLocations businessId={business.id} />}
           </TabsContent>
         </Tabs>
 

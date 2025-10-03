@@ -188,6 +188,69 @@ export type Database = {
         }
         Relationships: []
       }
+      business_locations: {
+        Row: {
+          address: string
+          business_id: string
+          city: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          latitude: number | null
+          location_name: string
+          longitude: number | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          business_id: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          location_name: string
+          longitude?: number | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          business_id?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          location_name?: string
+          longitude?: number | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_locations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_locations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_applications_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_violations: {
         Row: {
           action_taken: string

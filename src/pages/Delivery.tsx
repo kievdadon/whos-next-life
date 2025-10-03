@@ -49,41 +49,62 @@ const Delivery = () => {
     return R * c;
   };
 
-  // Fetch businesses from Supabase
+  // Fetch business locations from Supabase
   const fetchNearbyBusinesses = async (userCoords: [number, number]) => {
     setLoading(true);
     try {
-      const { data: businesses, error } = await supabase
-        .from('business_applications')
-        .select('id, business_name, business_type, address, store_primary_color, store_secondary_color, store_accent_color')
-        .eq('status', 'approved');
+      const { data: locations, error } = await supabase
+        .from('business_locations')
+        .select(`
+          *,
+          business:business_applications(
+            id,
+            business_name,
+            business_type,
+            description,
+            is_brand_partner,
+            store_primary_color,
+            store_secondary_color,
+            store_accent_color
+          )
+        `)
+        .eq('is_active', true);
 
       if (error) throw error;
 
       // Calculate distances and filter within 10 miles
-      const businessesWithDistance = (businesses || [])
-        .map(business => {
-          // Parse coordinates from address or use default
-          const lat = 41.5 + (Math.random() - 0.5) * 0.1; // Mock coordinates for demo
-          const lon = -81.5 + (Math.random() - 0.5) * 0.1;
+      const locationsWithDistance = (locations || [])
+        .filter(loc => loc.business)
+        .map(location => {
+          // Use actual coordinates if available, otherwise mock
+          const lat = location.latitude || 41.5 + (Math.random() - 0.5) * 0.1;
+          const lon = location.longitude || -81.5 + (Math.random() - 0.5) * 0.1;
           const distance = calculateDistance(userCoords[1], userCoords[0], lat, lon);
           
           return {
-            ...business,
+            id: location.id,
+            business_id: location.business_id,
+            business_name: location.business.business_name,
+            location_name: location.location_name,
+            business_type: location.business.business_type,
+            description: location.business.description,
+            is_brand_partner: location.business.is_brand_partner,
+            address: location.address,
+            phone: location.phone,
             distance,
             coordinates: [lon, lat] as [number, number],
             deliveryTime: distance < 5 ? "20-35 min" : "45-60 min",
             deliveryFee: distance < 5 ? 2.99 : 4.99,
             rating: 4.0 + Math.random() * 1, // Mock rating
-            primaryColor: business.store_primary_color || '#8B5CF6',
-            secondaryColor: business.store_secondary_color || '#EC4899',
-            accentColor: business.store_accent_color || '#10B981'
+            primaryColor: location.business.store_primary_color || '#8B5CF6',
+            secondaryColor: location.business.store_secondary_color || '#EC4899',
+            accentColor: location.business.store_accent_color || '#10B981'
           };
         })
-        .filter(business => business.distance <= 10)
+        .filter(loc => loc.distance <= 10)
         .sort((a, b) => a.distance - b.distance);
 
-      setNearbyBusinesses(businessesWithDistance);
+      setNearbyBusinesses(locationsWithDistance);
     } catch (error) {
       console.error('Error fetching businesses:', error);
       toast({
@@ -475,57 +496,58 @@ const Delivery = () => {
                 <p className="text-muted-foreground">Loading businesses near you...</p>
               </div>
             ) : nearbyBusinesses.length > 0 ? (
-              nearbyBusinesses.map((business, index) => (
+              nearbyBusinesses.map((location, index) => (
                 <Card 
                   key={index} 
                   className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer" 
-                  onClick={() => handleStoreClick(business.id, business.business_name)}
+                  onClick={() => handleStoreClick(location.business_id, location.business_name)}
                   style={{
-                    background: `linear-gradient(135deg, ${business.primaryColor}10, ${business.secondaryColor}10)`,
-                    borderColor: `${business.primaryColor}30`
+                    background: `linear-gradient(135deg, ${location.primaryColor}10, ${location.secondaryColor}10)`,
+                    borderColor: `${location.primaryColor}30`
                   }}
                 >
                   <div className="relative">
                     <div 
                       className="aspect-video flex items-center justify-center text-6xl"
                       style={{
-                        background: `linear-gradient(135deg, ${business.primaryColor}15, ${business.secondaryColor}15)`
+                        background: `linear-gradient(135deg, ${location.primaryColor}15, ${location.secondaryColor}15)`
                       }}
                     >
-                      {business.business_type === 'restaurant' ? '🍽️' : 
-                       business.business_type === 'grocery' ? '🛒' : 
-                       business.business_type === 'electronics' ? '📱' : 
-                       business.business_type === 'pharmacy' ? '💊' : '🏪'}
+                      {location.business_type === 'restaurant' ? '🍽️' : 
+                       location.business_type === 'grocery' ? '🛒' : 
+                       location.business_type === 'electronics' ? '📱' : 
+                       location.business_type === 'pharmacy' ? '💊' : '🏪'}
                     </div>
                     <Badge 
                       className="absolute top-3 left-3 text-primary-foreground"
-                      style={{ backgroundColor: `${business.accentColor}90` }}
+                      style={{ backgroundColor: `${location.accentColor}90` }}
                     >
-                      {business.distance?.toFixed(1)} mi
+                      {location.distance?.toFixed(1)} mi
                     </Badge>
                     <Badge 
                       className="absolute top-3 right-3 text-primary-foreground"
-                      style={{ backgroundColor: `${business.secondaryColor}90` }}
+                      style={{ backgroundColor: `${location.secondaryColor}90` }}
                     >
-                      ${business.deliveryFee}
+                      ${location.deliveryFee}
                     </Badge>
                   </div>
                   
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <h3 className="font-semibold text-lg group-hover:text-wellness-primary transition-colors">
-                        {business.business_name}
+                        {location.business_name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">{business.business_type}</p>
+                      <p className="text-sm text-muted-foreground">{location.location_name}</p>
+                      <p className="text-xs text-muted-foreground">{location.address}</p>
                       
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center space-x-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{business.rating?.toFixed(1)}</span>
+                          <span>{location.rating?.toFixed(1)}</span>
                         </div>
                         <div className="flex items-center space-x-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          <span>{business.deliveryTime}</span>
+                          <span>{location.deliveryTime}</span>
                         </div>
                       </div>
                     </div>
