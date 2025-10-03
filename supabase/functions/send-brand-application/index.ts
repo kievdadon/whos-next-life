@@ -117,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to business owner
     const emailResponse = await resend.emails.send({
       from: "WHOSENXT Brand Partnerships <onboarding@resend.dev>",
-      to: ["jameskiev16@gmail.com"],
+      to: ["whosenxtbusiness@gmail.com"],
       subject: `New Brand Partnership Application - ${applicationData.companyName}`,
       html: htmlContent,
     });

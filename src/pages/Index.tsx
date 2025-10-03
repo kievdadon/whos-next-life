@@ -372,6 +372,21 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Contact Section */}
+      <section className="py-12 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-2xl font-bold mb-4">Get In Touch</h3>
+          <p className="text-muted-foreground mb-6">Have questions? We'd love to hear from you.</p>
+          <a 
+            href="mailto:whosenxtbusiness@gmail.com"
+            className="inline-flex items-center gap-2 text-lg font-medium text-wellness-primary hover:text-wellness-primary/80 transition-colors"
+          >
+            <MessageCircle className="h-5 w-5" />
+            whosenxtbusiness@gmail.com
+          </a>
+        </div>
+      </section>
     </div>
   );
 };

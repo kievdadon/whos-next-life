@@ -164,7 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to business owner
     const emailResponse = await resend.emails.send({
       from: "WHOSENXT Driver Applications <onboarding@resend.dev>",
-      to: ["jameskiev16@gmail.com"],
+      to: ["whosenxtbusiness@gmail.com"],
       subject: `New Driver Application - ${applicationData.fullName}`,
       html: htmlContent,
     });
