@@ -19,8 +19,11 @@ serve(async (req) => {
       deliveryInfo, 
       cartItems, 
       storeInfo, 
-      totals 
+      totals,
+      wellnessDiscount = false
     } = await req.json();
+    
+    console.log("🩺 Wellness discount applied:", wellnessDiscount);
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -146,6 +149,13 @@ serve(async (req) => {
     // Calculate driver earnings and commission
     const driverEarning = totals.deliveryFee * 0.8;
     const companyCommission = totals.deliveryFee * 0.2;
+    
+    // Calculate platform commission on order (default 15%, wellness discount reduces to 10%)
+    const commissionRate = wellnessDiscount ? 0.10 : 0.15;
+    const commissionAmount = totals.subtotal * commissionRate;
+    const payoutAmount = totals.subtotal - commissionAmount;
+    
+    console.log(`💰 Commission: ${(commissionRate * 100)}% ($${commissionAmount.toFixed(2)}), Payout: $${payoutAmount.toFixed(2)}`);
 
     // Create order in database with status "pending" so drivers can see it
     const { data: orderData, error: orderError } = await supabaseClient
@@ -171,6 +181,9 @@ serve(async (req) => {
         estimated_delivery_time: estimatedDeliveryTime.toISOString(),
         driver_earning: driverEarning,
         company_commission: companyCommission,
+        commission_rate: commissionRate,
+        commission_amount: commissionAmount,
+        payout_amount: payoutAmount,
       })
       .select()
       .single();

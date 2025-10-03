@@ -68,12 +68,35 @@ const OrderCheckout = () => {
     try {
       setIsCreatingPayment(true);
       
+      // Check for wellness-based discount eligibility
+      const { data: { user } } = await supabase.auth.getUser();
+      let wellnessDiscount = false;
+      
+      if (user) {
+        // Check recent mood scores for wellness discount eligibility
+        const { data: moodData } = await supabase
+          .from('wellness_chat_messages')
+          .select('mood_score')
+          .eq('user_id', user.id)
+          .not('mood_score', 'is', null)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (moodData && moodData.length > 0) {
+          const avgMood = moodData.reduce((sum, m) => sum + (m.mood_score || 0), 0) / moodData.length;
+          // Low mood (< 5) qualifies for wellness discount on comfort food
+          wellnessDiscount = avgMood < 5;
+        }
+      }
+      
       const { data, error } = await supabase.functions.invoke('create-order-payment', {
         body: {
           deliveryInfo,
           cartItems,
           storeInfo,
-          totals: { subtotal, deliveryFee, tax, total }
+          totals: { subtotal, deliveryFee, tax, total },
+          wellnessDiscount
         }
       });
 
