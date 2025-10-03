@@ -242,21 +242,30 @@ const OrderCheckout = () => {
                   <Separator />
 
                   {/* Order Totals */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                  <div className="space-y-3">
+                    <div className="space-y-2 pb-3 border-b border-border">
+                      <div className="flex justify-between font-medium">
+                        <span>Items Total</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Delivery Fee</span>
+                        <span>${deliveryFee.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Delivery Fee</span>
-                      <span>${deliveryFee.toFixed(2)}</span>
+                    
+                    <div className="space-y-2 pb-3 border-b border-border">
+                      <div className="flex justify-between font-medium">
+                        <span>Subtotal (before tax)</span>
+                        <span>${(subtotal + deliveryFee).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Tax (8%)</span>
+                        <span>${tax.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Tax</span>
-                      <span>${tax.toFixed(2)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
+                    
+                    <div className="flex justify-between font-bold text-xl pt-2">
                       <span>Total</span>
                       <span>${total.toFixed(2)}</span>
                     </div>
