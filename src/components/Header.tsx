@@ -20,8 +20,8 @@ const Header = () => {
     }
   };
 
-  // Show header if user is logged in and has either subscription, business, or driver status
-  if (!user || (!subscribed && !hasApprovedBusiness && !hasApprovedDriver)) {
+  // Don't show header if user is not logged in
+  if (!user) {
     return null;
   }
 
