@@ -129,7 +129,7 @@ serve(async (req) => {
       line_items: lineItems,
       mode: "payment",
       success_url: `${req.headers.get("origin")}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/order-checkout`,
+      cancel_url: `${req.headers.get("origin")}/delivery`,
       payment_intent_data: {
         metadata: {
           store_name: storeInfo.name,
@@ -143,7 +143,11 @@ serve(async (req) => {
     const estimatedDeliveryTime = new Date();
     estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + 35);
 
-    // Create order in database
+    // Calculate driver earnings and commission
+    const driverEarning = totals.deliveryFee * 0.8;
+    const companyCommission = totals.deliveryFee * 0.2;
+
+    // Create order in database with status "pending" so drivers can see it
     const { data: orderData, error: orderError } = await supabaseClient
       .from("delivery_orders")
       .insert({
@@ -162,8 +166,11 @@ serve(async (req) => {
         total_amount: totals.total,
         payment_status: "pending",
         order_status: "pending",
+        status: "pending", // Available for drivers to claim
         stripe_session_id: session.id,
         estimated_delivery_time: estimatedDeliveryTime.toISOString(),
+        driver_earning: driverEarning,
+        company_commission: companyCommission,
       })
       .select()
       .single();

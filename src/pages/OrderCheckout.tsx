@@ -8,8 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ShoppingCart, CreditCard, MapPin, Clock } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface CartItem {
   id: string;
@@ -50,10 +48,6 @@ const OrderCheckout = () => {
     instructions: ''
   });
 
-  // Stripe payment states
-  const [clientSecret, setClientSecret] = useState<string>('');
-  const [publishableKey, setPublishableKey] = useState<string>('');
-  const [orderId, setOrderId] = useState<string>('');
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
 
   const validateForm = () => {
@@ -72,14 +66,9 @@ const OrderCheckout = () => {
     if (!validateForm()) return;
 
     try {
-      console.log('Delivery info:', deliveryInfo);
-      console.log('Cart items:', cartItems);
-      console.log('Store info:', storeInfo);
-      console.log('Totals:', { subtotal, deliveryFee, tax, total });
-
-      // Create a Payment Intent (embedded Stripe)
       setIsCreatingPayment(true);
-      const { data, error } = await supabase.functions.invoke('create-order-payment-intent', {
+      
+      const { data, error } = await supabase.functions.invoke('create-order-payment', {
         body: {
           deliveryInfo,
           cartItems,
@@ -88,24 +77,19 @@ const OrderCheckout = () => {
         }
       });
 
-      console.log('Function response:', { data, error });
-
-      if (error || !data) {
+      if (error || !data?.url) {
         console.error('Payment setup error:', error);
         toast({
           title: 'Payment Error',
-          description: (error as any)?.message || 'Failed to initialize payment. Please try again.',
+          description: 'Failed to initialize payment. Please try again.',
           variant: 'destructive',
         });
         setIsCreatingPayment(false);
         return;
       }
 
-      setClientSecret(data.clientSecret);
-      setPublishableKey(data.publishableKey);
-      setOrderId(data.orderId);
-      setIsCreatingPayment(false);
-      toast({ title: 'Secure payment', description: 'Enter your card details below to complete your order.' });
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
 
     } catch (error) {
       console.error('Order error:', error);
@@ -114,71 +98,10 @@ const OrderCheckout = () => {
         description: "Failed to place order. Please try again.",
         variant: "destructive",
       });
+      setIsCreatingPayment(false);
     }
   };
 
-  const handleTestOrder = async () => {
-    if (!validateForm()) return;
-    
-    // Create a mock order for testing without payment
-    const mockOrderId = 'demo-' + Math.random().toString(36).substr(2, 9);
-    
-    try {
-      // Insert a test order into the database
-      const { data: insertedData, error } = await supabase
-        .from('delivery_orders')
-        .insert({
-          customer_name: deliveryInfo.name,
-          customer_email: deliveryInfo.email,
-          customer_phone: deliveryInfo.phone,
-          customer_address: deliveryInfo.address,
-          delivery_address: deliveryInfo.address,
-          restaurant_address: storeInfo.name, // Using store name as address for demo
-          store_name: storeInfo.name,
-          cart_items: cartItems,
-          subtotal: subtotal,
-          delivery_fee: deliveryFee,
-          tax: tax,
-          total_amount: total,
-          order_status: 'pending_driver', // Waiting for driver acceptance
-          payment_status: 'demo_mode',
-          estimated_delivery_time: new Date(Date.now() + 35 * 60000).toISOString(), // 35 minutes from now
-          driver_earning: deliveryFee * 0.8,
-          company_commission: deliveryFee * 0.2,
-          status: 'pending',
-          distance_miles: 2.5,
-          tips: 0
-        })
-        .select('id')
-        .single();
-
-      if (error) {
-        console.error('Demo order creation error:', error);
-        toast({
-          title: "Demo Mode Error",
-          description: "Failed to create demo order",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Demo Order Created",
-        description: "Redirecting to order status page...",
-      });
-
-      // Navigate to order success page with demo order ID
-      navigate(`/order-success?session_id=demo_${insertedData.id}`);
-      
-    } catch (error) {
-      console.error('Demo order error:', error);
-      toast({
-        title: "Demo Mode Error",
-        description: "Something went wrong with the demo",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (cartItems.length === 0) {
     return (
@@ -339,35 +262,14 @@ const OrderCheckout = () => {
                     </div>
                   </div>
 
-                  {clientSecret && publishableKey && orderId ? (
-                    <StripePaymentForm
-                      clientSecret={clientSecret}
-                      publishableKey={publishableKey}
-                      orderId={orderId}
-                      amount={total}
-                    />
-                  ) : (
-                    <div className="space-y-3">
-                      <Button 
-                        size="lg" 
-                        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
-                        onClick={handlePlaceOrder}
-                        disabled={isCreatingPayment}
-                      >
-                        {isCreatingPayment ? 'Preparing Payment...' : `Place Order - $${total.toFixed(2)}`}
-                      </Button>
-                      
-                      {/* Test Mode Button */}
-                      <Button 
-                        variant="outline"
-                        size="lg" 
-                        className="w-full border-yellow-400 text-yellow-600 hover:bg-yellow-50"
-                        onClick={handleTestOrder}
-                      >
-                        🧪 Test Mode - Skip Payment (Demo)
-                      </Button>
-                    </div>
-                  )}
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+                    onClick={handlePlaceOrder}
+                    disabled={isCreatingPayment}
+                  >
+                    {isCreatingPayment ? 'Preparing Payment...' : `Place Order - $${total.toFixed(2)}`}
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -377,54 +279,5 @@ const OrderCheckout = () => {
     </div>
   );
 };
-
-function PaymentFormContent({ orderId, amount }: { orderId: string; amount: number }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handlePay = async () => {
-    if (!stripe || !elements) return;
-    setLoading(true);
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/order-success?order_id=${orderId}`,
-      },
-    });
-    if (error) {
-      console.error('Stripe error:', error);
-      toast({
-        title: 'Payment Error',
-        description: (error as any)?.message || 'Payment failed. Please try again.',
-        variant: 'destructive',
-      });
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="space-y-4">
-      <PaymentElement options={{ layout: 'tabs' }} />
-      <Button
-        onClick={handlePay}
-        disabled={!stripe || loading}
-        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
-      >
-        {loading ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
-      </Button>
-    </div>
-  );
-}
-
-function StripePaymentForm(props: { clientSecret: string; publishableKey: string; orderId: string; amount: number }) {
-  const stripePromise = loadStripe(props.publishableKey);
-  return (
-    <Elements stripe={stripePromise} options={{ clientSecret: props.clientSecret, appearance: { theme: 'flat' } }}>
-      <PaymentFormContent orderId={props.orderId} amount={props.amount} />
-    </Elements>
-  );
-}
 
 export default OrderCheckout;
