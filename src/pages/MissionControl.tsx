@@ -225,7 +225,12 @@ export default function MissionControl() {
                   ))}
                 </div>
               )}
-              <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/delivery')}>
+              <Button 
+                variant="outline" 
+                className="w-full mt-4" 
+                onClick={() => navigate('/delivery')}
+                type="button"
+              >
                 View All Orders
               </Button>
             </CardContent>
@@ -255,7 +260,12 @@ export default function MissionControl() {
                   ))}
                 </div>
               )}
-              <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/gig-browse')}>
+              <Button 
+                variant="outline" 
+                className="w-full mt-4" 
+                onClick={() => navigate('/gig-browse')}
+                type="button"
+              >
                 Browse Gigs
               </Button>
             </CardContent>
@@ -284,7 +294,12 @@ export default function MissionControl() {
                   ))}
                 </div>
               )}
-              <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/marketplace')}>
+              <Button 
+                variant="outline" 
+                className="w-full mt-4" 
+                onClick={() => navigate('/marketplace')}
+                type="button"
+              >
                 View Marketplace
               </Button>
             </CardContent>
@@ -311,7 +326,12 @@ export default function MissionControl() {
                   ))}
                 </div>
               )}
-              <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/family-group-chat')}>
+              <Button 
+                variant="outline" 
+                className="w-full mt-4" 
+                onClick={() => navigate('/family-group-chat')}
+                type="button"
+              >
                 Manage Groups
               </Button>
             </CardContent>
