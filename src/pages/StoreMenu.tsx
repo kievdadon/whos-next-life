@@ -468,15 +468,26 @@ const StoreMenu = () => {
                   };
                 });
                 
+                const subtotal = getTotalPrice();
+                const deliveryFee = currentStore.deliveryFee;
+                const tax = subtotal * 0.08; // 8% tax
+                const total = subtotal + deliveryFee + tax;
+                
                 navigate('/order-checkout', {
                   state: {
                     cartItems,
                     storeInfo: {
                       name: currentStore.name,
                       deliveryFee: currentStore.deliveryFee,
-                      deliveryTime: currentStore.deliveryTime
+                      deliveryTime: currentStore.deliveryTime,
+                      address: currentStore.address
                     },
-                    totalPrice: getTotalPrice()
+                    totals: {
+                      subtotal,
+                      deliveryFee,
+                      tax,
+                      total
+                    }
                   }
                 });
               }}
