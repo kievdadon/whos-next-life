@@ -40,6 +40,7 @@ import Navigation from "./components/Navigation";
 import Header from "./components/Header";
 import AutoFeatureLauncher from "./components/AutoFeatureLauncher";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
+import MissionControl from "./pages/MissionControl";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/driver-dashboard" element={<DriverDashboard />} />
               <Route path="/admin/driver-applications" element={<AdminDriverApplications />} />
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/mission-control" element={<MissionControl />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

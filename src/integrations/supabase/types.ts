@@ -47,6 +47,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string | null
+          id: string
+          price: number
+          service_id: string | null
+          service_type: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string | null
+          id?: string
+          price: number
+          service_id?: string | null
+          service_type: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string | null
+          id?: string
+          price?: number
+          service_id?: string | null
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "service_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_applications: {
         Row: {
           account_holder_name: string | null
@@ -716,6 +751,47 @@ export type Database = {
         }
         Relationships: []
       }
+      family_shared_carts: {
+        Row: {
+          cart_items: Json | null
+          created_at: string | null
+          created_by: string
+          delivery_address: string | null
+          group_id: string
+          id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cart_items?: Json | null
+          created_at?: string | null
+          created_by: string
+          delivery_address?: string | null
+          group_id: string
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cart_items?: Json | null
+          created_at?: string | null
+          created_by?: string
+          delivery_address?: string | null
+          group_id?: string
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_shared_carts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gig_applications: {
         Row: {
           applicant_user_id: string
@@ -1052,6 +1128,33 @@ export type Database = {
         }
         Relationships: []
       }
+      service_bundles: {
+        Row: {
+          created_at: string | null
+          id: string
+          status: string | null
+          total_discount: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          total_discount?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          total_discount?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
@@ -1273,6 +1376,36 @@ export type Database = {
           notifications_enabled?: boolean | null
           session_name?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wellness_recommendations: {
+        Row: {
+          clicked: boolean | null
+          id: string
+          mood_score: number | null
+          recommendation_data: Json
+          recommendation_type: string
+          shown_at: string | null
+          user_id: string
+        }
+        Insert: {
+          clicked?: boolean | null
+          id?: string
+          mood_score?: number | null
+          recommendation_data: Json
+          recommendation_type: string
+          shown_at?: string | null
+          user_id: string
+        }
+        Update: {
+          clicked?: boolean | null
+          id?: string
+          mood_score?: number | null
+          recommendation_data?: Json
+          recommendation_type?: string
+          shown_at?: string | null
           user_id?: string
         }
         Relationships: []

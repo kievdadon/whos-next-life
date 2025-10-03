@@ -10,7 +10,8 @@ import {
   PlusCircle,
   MessageSquare,
   Car,
-  Store
+  Store,
+  LayoutDashboard
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +72,7 @@ const Navigation = () => {
 
   const baseNavItems: NavItem[] = [
     { to: "/", icon: Home, label: "Home" },
+    { to: "/mission-control", icon: LayoutDashboard, label: "Dashboard", priority: true },
     { to: "/wellness-chat", icon: MessageCircle, label: "Wellness AI" },
     { to: "/delivery", icon: Package, label: "Delivery" },
     { to: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
