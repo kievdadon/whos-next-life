@@ -54,8 +54,10 @@ const WellnessChat = () => {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(false);
   const [moodReminders, setMoodReminders] = useState(true);
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [notificationPhone, setNotificationPhone] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedWeekMoodData, setSelectedWeekMoodData] = useState<{ average: number; count: number } | null>(null);
   const [moodDataByDate, setMoodDataByDate] = useState<Map<string, number>>(new Map());
@@ -270,8 +272,13 @@ const WellnessChat = () => {
       if (fetchError) throw fetchError;
 
       if (existingSessions && existingSessions.length > 0) {
-        setCurrentSession(existingSessions[0]);
-        return existingSessions[0];
+        const session = existingSessions[0];
+        setCurrentSession(session);
+        // Load notification preferences
+        setNotifications(session.notifications_enabled || false);
+        setNotificationEmail(session.notification_email || "");
+        setNotificationPhone(session.notification_phone || "");
+        return session;
       }
 
       // Create new session
@@ -302,6 +309,36 @@ const WellnessChat = () => {
     } catch (error) {
       console.error('Error with session:', error);
       return null;
+    }
+  };
+
+  // Save notification preferences
+  const saveNotificationPreferences = async () => {
+    if (!currentSession) return;
+
+    try {
+      const { error } = await supabase
+        .from('wellness_chat_sessions')
+        .update({
+          notifications_enabled: notifications,
+          notification_email: notificationEmail,
+          notification_phone: notificationPhone
+        })
+        .eq('id', currentSession.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Preferences Saved",
+        description: "Your notification preferences have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving notification preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save notification preferences.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -511,7 +548,7 @@ const WellnessChat = () => {
                         <Bell className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <Label htmlFor="notifications" className="text-sm font-medium">
-                            Notifications
+                            Enable Notifications
                           </Label>
                           <p className="text-xs text-muted-foreground">
                             Receive wellness tips and updates
@@ -524,6 +561,40 @@ const WellnessChat = () => {
                         onCheckedChange={setNotifications}
                       />
                     </div>
+
+                    {notifications && (
+                      <div className="space-y-3 pl-7">
+                        <div>
+                          <Label htmlFor="notification-email" className="text-xs font-medium text-muted-foreground">
+                            Email Address (optional)
+                          </Label>
+                          <Input
+                            id="notification-email"
+                            type="email"
+                            placeholder="your.email@example.com"
+                            value={notificationEmail}
+                            onChange={(e) => setNotificationEmail(e.target.value)}
+                            className="mt-1 h-9 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="notification-phone" className="text-xs font-medium text-muted-foreground">
+                            Phone Number (optional)
+                          </Label>
+                          <Input
+                            id="notification-phone"
+                            type="tel"
+                            placeholder="+1 (555) 000-0000"
+                            value={notificationPhone}
+                            onChange={(e) => setNotificationPhone(e.target.value)}
+                            className="mt-1 h-9 text-sm"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">
+                          Provide at least one contact method to receive notifications
+                        </p>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -545,6 +616,15 @@ const WellnessChat = () => {
                     </div>
 
                     <div className="pt-4 border-t">
+                      <Button 
+                        onClick={saveNotificationPreferences}
+                        className="w-full bg-wellness-primary hover:bg-wellness-primary/90"
+                      >
+                        Save Preferences
+                      </Button>
+                    </div>
+
+                    <div className="pt-2 border-t">
                       <div className="flex items-center space-x-3 text-muted-foreground">
                         <Shield className="h-4 w-4" />
                         <div className="text-xs">

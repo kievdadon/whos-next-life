@@ -1183,6 +1183,9 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          notification_email: string | null
+          notification_phone: string | null
+          notifications_enabled: boolean | null
           session_name: string | null
           updated_at: string | null
           user_id: string
@@ -1191,6 +1194,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          notification_email?: string | null
+          notification_phone?: string | null
+          notifications_enabled?: boolean | null
           session_name?: string | null
           updated_at?: string | null
           user_id: string
@@ -1199,6 +1205,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          notification_email?: string | null
+          notification_phone?: string | null
+          notifications_enabled?: boolean | null
           session_name?: string | null
           updated_at?: string | null
           user_id?: string
