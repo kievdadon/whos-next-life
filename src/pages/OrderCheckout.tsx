@@ -21,6 +21,7 @@ interface StoreInfo {
   name: string;
   deliveryFee: number;
   deliveryTime: string;
+  businessId?: string;
 }
 
 interface DeliveryInfo {

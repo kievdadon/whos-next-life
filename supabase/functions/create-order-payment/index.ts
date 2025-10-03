@@ -55,6 +55,23 @@ serve(async (req) => {
 
     console.log("👤 User authenticated:", !!user);
 
+    // Get business Stripe Connect account if business_id is provided
+    let businessConnectAccount = null;
+    if (storeInfo.businessId) {
+      const { data: businessData, error: businessError } = await supabaseClient
+        .from('business_applications')
+        .select('stripe_connect_account_id, business_name')
+        .eq('id', storeInfo.businessId)
+        .single();
+
+      if (!businessError && businessData?.stripe_connect_account_id) {
+        businessConnectAccount = businessData.stripe_connect_account_id;
+        console.log("🏢 Business Stripe Connect account found:", businessConnectAccount);
+      } else {
+        console.log("⚠️ No Stripe Connect account for business, payment goes to platform");
+      }
+    }
+
     // Initialize Stripe
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
@@ -68,7 +85,7 @@ serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
+      apiVersion: "2025-08-27",
     });
 
     // Create line items for Stripe
@@ -125,8 +142,15 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Calculate platform commission on order (default 15%, wellness discount reduces to 10%)
+    const commissionRate = wellnessDiscount ? 0.10 : 0.15;
+    const commissionAmount = totals.subtotal * commissionRate;
+    const payoutAmount = totals.subtotal - commissionAmount;
+    
+    console.log(`💰 Commission: ${(commissionRate * 100)}% ($${commissionAmount.toFixed(2)}), Payout to business: $${payoutAmount.toFixed(2)}`);
+
+    // Create Stripe checkout session with Connect payment splitting
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : deliveryInfo.email,
       line_items: lineItems,
@@ -140,7 +164,24 @@ serve(async (req) => {
           delivery_address: deliveryInfo.address,
         },
       },
-    });
+    };
+
+    // If business has Connect account, split payment automatically
+    if (businessConnectAccount) {
+      // Application fee is the platform commission (in cents)
+      const applicationFeeAmount = Math.round(commissionAmount * 100);
+      
+      sessionConfig.payment_intent_data.application_fee_amount = applicationFeeAmount;
+      sessionConfig.payment_intent_data.transfer_data = {
+        destination: businessConnectAccount,
+      };
+      
+      console.log(`💳 Stripe Connect payment split: Platform fee $${commissionAmount.toFixed(2)}, Business receives $${payoutAmount.toFixed(2)}`);
+    } else {
+      console.log("💵 Payment to platform account (no Connect split)");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     // Calculate estimated delivery time (30-45 minutes from now)
     const estimatedDeliveryTime = new Date();
@@ -149,13 +190,6 @@ serve(async (req) => {
     // Calculate driver earnings and commission
     const driverEarning = totals.deliveryFee * 0.8;
     const companyCommission = totals.deliveryFee * 0.2;
-    
-    // Calculate platform commission on order (default 15%, wellness discount reduces to 10%)
-    const commissionRate = wellnessDiscount ? 0.10 : 0.15;
-    const commissionAmount = totals.subtotal * commissionRate;
-    const payoutAmount = totals.subtotal - commissionAmount;
-    
-    console.log(`💰 Commission: ${(commissionRate * 100)}% ($${commissionAmount.toFixed(2)}), Payout: $${payoutAmount.toFixed(2)}`);
 
     // Create order in database with status "pending" so drivers can see it
     const { data: orderData, error: orderError } = await supabaseClient
