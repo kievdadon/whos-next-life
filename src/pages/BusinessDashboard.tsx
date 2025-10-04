@@ -777,10 +777,11 @@ const BusinessDashboard = () => {
                     if (!business) return;
                     try {
                       const newClosureStatus = !business.temporary_closure;
-                      const { error } = await supabase
-                        .from('business_applications')
-                        .update({ temporary_closure: newClosureStatus })
-                        .eq('id', business.id);
+                      const { error } = await supabase.rpc('set_business_temporary_closure', {
+                        p_business_id: business.id,
+                        p_temporary_closure: newClosureStatus,
+                        p_closure_message: null,
+                      });
                       
                       if (error) throw error;
                       

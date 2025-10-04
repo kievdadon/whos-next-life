@@ -1663,6 +1663,14 @@ export type Database = {
         Args: { _ban_type?: string; _user_email: string }
         Returns: boolean
       }
+      set_business_temporary_closure: {
+        Args: {
+          p_business_id: string
+          p_closure_message?: string
+          p_temporary_closure: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "driver" | "business_owner" | "user"
