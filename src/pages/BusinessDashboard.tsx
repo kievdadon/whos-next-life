@@ -771,6 +771,40 @@ const BusinessDashboard = () => {
                   <Clock className="mr-2 h-4 w-4" />
                   Update Hours
                 </Button>
+                <Button 
+                  variant={business?.temporary_closure ? "default" : "outline"}
+                  onClick={async () => {
+                    if (!business) return;
+                    try {
+                      const newClosureStatus = !business.temporary_closure;
+                      const { error } = await supabase
+                        .from('business_applications')
+                        .update({ temporary_closure: newClosureStatus })
+                        .eq('id', business.id);
+                      
+                      if (error) throw error;
+                      
+                      toast({
+                        title: newClosureStatus ? "Store Temporarily Closed" : "Store Reopened",
+                        description: newClosureStatus 
+                          ? "Your store is now marked as temporarily closed" 
+                          : "Your store is now open for business",
+                      });
+                      
+                      await loadBusinessData();
+                    } catch (error) {
+                      console.error('Error toggling temporary closure:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to update store status. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  <Store className="mr-2 h-4 w-4" />
+                  {business?.temporary_closure ? 'Reopen Store' : 'Close Temporarily'}
+                </Button>
                 <Button variant="outline" onClick={() => setActiveTab('settings')}>
                   <Palette className="mr-2 h-4 w-4" />
                   Store Appearance
