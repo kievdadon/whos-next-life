@@ -26,6 +26,7 @@ interface BusinessLocation {
   is_active: boolean;
   latitude?: number;
   longitude?: number;
+  total_sales?: number;
 }
 
 export function ManageBusinessLocations({ businessId }: { businessId: string }) {
@@ -58,7 +59,24 @@ export function ManageBusinessLocations({ businessId }: { businessId: string }) 
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setLocations(data || []);
+
+      // Fetch sales count for each location
+      const locationsWithSales = await Promise.all(
+        (data || []).map(async (location) => {
+          const { count } = await supabase
+            .from("delivery_orders")
+            .select("*", { count: "exact", head: true })
+            .eq("restaurant_address", location.address)
+            .eq("payment_status", "completed");
+
+          return {
+            ...location,
+            total_sales: count || 0,
+          };
+        })
+      );
+
+      setLocations(locationsWithSales);
     } catch (error) {
       console.error("Error fetching locations:", error);
       toast({
@@ -303,6 +321,9 @@ export function ManageBusinessLocations({ businessId }: { businessId: string }) 
                             Inactive
                           </span>
                         )}
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-medium">
+                          {location.total_sales || 0} sales
+                        </span>
                       </div>
                       <div className="flex items-start gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4 mt-0.5" />
