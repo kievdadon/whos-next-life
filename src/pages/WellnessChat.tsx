@@ -513,9 +513,9 @@ const WellnessChat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-wellness-calm/20 to-background flex">
+    <div className="min-h-screen bg-gradient-to-br from-background via-wellness-calm/20 to-background flex h-screen overflow-hidden">
       {/* Enhanced Sidebar */}
-      <div className="w-80 border-r border-border/30 bg-gradient-to-b from-card/40 to-card/20 backdrop-blur-xl">
+      <div className="w-80 border-r border-border/30 bg-gradient-to-b from-card/40 to-card/20 backdrop-blur-xl overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-border/20">
           <div className="flex items-center justify-between mb-6">
@@ -763,7 +763,7 @@ const WellnessChat = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Enhanced Header */}
         <div className="p-6 border-b border-border/20 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
           <div className="flex items-center justify-between">
@@ -793,7 +793,7 @@ const WellnessChat = () => {
         </div>
 
         {/* Conversation Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8" style={{ scrollBehavior: 'smooth' }}>
           {chatHistory.map((chat, idx) => (
             <div key={chat.id} className={`flex ${chat.message_type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
               <div className={`max-w-3xl ${chat.message_type === 'user' ? '' : 'w-full'}`}>
@@ -858,8 +858,8 @@ const WellnessChat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Enhanced Input Area */}
-        <div className="p-6 border-t border-border/20 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
+        {/* Enhanced Input Area - Fixed at bottom */}
+        <div className="flex-shrink-0 p-6 border-t border-border/20 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-end space-x-3">
               <div className="flex-1 relative">
