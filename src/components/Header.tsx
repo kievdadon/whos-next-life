@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Crown, Shield, Star, Store, Car, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AppSidebar } from "./AppSidebar";
 
 const Header = () => {
   const { user, subscribed, subscriptionTier, hasApprovedBusiness, businessName, hasApprovedDriver, driverName } = useAuth();
@@ -28,9 +29,12 @@ const Header = () => {
   const tierDisplay = getTierDisplay(subscriptionTier);
 
   return (
-    <header className="fixed top-0 right-0 z-50 p-4 flex items-center gap-3">
-      {/* Mission Control Dashboard Link */}
-      <Link to="/mission-control">
+    <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between gap-3 bg-card/90 backdrop-blur-lg border-b border-border/50">
+      <AppSidebar />
+      
+      <div className="hidden md:flex items-center gap-3">
+        {/* Mission Control Dashboard Link */}
+        <Link to="/mission-control">
         <Button variant="outline" size="sm" className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/20">
           <LayoutDashboard className="mr-2 h-4 w-4" />
           Mission Control
@@ -57,14 +61,15 @@ const Header = () => {
         </Link>
       )}
       
-      {/* Subscription Tier Badge */}
-      {subscribed && subscriptionTier && tierDisplay && (
-        <Badge className={`${tierDisplay.color} shadow-lg backdrop-blur-sm`}>
-          <span className="mr-1 text-base">{tierDisplay.emoji}</span>
-          <tierDisplay.icon className="mr-1 h-3 w-3" />
-          {subscriptionTier.charAt(0).toUpperCase()}{subscriptionTier.slice(1)} Member
-        </Badge>
-      )}
+        {/* Subscription Tier Badge */}
+        {subscribed && subscriptionTier && tierDisplay && (
+          <Badge className={`${tierDisplay.color} shadow-lg backdrop-blur-sm`}>
+            <span className="mr-1 text-base">{tierDisplay.emoji}</span>
+            <tierDisplay.icon className="mr-1 h-3 w-3" />
+            {subscriptionTier.charAt(0).toUpperCase()}{subscriptionTier.slice(1)} Member
+          </Badge>
+        )}
+      </div>
     </header>
   );
 };
