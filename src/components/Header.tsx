@@ -29,8 +29,11 @@ const Header = () => {
   const tierDisplay = getTierDisplay(subscriptionTier);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between gap-3 bg-card/90 backdrop-blur-lg border-b border-border/50">
-      <AppSidebar />
+    <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between gap-3 bg-card/90 backdrop-blur-lg border-b border-border/50">
+      <div className="flex items-center gap-3">
+        <AppSidebar />
+        <span className="font-semibold text-lg md:hidden">WhoseNxt</span>
+      </div>
       
       <div className="hidden md:flex items-center gap-3">
         {/* Mission Control Dashboard Link */}

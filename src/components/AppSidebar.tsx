@@ -101,8 +101,13 @@ export function AppSidebar() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden hover:bg-wellness-primary/10"
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-72 bg-card">
