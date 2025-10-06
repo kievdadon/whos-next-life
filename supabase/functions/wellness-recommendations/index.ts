@@ -55,14 +55,14 @@ serve(async (req) => {
         .from('products')
         .select('*, business_applications_safe!inner(*)')
         .eq('is_active', true)
-        .in('category', ['Wellness', 'Self-Care', 'Aromatherapy', 'Personal Care', 'Health', 'Candles', 'Fragrances', 'ADHD Support', 'Mental Health'])
+        .in('category', ['Wellness', 'Self-Care', 'Aromatherapy', 'Personal Care', 'Health', 'Candles', 'Fragrances', 'ADHD Support', 'Mental Health', 'Medicine', 'Pharmacy', 'Humidifiers', 'Air Quality', 'First Aid', 'Vitamins', 'Supplements'])
         .limit(3);
 
       if (wellnessProducts && wellnessProducts.length > 0) {
         recommendations.push({
           type: 'delivery',
-          title: 'Mood-Boosting Items',
-          description: 'Products to help you feel better',
+          title: 'Wellness & Health Items',
+          description: 'Products to help you feel better - from mood boosters to health essentials',
           items: wellnessProducts,
           mood_context: 'low_mood'
         });
