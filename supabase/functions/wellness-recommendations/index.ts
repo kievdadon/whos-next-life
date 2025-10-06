@@ -50,20 +50,20 @@ serve(async (req) => {
 
     // Low mood recommendations (< 5)
     if (avgMood < 5) {
-      // Comfort food delivery
-      const { data: comfortFood } = await supabaseClient
+      // Mood-boosting products (wellness items, not just food)
+      const { data: wellnessProducts } = await supabaseClient
         .from('products')
         .select('*, business_applications_safe!inner(*)')
         .eq('is_active', true)
-        .in('category', ['Food', 'Desserts', 'Comfort Food'])
+        .in('category', ['Wellness', 'Self-Care', 'Aromatherapy', 'Personal Care', 'Health', 'Candles', 'Fragrances', 'ADHD Support', 'Mental Health'])
         .limit(3);
 
-      if (comfortFood && comfortFood.length > 0) {
+      if (wellnessProducts && wellnessProducts.length > 0) {
         recommendations.push({
           type: 'delivery',
-          title: 'Comfort Food Nearby',
-          description: 'Treat yourself to something delicious',
-          items: comfortFood,
+          title: 'Mood-Boosting Items',
+          description: 'Products to help you feel better',
+          items: wellnessProducts,
           mood_context: 'low_mood'
         });
       }
