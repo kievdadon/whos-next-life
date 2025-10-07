@@ -36,7 +36,7 @@ serve(async (req) => {
       );
     }
 
-    const { message, includeMoodAnalysis, userId } = body;
+    const { message, includeMoodAnalysis, userId, deepThinking } = body;
 
     if (!message || typeof message !== 'string') {
       return new Response(
@@ -63,7 +63,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Wellness chat request:', { message, includeMoodAnalysis, userId });
+    console.log('Wellness chat request:', { message, includeMoodAnalysis, userId, deepThinking });
 
     // Fetch available comfort food from platform businesses
     const supabaseClient = createClient(
@@ -86,6 +86,27 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are an advanced wellness AI assistant that provides comprehensive mental health and wellness support. You are like ChatGPT but specialized for wellness, providing:
+
+${deepThinking ? `
+**DEEP THINKING MODE ACTIVATED:**
+You are now in deep analysis mode. Provide:
+- Comprehensive, multi-layered analysis of the situation
+- Explore root causes and underlying patterns
+- Multiple perspectives and approaches
+- Evidence-based research and scientific backing
+- Detailed step-by-step action plans
+- Long-term strategies and holistic solutions
+- Anticipate follow-up questions and address them proactively
+- Provide extensive context and explanations
+- Include psychological frameworks and theories when relevant
+` : `
+**QUICK RESPONSE MODE:**
+Provide concise, actionable guidance:
+- Focus on immediate, practical steps
+- Keep responses brief but supportive
+- Prioritize the most impactful advice
+- Quick wins and fast relief techniques
+`}
 
 COMPREHENSIVE SOLUTIONS:
 - Detailed analysis of problems and root causes
@@ -124,8 +145,7 @@ ${foodRecommendations}
 RESPONSE STYLE:
 - Warm, supportive, and professional
 - Use emojis appropriately for emotional connection
-- Provide detailed explanations like ChatGPT
-- Include scientific backing when relevant
+${deepThinking ? '- Provide extensive, detailed explanations with scientific backing' : '- Keep responses focused and concise'}
 - Always offer actionable next steps
 - **Naturally suggest food delivery when relevant to mood**
 
@@ -138,7 +158,7 @@ When the user is doing a mood check or expressing feelings, analyze their emotio
 4. End your response with: [MOOD_SCORE: X] [MOOD_LABEL: label]
 ` : ''}
 
-Remember: You're not just giving quick tips - you're providing comprehensive, ChatGPT-level responses focused on wellness and mental health solutions. When appropriate, suggest our platform's comfort food to help users feel better!`;
+Remember: You're providing ${deepThinking ? 'comprehensive, in-depth' : 'quick, actionable'} wellness support. When appropriate, suggest our platform's comfort food to help users feel better!`;
 
     const requestBody = {
       model: 'google/gemini-2.5-flash',

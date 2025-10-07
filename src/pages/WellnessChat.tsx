@@ -61,6 +61,7 @@ const WellnessChat = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedWeekMoodData, setSelectedWeekMoodData] = useState<{ average: number; count: number } | null>(null);
   const [moodDataByDate, setMoodDataByDate] = useState<Map<string, number>>(new Map());
+  const [deepThinking, setDeepThinking] = useState(false);
 
   // Redirect if not authenticated
   if (!user) {
@@ -390,7 +391,8 @@ const WellnessChat = () => {
         body: { 
           message: messageToSend,
           includeMoodAnalysis: true,
-          userId: user.id
+          userId: user.id,
+          deepThinking
         }
       });
 
@@ -905,6 +907,16 @@ const WellnessChat = () => {
                 <div className="flex items-center space-x-1.5">
                   <Heart className="h-3 w-3 text-wellness-warm" />
                   <span>100% confidential</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="deep-thinking"
+                    checked={deepThinking}
+                    onCheckedChange={setDeepThinking}
+                  />
+                  <Label htmlFor="deep-thinking" className="text-xs cursor-pointer">
+                    {deepThinking ? '🧠 Deep thinking' : '⚡ Quick response'}
+                  </Label>
                 </div>
               </div>
               <span className="text-xs text-muted-foreground">Press Enter to send</span>
