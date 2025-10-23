@@ -251,6 +251,60 @@ export type Database = {
           },
         ]
       }
+      casual_routes: {
+        Row: {
+          created_at: string | null
+          end_address: string
+          end_lat: number | null
+          end_lon: number | null
+          id: string
+          is_active: boolean | null
+          max_detour_miles: number | null
+          route_name: string
+          schedule_days: string[] | null
+          start_address: string
+          start_lat: number | null
+          start_lon: number | null
+          typical_time: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_address: string
+          end_lat?: number | null
+          end_lon?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_detour_miles?: number | null
+          route_name: string
+          schedule_days?: string[] | null
+          start_address: string
+          start_lat?: number | null
+          start_lon?: number | null
+          typical_time?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_address?: string
+          end_lat?: number | null
+          end_lon?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_detour_miles?: number | null
+          route_name?: string
+          schedule_days?: string[] | null
+          start_address?: string
+          start_lat?: number | null
+          start_lon?: number | null
+          typical_time?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_violations: {
         Row: {
           action_taken: string
@@ -366,6 +420,7 @@ export type Database = {
           driver_id: string | null
           estimated_delivery_time: string | null
           id: string
+          is_casual_delivery: boolean | null
           order_id: string | null
           order_status: string | null
           payment_status: string | null
@@ -403,6 +458,7 @@ export type Database = {
           driver_id?: string | null
           estimated_delivery_time?: string | null
           id?: string
+          is_casual_delivery?: boolean | null
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
@@ -440,6 +496,7 @@ export type Database = {
           driver_id?: string | null
           estimated_delivery_time?: string | null
           id?: string
+          is_casual_delivery?: boolean | null
           order_id?: string | null
           order_status?: string | null
           payment_status?: string | null
@@ -476,6 +533,7 @@ export type Database = {
           city: string | null
           created_at: string
           date_of_birth: string | null
+          driver_tier: string | null
           drivers_license_url: string | null
           email: string
           emergency_contact_name: string | null
@@ -509,6 +567,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date_of_birth?: string | null
+          driver_tier?: string | null
           drivers_license_url?: string | null
           email: string
           emergency_contact_name?: string | null
@@ -542,6 +601,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date_of_birth?: string | null
+          driver_tier?: string | null
           drivers_license_url?: string | null
           email?: string
           emergency_contact_name?: string | null
@@ -880,6 +940,176 @@ export type Database = {
         }
         Relationships: []
       }
+      group_order_items: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          group_order_id: string
+          id: string
+          participant_id: string
+          product_id: string | null
+          product_name: string
+          product_price: number
+          quantity: number
+          special_instructions: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          group_order_id: string
+          id?: string
+          participant_id: string
+          product_id?: string | null
+          product_name: string
+          product_price: number
+          quantity?: number
+          special_instructions?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          group_order_id?: string
+          id?: string
+          participant_id?: string
+          product_id?: string | null
+          product_name?: string
+          product_price?: number
+          quantity?: number
+          special_instructions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_order_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_order_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_applications_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_order_items_group_order_id_fkey"
+            columns: ["group_order_id"]
+            isOneToOne: false
+            referencedRelation: "group_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_order_items_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "group_order_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_order_participants: {
+        Row: {
+          contribution_amount: number | null
+          display_name: string
+          email: string | null
+          group_order_id: string
+          id: string
+          is_admin: boolean | null
+          joined_at: string | null
+          payment_status: string | null
+          stripe_payment_intent_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contribution_amount?: number | null
+          display_name: string
+          email?: string | null
+          group_order_id: string
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          payment_status?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contribution_amount?: number | null
+          display_name?: string
+          email?: string | null
+          group_order_id?: string
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          payment_status?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_order_participants_group_order_id_fkey"
+            columns: ["group_order_id"]
+            isOneToOne: false
+            referencedRelation: "group_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_orders: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          delivery_address: string | null
+          delivery_fee: number | null
+          delivery_instructions: string | null
+          group_name: string
+          id: string
+          invite_code: string | null
+          status: string | null
+          submitted_at: string | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          delivery_address?: string | null
+          delivery_fee?: number | null
+          delivery_instructions?: string | null
+          group_name: string
+          id?: string
+          invite_code?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          delivery_address?: string | null
+          delivery_fee?: number | null
+          delivery_instructions?: string | null
+          group_name?: string
+          id?: string
+          invite_code?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -926,6 +1156,7 @@ export type Database = {
           created_at: string
           customer_id: string
           delivery_address: string | null
+          group_order_id: string | null
           id: string
           order_status: string | null
           payment_status: string | null
@@ -943,6 +1174,7 @@ export type Database = {
           created_at?: string
           customer_id: string
           delivery_address?: string | null
+          group_order_id?: string | null
           id?: string
           order_status?: string | null
           payment_status?: string | null
@@ -960,6 +1192,7 @@ export type Database = {
           created_at?: string
           customer_id?: string
           delivery_address?: string | null
+          group_order_id?: string | null
           id?: string
           order_status?: string | null
           payment_status?: string | null
@@ -971,6 +1204,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_group_order_id_fkey"
+            columns: ["group_order_id"]
+            isOneToOne: false
+            referencedRelation: "group_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_product_id_fkey"
             columns: ["product_id"]
@@ -1032,6 +1272,7 @@ export type Database = {
           stock_quantity: number | null
           updated_at: string
           user_id: string | null
+          wellness_tags: string[] | null
         }
         Insert: {
           business_id?: string | null
@@ -1049,6 +1290,7 @@ export type Database = {
           stock_quantity?: number | null
           updated_at?: string
           user_id?: string | null
+          wellness_tags?: string[] | null
         }
         Update: {
           business_id?: string | null
@@ -1066,6 +1308,7 @@ export type Database = {
           stock_quantity?: number | null
           updated_at?: string
           user_id?: string | null
+          wellness_tags?: string[] | null
         }
         Relationships: []
       }
@@ -1641,13 +1884,10 @@ export type Database = {
     }
     Functions: {
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
-      get_user_warning_count: {
-        Args: { _user_email: string }
-        Returns: number
-      }
+      get_user_warning_count: { Args: { _user_email: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

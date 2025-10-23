@@ -23,9 +23,12 @@ import {
   Camera,
   CreditCard,
   Building,
-  Settings
+  Settings,
+  Route
 } from 'lucide-react';
 import { CameraCapture } from '@/components/CameraCapture';
+import { MyRoutes } from '@/components/MyRoutes';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface DriverProfile {
   id: string;

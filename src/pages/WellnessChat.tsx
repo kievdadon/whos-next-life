@@ -24,6 +24,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { WellnessProductRecommendations } from "@/components/WellnessProductRecommendations";
 import { 
   Send, 
   Mic,
@@ -921,6 +922,11 @@ const WellnessChat = () => {
               </div>
               <span className="text-xs text-muted-foreground">Press Enter to send</span>
             </div>
+          </div>
+
+          {/* Wellness Shopping Recommendations */}
+          <div className="mt-6">
+            <WellnessProductRecommendations />
           </div>
         </div>
       </div>
