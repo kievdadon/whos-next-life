@@ -144,10 +144,13 @@ ${foodRecommendations}
 
 RESPONSE STYLE:
 - Warm, supportive, and professional
-- Use emojis appropriately for emotional connection
+- Use emojis sparingly and naturally (no hashtags)
+- NEVER use hashtags or markdown formatting like #hashtag or **bold**
+- Write in natural, conversational prose without special formatting
+- Use simple paragraphs and line breaks for readability
 ${deepThinking ? '- Provide extensive, detailed explanations with scientific backing' : '- Keep responses focused and concise'}
 - Always offer actionable next steps
-- **Naturally suggest food delivery when relevant to mood**
+- Naturally suggest food delivery when relevant to mood
 
 ${includeMoodAnalysis ? `
 MOOD ANALYSIS:
@@ -219,6 +222,19 @@ Remember: You're providing ${deepThinking ? 'comprehensive, in-depth' : 'quick, 
     
     let aiResponse = data.choices[0].message.content;
     console.log('AI response generated successfully, length:', aiResponse?.length);
+
+    // Clean up AI response: remove hashtags and excessive formatting
+    if (aiResponse) {
+      // Remove hashtags
+      aiResponse = aiResponse.replace(/#[\w]+/g, '');
+      // Remove markdown bold/italic formatting but keep the text
+      aiResponse = aiResponse.replace(/\*\*([^*]+)\*\*/g, '$1');
+      aiResponse = aiResponse.replace(/\*([^*]+)\*/g, '$1');
+      // Clean up multiple spaces and line breaks
+      aiResponse = aiResponse.replace(/  +/g, ' ');
+      aiResponse = aiResponse.replace(/\n\n\n+/g, '\n\n');
+      aiResponse = aiResponse.trim();
+    }
 
     // Extract mood data if present
     let moodScore = null;
