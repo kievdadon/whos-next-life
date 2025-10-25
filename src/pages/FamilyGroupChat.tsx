@@ -169,9 +169,18 @@ const FamilyGroupChat = () => {
         .from('family_groups')
         .select('*')
         .eq('invite_code', inviteCode.trim())
-        .single();
+        .maybeSingle();
 
       if (groupError) throw groupError;
+      
+      if (!groupData) {
+        toast({
+          title: "Invalid Code",
+          description: "No group found with that invite code.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Add user to group
       const { error: memberError } = await supabase
