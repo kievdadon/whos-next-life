@@ -139,30 +139,29 @@ const FamilyGroupChat = () => {
 
       if (groupError || !groupData) throw groupError || new Error('No group returned');
 
-      // Add creator as admin member
+      // Add creator as admin member (use upsert to avoid duplicate key errors)
       const { error: memberError } = await supabase
         .from('family_group_members')
-        .insert({
+        .upsert({
           group_id: groupData.id,
           user_id: user.id,
           display_name: user.email?.split('@')[0] || 'You',
           is_admin: true,
           status: 'active',
+        }, {
+          onConflict: 'group_id,user_id'
         });
 
       if (memberError) throw memberError;
 
-      // Optimistically update UI
+      // Update UI immediately
       setCurrentGroup(groupData);
-      setFamilyGroups((prev) => [groupData, ...prev.filter((g) => g.id !== groupData.id)]);
+      setFamilyGroups((prev) => [groupData, ...prev]);
 
       toast({
         title: "Group Created!",
         description: `Family group "${groupName}" has been created. Share invite code: ${groupData.invite_code}`,
       });
-
-      // Refresh from server to ensure consistency
-      loadFamilyGroups();
     } catch (error: any) {
       console.error('Error creating group:', error);
       toast({
