@@ -118,17 +118,26 @@ const FamilyGroupChat = () => {
     const groupName = prompt("Enter family group name:");
     if (!groupName?.trim()) return;
 
+    if (!user?.id) {
+      toast({
+        title: "Not signed in",
+        description: "Please sign in to create a family group.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: groupData, error: groupError } = await supabase
         .from('family_groups')
         .insert({
           name: groupName.trim(),
-          created_by: user.id
+          created_by: user.id,
         })
         .select()
         .single();
 
-      if (groupError) throw groupError;
+      if (groupError || !groupData) throw groupError || new Error('No group returned');
 
       // Add creator as admin member
       const { error: memberError } = await supabase
@@ -137,27 +146,32 @@ const FamilyGroupChat = () => {
           group_id: groupData.id,
           user_id: user.id,
           display_name: user.email?.split('@')[0] || 'You',
-          is_admin: true
+          is_admin: true,
+          status: 'active',
         });
 
       if (memberError) throw memberError;
+
+      // Optimistically update UI
+      setCurrentGroup(groupData);
+      setFamilyGroups((prev) => [groupData, ...prev.filter((g) => g.id !== groupData.id)]);
 
       toast({
         title: "Group Created!",
         description: `Family group "${groupName}" has been created. Share invite code: ${groupData.invite_code}`,
       });
 
+      // Refresh from server to ensure consistency
       loadFamilyGroups();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating group:', error);
       toast({
         title: "Error",
-        description: "Failed to create family group",
+        description: error?.message || "Failed to create family group",
         variant: "destructive",
       });
     }
   };
-
   // Join group by invite code
   const joinGroup = async () => {
     const inviteCode = prompt("Enter invite code:");
