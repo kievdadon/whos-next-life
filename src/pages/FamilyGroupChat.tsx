@@ -154,8 +154,7 @@ const FamilyGroupChat = () => {
 
       if (memberError) throw memberError;
 
-      // Update UI immediately
-      setCurrentGroup(groupData);
+      // Add to groups list without switching to it
       setFamilyGroups((prev) => [groupData, ...prev]);
 
       toast({
