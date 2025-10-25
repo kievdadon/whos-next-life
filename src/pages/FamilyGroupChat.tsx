@@ -222,6 +222,41 @@ const FamilyGroupChat = () => {
     }
   };
 
+  // Leave current group
+  const leaveGroup = async () => {
+    if (!currentGroup) return;
+
+    const confirmed = window.confirm(`Are you sure you want to leave "${currentGroup.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('family_group_members')
+        .update({ status: 'inactive' })
+        .eq('group_id', currentGroup.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Left Group",
+        description: `You've left "${currentGroup.name}"`,
+      });
+
+      // Remove from local state and select another group
+      setFamilyGroups(prev => prev.filter(g => g.id !== currentGroup.id));
+      setCurrentGroup(null);
+      loadFamilyGroups();
+    } catch (error) {
+      console.error('Error leaving group:', error);
+      toast({
+        title: "Error",
+        description: "Failed to leave group",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Setup real-time subscriptions
   useEffect(() => {
     if (!currentGroup) return;
@@ -358,8 +393,8 @@ const FamilyGroupChat = () => {
               <Users className="h-4 w-4 mr-2" />
               Join Group
             </Button>
-            <Button variant="outline" size="icon">
-              <Settings className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={leaveGroup}>
+              Leave Group
             </Button>
           </div>
         </div>
