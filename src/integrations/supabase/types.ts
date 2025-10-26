@@ -817,6 +817,48 @@ export type Database = {
           },
         ]
       }
+      family_shared_orders: {
+        Row: {
+          group_id: string
+          id: string
+          order_details: Json | null
+          order_id: string
+          shared_at: string | null
+          shared_by: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          order_details?: Json | null
+          order_id: string
+          shared_at?: string | null
+          shared_by: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          order_details?: Json | null
+          order_id?: string
+          shared_at?: string | null
+          shared_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_shared_orders_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_shared_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gig_applications: {
         Row: {
           applicant_user_id: string

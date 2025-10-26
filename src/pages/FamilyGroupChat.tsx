@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users, Plus, Settings, Search } from "lucide-react";
+import { Send, Users, Plus, Settings, Search, Copy, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Navigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FamilyGroupChat = () => {
   const { user } = useAuth();
@@ -20,6 +22,8 @@ const FamilyGroupChat = () => {
   const [currentGroup, setCurrentGroup] = useState<any>(null);
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sharedOrders, setSharedOrders] = useState<any[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not authenticated
@@ -85,6 +89,22 @@ const FamilyGroupChat = () => {
       setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
+    }
+  };
+
+  // Load shared orders
+  const loadSharedOrders = async (groupId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('family_shared_orders')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('shared_at', { ascending: false });
+
+      if (error) throw error;
+      setSharedOrders(data || []);
+    } catch (error) {
+      console.error('Error loading shared orders:', error);
     }
   };
 
@@ -171,16 +191,16 @@ const FamilyGroupChat = () => {
     }
   };
   // Join group by invite code
-  const joinGroup = async () => {
-    const inviteCode = prompt("Enter invite code:");
-    if (!inviteCode?.trim()) return;
+  const joinGroup = async (inviteCode?: string) => {
+    const code = inviteCode || prompt("Enter invite code:");
+    if (!code?.trim()) return;
 
     try {
       // Find group by invite code
       const { data: groupData, error: groupError } = await supabase
         .from('family_groups')
         .select('*')
-        .eq('invite_code', inviteCode.trim())
+        .eq('invite_code', code.trim())
         .maybeSingle();
 
       if (groupError) throw groupError;
@@ -219,6 +239,16 @@ const FamilyGroupChat = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Copy invite code to clipboard
+  const copyInviteCode = () => {
+    if (!currentGroup?.invite_code) return;
+    navigator.clipboard.writeText(currentGroup.invite_code);
+    toast({
+      title: "Copied!",
+      description: "Invite code copied to clipboard",
+    });
   };
 
   // Leave current group
@@ -316,6 +346,7 @@ const FamilyGroupChat = () => {
     if (currentGroup) {
       loadGroupMembers(currentGroup.id);
       loadMessages(currentGroup.id);
+      loadSharedOrders(currentGroup.id);
     }
   }, [currentGroup]);
 
@@ -354,7 +385,7 @@ const FamilyGroupChat = () => {
             <Button 
               variant="outline"
               className="w-full"
-              onClick={joinGroup}
+              onClick={() => joinGroup(undefined)}
             >
               <Users className="h-4 w-4 mr-2" />
               Join with Invite Code
@@ -388,13 +419,49 @@ const FamilyGroupChat = () => {
               <Plus className="h-4 w-4 mr-2" />
               New Group
             </Button>
-            <Button variant="outline" size="sm" onClick={joinGroup}>
+            <Button variant="outline" size="sm" onClick={() => joinGroup(undefined)}>
               <Users className="h-4 w-4 mr-2" />
               Join Group
             </Button>
-            <Button variant="outline" size="sm" onClick={leaveGroup}>
-              Leave Group
-            </Button>
+            <Dialog open={showSettings} onOpenChange={setShowSettings}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Group Settings</DialogTitle>
+                  <DialogDescription>
+                    Manage your group settings and invite code
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Invite Code</h4>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={currentGroup?.invite_code || ''} 
+                        readOnly 
+                        className="font-mono"
+                      />
+                      <Button onClick={copyInviteCode} variant="outline" size="icon">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Share this code with others to invite them to the group
+                    </p>
+                  </div>
+                  <div>
+                    <Button variant="destructive" onClick={leaveGroup} className="w-full">
+                      Leave Group
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -440,85 +507,139 @@ const FamilyGroupChat = () => {
 
           {/* Chat Area */}
           <Card className="lg:col-span-3 flex flex-col h-[70vh]">
-            <CardHeader className="border-b">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback className="bg-wellness-primary text-white">
-                    {currentGroup?.name?.[0]?.toUpperCase() || 'F'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle>{currentGroup?.name || 'Messaging'}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {messages.length > 0 
-                      ? `Last message ${new Date(messages[messages.length - 1]?.created_at).toLocaleTimeString()}`
-                      : 'No messages yet'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-
-            {/* Messages */}
-            <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => {
-                const isOwn = msg.user_id === user.id;
-                const sender = groupMembers.find(m => m.user_id === msg.user_id);
-                
-                return (
-                  <div key={msg.id} className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    {!isOwn && (
-                      <Avatar className="mt-1">
-                        <AvatarFallback className="bg-wellness-secondary/20 text-wellness-secondary text-xs">
-                          {sender?.display_name?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
-                      {!isOwn && (
-                        <p className="text-xs text-muted-foreground mb-1">
-                          {sender?.display_name || 'Family Member'}
-                        </p>
-                      )}
-                      <div className={`p-3 rounded-lg ${
-                        isOwn 
-                          ? 'bg-wellness-primary text-white ml-auto' 
-                          : 'bg-muted'
-                      }`}>
-                        <p className="text-sm">{msg.content}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 text-right">
-                        {new Date(msg.created_at).toLocaleTimeString()}
+            <Tabs defaultValue="chat" className="flex flex-col h-full">
+              <CardHeader className="border-b pb-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback className="bg-wellness-primary text-white">
+                        {currentGroup?.name?.[0]?.toUpperCase() || 'F'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle>{currentGroup?.name || 'Messaging'}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {messages.length > 0 
+                          ? `Last message ${new Date(messages[messages.length - 1]?.created_at).toLocaleTimeString()}`
+                          : 'No messages yet'
+                        }
                       </p>
                     </div>
-                    {isOwn && (
-                      <Avatar className="mt-1">
-                        <AvatarFallback className="bg-wellness-primary text-white text-xs">
-                          {user.email?.[0]?.toUpperCase() || 'Y'}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
                   </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </CardContent>
+                </div>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="orders">
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Shared Orders ({sharedOrders.length})
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-            {/* Message Input */}
-            <div className="p-4 border-t">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Type your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1"
-                />
-                <Button onClick={handleSendMessage} className="bg-wellness-primary hover:bg-wellness-primary/90">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+              <TabsContent value="chat" className="flex-1 flex flex-col m-0 overflow-hidden">
+                {/* Messages */}
+                <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.map((msg) => {
+                    const isOwn = msg.user_id === user.id;
+                    const sender = groupMembers.find(m => m.user_id === msg.user_id);
+                    
+                    return (
+                      <div key={msg.id} className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        {!isOwn && (
+                          <Avatar className="mt-1">
+                            <AvatarFallback className="bg-wellness-secondary/20 text-wellness-secondary text-xs">
+                              {sender?.display_name?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
+                          {!isOwn && (
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {sender?.display_name || 'Family Member'}
+                            </p>
+                          )}
+                          <div className={`p-3 rounded-lg ${
+                            isOwn 
+                              ? 'bg-wellness-primary text-white ml-auto' 
+                              : 'bg-muted'
+                          }`}>
+                            <p className="text-sm">{msg.content}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 text-right">
+                            {new Date(msg.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        {isOwn && (
+                          <Avatar className="mt-1">
+                            <AvatarFallback className="bg-wellness-primary text-white text-xs">
+                              {user.email?.[0]?.toUpperCase() || 'Y'}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </CardContent>
+
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type your message..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSendMessage} className="bg-wellness-primary hover:bg-wellness-primary/90">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="orders" className="flex-1 m-0 overflow-hidden">
+                <CardContent className="p-4 overflow-y-auto h-full">
+                  {sharedOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No orders shared yet</p>
+                      <p className="text-sm mt-2">Family members can share their orders here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {sharedOrders.map((order) => {
+                        const sharer = groupMembers.find(m => m.user_id === order.shared_by);
+                        return (
+                          <Card key={order.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="font-medium">Order from {sharer?.display_name || 'Family Member'}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(order.shared_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <Badge>Shared</Badge>
+                              </div>
+                              {order.order_details && (
+                                <div className="text-sm space-y-1 mt-2">
+                                  <p className="text-muted-foreground">
+                                    {JSON.stringify(order.order_details)}
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </TabsContent>
+            </Tabs>
+
           </Card>
         </div>
       </div>
