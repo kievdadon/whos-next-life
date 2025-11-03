@@ -248,15 +248,26 @@ const WellnessChat = () => {
 
   const handleMoodCheck = async () => {
     const moodPrompt = "I'd like to do a mood check. Can you help me reflect on how I'm feeling today and log my mood?";
-    setMessage(moodPrompt);
-    await handleSend();
+    await handleSend(moodPrompt);
+  };
+
+  const handleMeditation = async () => {
+    await handleSend("I'd like some meditation guidance to help me relax and find inner peace.");
+  };
+
+  const handleBreathing = async () => {
+    await handleSend("Can you guide me through some breathing exercises to help me feel calmer?");
+  };
+
+  const handleSleepTips = async () => {
+    await handleSend("I'm having trouble sleeping. Can you give me some tips for better sleep hygiene?");
   };
 
   const quickActions = [
     { icon: Heart, label: "Mood Check", color: "wellness-warm", action: handleMoodCheck },
-    { icon: Brain, label: "Meditation", color: "wellness-primary", action: () => setMessage("I'd like some meditation guidance to help me relax and find inner peace.") },
-    { icon: Activity, label: "Breathing", color: "wellness-secondary", action: () => setMessage("Can you guide me through some breathing exercises to help me feel calmer?") },
-    { icon: Moon, label: "Sleep Tips", color: "wellness-accent", action: () => setMessage("I'm having trouble sleeping. Can you give me some tips for better sleep hygiene?") }
+    { icon: Brain, label: "Meditation", color: "wellness-primary", action: handleMeditation },
+    { icon: Activity, label: "Breathing", color: "wellness-secondary", action: handleBreathing },
+    { icon: Moon, label: "Sleep Tips", color: "wellness-accent", action: handleSleepTips }
   ];
 
   // Create or get current wellness session
