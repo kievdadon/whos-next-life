@@ -174,8 +174,8 @@ const FamilyGroupChat = () => {
 
       if (memberError) throw memberError;
 
-      // Add to groups list without switching to it
-      setFamilyGroups((prev) => [groupData, ...prev]);
+      // Reload groups to get the new one with proper data structure
+      await loadFamilyGroups();
 
       toast({
         title: "Group Created!",
@@ -405,10 +405,24 @@ const FamilyGroupChat = () => {
             <div className="p-3 rounded-full bg-wellness-primary/20">
               <Users className="h-6 w-6 text-wellness-primary" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {currentGroup?.name || "Family Group"}
-              </h1>
+            <div className="flex-1">
+              {/* Group Selector */}
+              <div className="flex items-center gap-2 mb-1">
+                <select 
+                  value={currentGroup?.id || ''} 
+                  onChange={(e) => {
+                    const group = familyGroups.find(g => g.id === e.target.value);
+                    setCurrentGroup(group || null);
+                  }}
+                  className="text-2xl font-bold bg-transparent border-none outline-none cursor-pointer hover:text-wellness-primary transition-colors"
+                >
+                  {familyGroups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="text-muted-foreground">
                 {groupMembers.length} members • {groupMembers.filter(m => m.status === 'active').length} active
               </p>
