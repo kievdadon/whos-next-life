@@ -80,9 +80,14 @@ export default function MissionControl() {
       setFamilyGroups(groups?.map(g => g.family_groups) || []);
 
       // Load wellness recommendations
-      const { data: recs } = await supabase.functions.invoke('wellness-recommendations');
-      if (recs?.data?.recommendations) {
-        setRecommendations(recs.data.recommendations);
+      try {
+        const { data: recs, error: recsError } = await supabase.functions.invoke('wellness-recommendations');
+        if (!recsError && recs?.recommendations) {
+          setRecommendations(recs.recommendations);
+        }
+      } catch (recsErr) {
+        console.log('Wellness recommendations unavailable:', recsErr);
+        // Silently fail - recommendations are optional
       }
 
     } catch (error: any) {
