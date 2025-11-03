@@ -387,10 +387,23 @@ const WellnessChat = () => {
 
       if (!customMessage) setMessage("");
 
-      // Get AI response with mood analysis
+      // Build conversation history for AI context
+      const conversationMessages = chatHistory.map(msg => ({
+        role: msg.message_type === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
+      // Add current user message to history
+      conversationMessages.push({
+        role: 'user',
+        content: messageToSend
+      });
+
+      // Get AI response with mood analysis and full conversation context
       const { data, error } = await supabase.functions.invoke('wellness-chat', {
         body: { 
-          message: messageToSend,
+          messages: conversationMessages,
+          message: messageToSend, // Keep for backward compatibility
           includeMoodAnalysis: true,
           userId: user.id,
           deepThinking
