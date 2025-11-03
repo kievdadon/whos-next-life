@@ -47,8 +47,12 @@ export const WellnessProductRecommendations = () => {
   const loadRecommendations = async () => {
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
       const { data, error } = await supabase.functions.invoke('wellness-recommendations', {
-        body: {}
+        body: {},
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) throw error;
@@ -65,7 +69,6 @@ export const WellnessProductRecommendations = () => {
       setLoading(false);
     }
   };
-
   const handleShopProduct = (productId: string, businessId: string) => {
     navigate(`/product/${productId}`, { state: { businessId } });
   };

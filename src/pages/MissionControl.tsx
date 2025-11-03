@@ -81,7 +81,11 @@ export default function MissionControl() {
 
       // Load wellness recommendations
       try {
-        const { data: recs, error: recsError } = await supabase.functions.invoke('wellness-recommendations');
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        const { data: recs, error: recsError } = await supabase.functions.invoke('wellness-recommendations', {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
         if (!recsError && recs?.recommendations) {
           setRecommendations(recs.recommendations);
         }
