@@ -63,8 +63,7 @@ const SubscriptionPlans = () => {
         'Instant gig notifications',
         'Exclusive gig access',
         'Full online store suite',
-        'Business analytics dashboard',
-        'Personal account manager'
+        'Business analytics dashboard'
       ],
       popular: false
     }

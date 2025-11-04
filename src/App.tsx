@@ -39,6 +39,7 @@ import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 import Header from "./components/Header";
 import AutoFeatureLauncher from "./components/AutoFeatureLauncher";
+import VoiceAssistant from "./components/VoiceAssistant";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import MissionControl from "./pages/MissionControl";
 
@@ -53,6 +54,7 @@ const App = () => (
         <BrowserRouter>
           <Header />
           <AutoFeatureLauncher />
+          <VoiceAssistant />
           <div className="pt-16 pb-16 md:pb-0">
             <Routes>
               <Route path="/" element={<Index />} />

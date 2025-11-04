@@ -59,7 +59,7 @@ export const useSubscription = () => {
           hasEarlyGigAccess: true,
           hasStoreTools: true,
           hasAnalytics: true,
-          hasAccountManager: true,
+          hasAccountManager: false,
           gigNotificationPriority: 'instant'
         };
       default:

@@ -82,6 +82,9 @@ verify_jwt = true
 [functions.wellness-recommendations]
 verify_jwt = true
 
+[functions.voice-assistant-token]
+verify_jwt = true
+
 [functions.send-driver-application]
 verify_jwt = true
 
