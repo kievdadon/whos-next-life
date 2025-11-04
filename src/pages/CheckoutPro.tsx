@@ -41,12 +41,9 @@ const CheckoutPro = () => {
     price: 10,
     features: [
       'Free delivery 2 days per week',
-      'Access to all WHOSENXT features',
       '10% off clothing & accessories',
       'Basic gig notifications',
-      'Mobile app access',
-      'Email customer support',
-      'Monthly wellness tips'
+      'Standard customer support'
     ]
   };
 

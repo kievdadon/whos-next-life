@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,8 @@ import {
   X,
   MoreVertical,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 
 const ProductDetail = () => {
@@ -28,6 +30,7 @@ const ProductDetail = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { applyDiscount, calculateSavings, benefits } = useSubscription();
   const [product, setProduct] = useState<any>(null);
   const [productImages, setProductImages] = useState<any[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -382,8 +385,30 @@ const ProductDetail = () => {
 
               <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
               
-              <div className="text-4xl font-bold text-wellness-primary mb-6">
-                ${product.price}
+              <div className="space-y-2 mb-6">
+                {benefits.discountPercentage > 0 && calculateSavings(product.price, product.category) > 0 ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-muted-foreground line-through">
+                        ${product.price.toFixed(2)}
+                      </span>
+                      <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20">
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        {benefits.discountPercentage}% OFF
+                      </Badge>
+                    </div>
+                    <div className="text-4xl font-bold text-wellness-primary">
+                      ${applyDiscount(product.price, product.category).toFixed(2)}
+                    </div>
+                    <p className="text-sm text-wellness-primary">
+                      You save ${calculateSavings(product.price, product.category).toFixed(2)} with your subscription!
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-4xl font-bold text-wellness-primary">
+                    ${product.price.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { SupportBadge } from "./SupportBadge";
 import { Crown, Shield, Star, Store, Car, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
@@ -72,6 +73,9 @@ const Header = () => {
             {subscriptionTier.charAt(0).toUpperCase()}{subscriptionTier.slice(1)} Member
           </Badge>
         )}
+        
+        {/* Support Tier Badge */}
+        <SupportBadge />
       </div>
     </header>
   );

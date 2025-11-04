@@ -43,17 +43,13 @@ const CheckoutVeteran = () => {
     originalPrice: 60,
     features: [
       'Free delivery every day',
-      'VIP customer support',
       '30% off clothing & accessories',
+      'VIP customer support',
       'Instant gig notifications',
       'Exclusive gig access',
       'Full online store suite',
       'Business analytics dashboard',
-      'Personal account manager',
-      'Advanced wellness programs',
-      'Exclusive member meetups',
-      'White-label marketplace options',
-      'API access for integrations'
+      'Personal account manager'
     ]
   };
 

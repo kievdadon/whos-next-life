@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ interface Business {
 
 const BusinessMarketplace = () => {
   const { user, subscribed, subscriptionTier } = useAuth();
+  const { benefits } = useSubscription();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -71,7 +73,7 @@ const BusinessMarketplace = () => {
           description: business.description || 'Local business',
           rating: 4.0 + Math.random() * 1, // Mock rating
           location: business.address || 'Local area',
-          discount: subscribed ? (subscriptionTier === 'pro' ? 10 : subscriptionTier === 'elite' ? 20 : 30) : 0,
+          discount: benefits.discountPercentage,
           image: '/placeholder.svg',
           hours: business.is_24_7 ? '24/7' : 'Mon-Sun 8AM-8PM', // Simplified for demo
           isBrandPartner: business.is_brand_partner,
@@ -124,9 +126,9 @@ const BusinessMarketplace = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Support local businesses in your community. Create your own store or discover amazing products and services.
           </p>
-          {subscribed && (
+          {subscribed && benefits.discountPercentage > 0 && (
             <Badge className="mt-4 bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20">
-              Your {subscriptionTier} discount: {subscriptionTier === 'pro' ? '10%' : subscriptionTier === 'elite' ? '20%' : '30%'} off
+              Your {subscriptionTier} discount: {benefits.discountPercentage}% off clothing & accessories
             </Badge>
           )}
         </div>

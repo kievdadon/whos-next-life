@@ -43,14 +43,12 @@ const CheckoutElite = () => {
     originalPrice: 35,
     features: [
       'Free delivery 4 days per week',
-      'Priority customer support',
       '20% off clothing & accessories',
+      'Priority customer support',
       'Priority gig notifications',
       'Early access to new gigs',
       'Online store creation tools',
-      'Advanced wellness features',
-      'Monthly video consultations',
-      'Exclusive member events'
+      'Advanced wellness features'
     ]
   };
 

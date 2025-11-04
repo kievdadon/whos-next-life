@@ -27,10 +27,9 @@ const SubscriptionPlans = () => {
       description: 'Perfect for casual users',
       features: [
         'Free delivery 2 days per week',
-        'Access to all WHOSENXT features',
         '10% off clothing & accessories',
         'Basic gig notifications',
-        'Mobile app access'
+        'Standard customer support'
       ],
       popular: false
     },
@@ -42,8 +41,8 @@ const SubscriptionPlans = () => {
       description: 'Great for regular users',
       features: [
         'Free delivery 4 days per week',
-        'Priority customer support',
         '20% off clothing & accessories',
+        'Priority customer support',
         'Priority gig notifications',
         'Early access to new gigs',
         'Online store creation tools',
@@ -59,8 +58,8 @@ const SubscriptionPlans = () => {
       description: 'Ultimate experience',
       features: [
         'Free delivery every day',
-        'VIP customer support',
         '30% off clothing & accessories',
+        'VIP customer support',
         'Instant gig notifications',
         'Exclusive gig access',
         'Full online store suite',
