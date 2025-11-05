@@ -25,7 +25,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
+        model: "gpt-4o-realtime-preview-2024-10-01",
         voice: "alloy",
         instructions: `You are WHOSENXT Voice Assistant, an intelligent voice-powered AI helper for the WHOSENXT platform.
 
