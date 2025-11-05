@@ -65,6 +65,7 @@ export class VoiceAssistant {
   private dc: RTCDataChannel | null = null;
   private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
+  private callIdToName = new Map<string, string>();
 
   constructor(
     private onMessage: (message: any) => void,
@@ -103,6 +104,11 @@ export class VoiceAssistant {
         const event = JSON.parse(e.data);
         console.log("Voice assistant event:", event);
         
+        // Track function call creations to map call_id -> name
+        if (event.type === 'response.function_call.created' && event.call_id && event.name) {
+          this.callIdToName.set(event.call_id, event.name);
+        }
+        
         // Handle speaking state
         if (event.type === 'response.audio.delta') {
           this.onSpeakingChange(true);
@@ -112,10 +118,12 @@ export class VoiceAssistant {
         
         // Handle function calls
         if (event.type === 'response.function_call_arguments.done' && this.onToolCall) {
-          const { call_id, name, arguments: argsStr } = event;
+          const { call_id, arguments: argsStr } = event;
+          const name = event.name || (call_id ? this.callIdToName.get(call_id) : undefined);
           try {
-            const args = JSON.parse(argsStr);
+            const args = typeof argsStr === 'string' ? JSON.parse(argsStr) : argsStr;
             console.log("Executing tool:", name, args);
+            if (!name) throw new Error('Missing tool name for function call');
             const result = await this.onToolCall(name, args);
             
             // Send function output back to the model
@@ -123,6 +131,8 @@ export class VoiceAssistant {
           } catch (error) {
             console.error("Tool execution error:", error);
             this.sendFunctionOutput(call_id, { error: error instanceof Error ? error.message : "Unknown error" });
+          } finally {
+            if (call_id) this.callIdToName.delete(call_id);
           }
         }
         
