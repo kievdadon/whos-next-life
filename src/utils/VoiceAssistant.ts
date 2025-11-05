@@ -68,7 +68,8 @@ export class VoiceAssistant {
 
   constructor(
     private onMessage: (message: any) => void,
-    private onSpeakingChange: (speaking: boolean) => void
+    private onSpeakingChange: (speaking: boolean) => void,
+    private onToolCall?: (toolName: string, args: any) => Promise<any>
   ) {
     this.audioEl = document.createElement("audio");
     this.audioEl.autoplay = true;
@@ -98,7 +99,7 @@ export class VoiceAssistant {
 
       // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
-      this.dc.addEventListener("message", (e) => {
+      this.dc.addEventListener("message", async (e) => {
         const event = JSON.parse(e.data);
         console.log("Voice assistant event:", event);
         
@@ -107,6 +108,22 @@ export class VoiceAssistant {
           this.onSpeakingChange(true);
         } else if (event.type === 'response.audio.done' || event.type === 'response.done') {
           this.onSpeakingChange(false);
+        }
+        
+        // Handle function calls
+        if (event.type === 'response.function_call_arguments.done' && this.onToolCall) {
+          const { call_id, name, arguments: argsStr } = event;
+          try {
+            const args = JSON.parse(argsStr);
+            console.log("Executing tool:", name, args);
+            const result = await this.onToolCall(name, args);
+            
+            // Send function output back to the model
+            this.sendFunctionOutput(call_id, result);
+          } catch (error) {
+            console.error("Tool execution error:", error);
+            this.sendFunctionOutput(call_id, { error: error instanceof Error ? error.message : "Unknown error" });
+          }
         }
         
         this.onMessage(event);
@@ -170,6 +187,25 @@ export class VoiceAssistant {
     }
     
     return btoa(binary);
+  }
+
+  private sendFunctionOutput(callId: string, output: any) {
+    if (!this.dc || this.dc.readyState !== 'open') {
+      console.error('Data channel not ready for function output');
+      return;
+    }
+
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'function_call_output',
+        call_id: callId,
+        output: JSON.stringify(output)
+      }
+    };
+
+    this.dc.send(JSON.stringify(event));
+    this.dc.send(JSON.stringify({type: 'response.create'}));
   }
 
   async sendMessage(text: string) {

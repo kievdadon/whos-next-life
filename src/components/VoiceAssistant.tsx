@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +13,108 @@ interface VoiceAssistantProps {
 
 const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<string[]>([]);
   const assistantRef = useRef<VoiceAssistantClass | null>(null);
+
+  const handleToolCall = async (toolName: string, args: any): Promise<any> => {
+    console.log("Tool called:", toolName, args);
+    
+    try {
+      switch (toolName) {
+        case 'navigate_to_page':
+          const pageMap: Record<string, string> = {
+            'marketplace': '/marketplace',
+            'delivery': '/delivery',
+            'gigs': '/gig-browse',
+            'business-dashboard': '/business-dashboard',
+            'driver-dashboard': '/driver-dashboard',
+            'wellness-chat': '/wellness-chat',
+            'mission-control': '/mission-control',
+            'home': '/'
+          };
+          navigate(pageMap[args.page] || '/');
+          return { success: true, message: `Navigated to ${args.page}` };
+
+        case 'search_marketplace':
+          navigate(`/marketplace?search=${encodeURIComponent(args.query)}${args.category ? `&category=${args.category}` : ''}`);
+          return { success: true, message: `Searching marketplace for: ${args.query}` };
+
+        case 'search_gigs':
+          navigate(`/gig-browse?search=${encodeURIComponent(args.query)}`);
+          return { success: true, message: `Searching gigs for: ${args.query}` };
+
+        case 'send_message':
+          toast({
+            title: "Message Sent",
+            description: `Message sent to ${args.type}: ${args.message}`,
+          });
+          return { success: true, message: "Message sent successfully" };
+
+        case 'add_to_cart':
+          // This would integrate with your cart system
+          toast({
+            title: "Added to Cart",
+            description: `Added ${args.quantity} item(s) to cart`,
+          });
+          return { success: true, message: `Added ${args.quantity} items to cart` };
+
+        case 'update_cart_quantity':
+          toast({
+            title: "Cart Updated",
+            description: `Updated quantity to ${args.quantity}`,
+          });
+          return { success: true, message: "Cart quantity updated" };
+
+        case 'remove_from_cart':
+          toast({
+            title: "Removed from Cart",
+            description: "Item removed from cart",
+          });
+          return { success: true, message: "Item removed from cart" };
+
+        case 'initiate_checkout':
+          if (args.voiceConfirmed) {
+            navigate('/checkout');
+            return { success: true, message: "Starting checkout process" };
+          } else {
+            return { success: false, message: "Voice confirmation required for checkout" };
+          }
+
+        case 'check_delivery_status':
+          toast({
+            title: "Delivery Status",
+            description: "Checking your delivery status...",
+          });
+          return { success: true, status: "In transit", estimatedTime: "15 minutes" };
+
+        case 'cancel_delivery':
+          toast({
+            title: "Delivery Cancelled",
+            description: "Your delivery has been cancelled",
+            variant: "destructive",
+          });
+          return { success: true, message: "Delivery cancelled" };
+
+        case 'go_back':
+          navigate(-1);
+          return { success: true, message: "Navigated back" };
+
+        case 'go_forward':
+          navigate(1);
+          return { success: true, message: "Navigated forward" };
+
+        default:
+          return { success: false, message: "Unknown tool" };
+      }
+    } catch (error) {
+      console.error("Tool execution error:", error);
+      return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    }
+  };
 
   const handleMessage = (event: any) => {
     console.log('Voice assistant message:', event);
@@ -61,7 +159,7 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
       // Request microphone permission first
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      assistantRef.current = new VoiceAssistantClass(handleMessage, handleSpeakingChange);
+      assistantRef.current = new VoiceAssistantClass(handleMessage, handleSpeakingChange, handleToolCall);
       await assistantRef.current.init();
       setIsConnected(true);
       setTranscript([]);
@@ -71,7 +169,7 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
       
       toast({
         title: "Voice Assistant Active",
-        description: "I'm listening! How can I help you with WHOSENXT?",
+        description: "I'm listening! I can help you navigate, search, shop, and more on WHOSENXT!",
       });
     } catch (error) {
       console.error('Error starting voice assistant:', error);

@@ -46,17 +46,151 @@ CRITICAL RULES:
 5. When searching, describe what you're searching for before doing it
 6. For messaging, read back the message before sending
 7. Keep the wellness bot on standby - mention it's available if users need health/wellness support
+8. For purchases, remind users about voice confirmation if enabled in settings
 
-Available tools and features:
-- Search marketplace products
-- Search for gigs
-- Search delivery options
-- Check order/delivery status
-- Navigate to different pages
-- Send messages
-- Wellness chat handoff
-
-Always be helpful, friendly, and ask for explicit confirmation before taking actions.`
+Always be helpful, friendly, and ask for explicit confirmation before taking actions.`,
+        tools: [
+          {
+            type: "function",
+            name: "navigate_to_page",
+            description: "Navigate to a specific page in the WHOSENXT app. Always confirm with user before navigating.",
+            parameters: {
+              type: "object",
+              properties: {
+                page: {
+                  type: "string",
+                  enum: ["marketplace", "delivery", "gigs", "business-dashboard", "driver-dashboard", "wellness-chat", "mission-control", "home"],
+                  description: "The page to navigate to"
+                }
+              },
+              required: ["page"]
+            }
+          },
+          {
+            type: "function",
+            name: "search_marketplace",
+            description: "Search for products in the marketplace. Ask user to confirm search terms.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: { type: "string", description: "Search query" },
+                category: { type: "string", description: "Category filter (clothing, accessories, fashion, etc.)" }
+              },
+              required: ["query"]
+            }
+          },
+          {
+            type: "function",
+            name: "search_gigs",
+            description: "Search for available gigs. Confirm search criteria with user.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: { type: "string", description: "Search query" }
+              },
+              required: ["query"]
+            }
+          },
+          {
+            type: "function",
+            name: "send_message",
+            description: "Send a message to a seller, driver, or gig poster. Always read the message back to user before sending.",
+            parameters: {
+              type: "object",
+              properties: {
+                recipient: { type: "string", description: "Recipient identifier" },
+                message: { type: "string", description: "Message content" },
+                type: { type: "string", enum: ["seller", "driver", "gig_poster"], description: "Type of recipient" }
+              },
+              required: ["recipient", "message", "type"]
+            }
+          },
+          {
+            type: "function",
+            name: "add_to_cart",
+            description: "Add a product to the shopping cart. Confirm quantity and product with user.",
+            parameters: {
+              type: "object",
+              properties: {
+                productId: { type: "string", description: "Product ID" },
+                quantity: { type: "number", description: "Quantity to add" }
+              },
+              required: ["productId", "quantity"]
+            }
+          },
+          {
+            type: "function",
+            name: "update_cart_quantity",
+            description: "Update the quantity of an item in the cart. Confirm with user.",
+            parameters: {
+              type: "object",
+              properties: {
+                itemId: { type: "string", description: "Cart item ID" },
+                quantity: { type: "number", description: "New quantity" }
+              },
+              required: ["itemId", "quantity"]
+            }
+          },
+          {
+            type: "function",
+            name: "remove_from_cart",
+            description: "Remove an item from the cart. Confirm with user.",
+            parameters: {
+              type: "object",
+              properties: {
+                itemId: { type: "string", description: "Cart item ID" }
+              },
+              required: ["itemId"]
+            }
+          },
+          {
+            type: "function",
+            name: "initiate_checkout",
+            description: "Start the checkout process. Requires voice confirmation if enabled in settings.",
+            parameters: {
+              type: "object",
+              properties: {
+                voiceConfirmed: { type: "boolean", description: "Whether voice confirmation was completed" }
+              },
+              required: ["voiceConfirmed"]
+            }
+          },
+          {
+            type: "function",
+            name: "check_delivery_status",
+            description: "Check the status of a food delivery order.",
+            parameters: {
+              type: "object",
+              properties: {
+                orderId: { type: "string", description: "Order ID to check" }
+              }
+            }
+          },
+          {
+            type: "function",
+            name: "cancel_delivery",
+            description: "Cancel a delivery order. Confirm with user before canceling.",
+            parameters: {
+              type: "object",
+              properties: {
+                orderId: { type: "string", description: "Order ID to cancel" }
+              },
+              required: ["orderId"]
+            }
+          },
+          {
+            type: "function",
+            name: "go_back",
+            description: "Navigate back to the previous page.",
+            parameters: { type: "object", properties: {} }
+          },
+          {
+            type: "function",
+            name: "go_forward",
+            description: "Navigate forward to the next page.",
+            parameters: { type: "object", properties: {} }
+          }
+        ]
       }),
     });
 
