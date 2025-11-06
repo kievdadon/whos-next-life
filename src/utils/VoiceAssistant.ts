@@ -74,6 +74,9 @@ export class VoiceAssistant {
   ) {
     this.audioEl = document.createElement("audio");
     this.audioEl.autoplay = true;
+    this.audioEl.setAttribute('playsinline', 'true');
+    this.audioEl.style.display = 'none';
+    try { document.body.appendChild(this.audioEl); } catch {}
   }
 
   async init() {
@@ -98,8 +101,71 @@ export class VoiceAssistant {
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.pc.addTrack(ms.getTracks()[0]);
 
+      // Fallback for server-created data channel
+      this.pc.ondatachannel = (ev) => {
+        console.log('Voice assistant remote data channel received', ev.channel.label);
+        if (!this.dc) {
+          this.dc = ev.channel;
+          this.dc.onopen = () => console.log('Voice assistant data channel (remote) open');
+          this.dc.onerror = (e) => console.error('Voice assistant data channel (remote) error', e);
+          this.dc.addEventListener('message', async (e) => {
+            const event = JSON.parse(e.data);
+            console.log('Voice assistant event:', event);
+            // Initialize session settings after creation to enable server-side VAD
+            if (event.type === 'session.created' && this.dc?.readyState === 'open') {
+              const update = {
+                type: 'session.update',
+                session: {
+                  modalities: ["text", "audio"],
+                  input_audio_format: 'pcm16',
+                  output_audio_format: 'pcm16',
+                  turn_detection: {
+                    type: 'server_vad',
+                    threshold: 0.5,
+                    prefix_padding_ms: 300,
+                    silence_duration_ms: 800
+                  }
+                }
+              };
+              this.dc.send(JSON.stringify(update));
+            }
+            // Track function call creations to map call_id -> name
+            if (event.type === 'response.function_call.created' && event.call_id && event.name) {
+              this.callIdToName.set(event.call_id, event.name);
+            }
+            // Handle speaking state
+            if (event.type === 'response.audio.delta') {
+              this.onSpeakingChange(true);
+            } else if (event.type === 'response.audio.done' || event.type === 'response.done') {
+              this.onSpeakingChange(false);
+            }
+            // Handle function calls
+            if (event.type === 'response.function_call_arguments.done' && this.onToolCall) {
+              const { call_id, arguments: argsStr } = event;
+              const name = event.name || (call_id ? this.callIdToName.get(call_id) : undefined);
+              try {
+                const args = typeof argsStr === 'string' ? JSON.parse(argsStr) : argsStr;
+                console.log('Executing tool:', name, args);
+                if (!name) throw new Error('Missing tool name for function call');
+                const result = await this.onToolCall(name, args);
+                // Send function output back to the model
+                this.sendFunctionOutput(call_id, result);
+              } catch (error) {
+                console.error('Tool execution error:', error);
+                this.sendFunctionOutput(call_id, { error: error instanceof Error ? error.message : 'Unknown error' });
+              } finally {
+                if (call_id) this.callIdToName.delete(call_id);
+              }
+            }
+            this.onMessage(event);
+          });
+        }
+      };
+
       // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
+      this.dc.onopen = () => console.log("Voice assistant data channel open");
+      this.dc.onerror = (e) => console.error("Voice assistant data channel error", e);
       this.dc.addEventListener("message", async (e) => {
         const event = JSON.parse(e.data);
         console.log("Voice assistant event:", event);
