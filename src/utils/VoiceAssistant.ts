@@ -99,10 +99,28 @@ export class VoiceAssistant {
       this.pc.addTrack(ms.getTracks()[0]);
 
       // Set up data channel
-      this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", async (e) => {
         const event = JSON.parse(e.data);
         console.log("Voice assistant event:", event);
+        
+        // Initialize session settings after creation to enable server-side VAD
+        if (event.type === 'session.created' && this.dc?.readyState === 'open') {
+          const update = {
+            type: 'session.update',
+            session: {
+              modalities: ["text", "audio"],
+              input_audio_format: "pcm16",
+              output_audio_format: "pcm16",
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 800
+              }
+            }
+          };
+          this.dc.send(JSON.stringify(update));
+        }
         
         // Track function call creations to map call_id -> name
         if (event.type === 'response.function_call.created' && event.call_id && event.name) {
@@ -163,16 +181,8 @@ export class VoiceAssistant {
       await this.pc.setRemoteDescription(answer);
       console.log("Voice Assistant WebRTC connection established");
 
-      // Start recording
-      this.recorder = new AudioRecorder((audioData) => {
-        if (this.dc?.readyState === 'open') {
-          this.dc.send(JSON.stringify({
-            type: 'input_audio_buffer.append',
-            audio: this.encodeAudioData(audioData)
-          }));
-        }
-      });
-      await this.recorder.start();
+      // Using WebRTC microphone track for audio input; no manual buffer streaming is needed.
+      console.log("Voice Assistant ready: using WebRTC mic track with server VAD");
 
     } catch (error) {
       console.error("Error initializing voice assistant:", error);
