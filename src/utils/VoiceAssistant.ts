@@ -99,6 +99,7 @@ export class VoiceAssistant {
       this.pc.addTrack(ms.getTracks()[0]);
 
       // Set up data channel
+      this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", async (e) => {
         const event = JSON.parse(e.data);
         console.log("Voice assistant event:", event);
