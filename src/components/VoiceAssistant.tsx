@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { VoiceAssistant as VoiceAssistantClass } from '@/utils/VoiceAssistant';
 import { Mic, MicOff, MessageSquare, Volume2 } from 'lucide-react';
+import VoiceDebugHUD from '@/components/VoiceDebugHUD';
 
 interface VoiceAssistantProps {
   onWellnessStandby?: (standby: boolean) => void;
@@ -18,10 +19,17 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<string[]>([]);
+  const [lastEvent, setLastEvent] = useState<any>(null);
+  const [lastToolCall, setLastToolCall] = useState<{ name: string; args: any; timestamp: number } | null>(null);
+  const [latency, setLatency] = useState<number | null>(null);
+  const [lastRequestTime, setLastRequestTime] = useState<number | null>(null);
   const assistantRef = useRef<VoiceAssistantClass | null>(null);
 
   const handleToolCall = async (toolName: string, args: any): Promise<any> => {
     console.log("Tool called:", toolName, args);
+    
+    // Track tool call for debug HUD
+    setLastToolCall({ name: toolName, args, timestamp: Date.now() });
     
     try {
       switch (toolName) {
@@ -119,6 +127,13 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
   const handleMessage = (event: any) => {
     console.log('Voice assistant message:', event);
     
+    // Update last event and calculate latency
+    setLastEvent(event);
+    
+    if (event.type === 'response.created' && lastRequestTime) {
+      setLatency(Date.now() - lastRequestTime);
+    }
+    
     // Handle different event types
     if (event.type === 'response.audio.delta') {
       setIsSpeaking(true);
@@ -145,6 +160,7 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
       }
     } else if (event.type === 'input_audio_buffer.speech_started') {
       setIsListening(true);
+      setLastRequestTime(Date.now());
     } else if (event.type === 'input_audio_buffer.speech_stopped') {
       setIsListening(false);
     }
@@ -203,69 +219,83 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
   }, []);
 
   return (
-    <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3">
-      {/* Transcript Card */}
-      {isConnected && transcript.length > 0 && (
-        <Card className="w-80 max-h-60 overflow-y-auto shadow-lg border-wellness-primary/20">
-          <CardContent className="p-4 space-y-2">
-            {transcript.slice(-5).map((text, index) => (
-              <div 
-                key={index} 
-                className={`text-sm ${text.startsWith('Assistant: ') ? 'text-wellness-primary' : 'text-foreground'}`}
-              >
-                {text}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Status Badges */}
+    <>
+      {/* Debug HUD */}
       {isConnected && (
-        <div className="flex gap-2">
-          {isListening && (
-            <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20 animate-pulse">
-              <Mic className="mr-1 h-3 w-3" />
-              Listening
-            </Badge>
-          )}
-          {isSpeaking && (
-            <Badge className="bg-wellness-secondary/10 text-wellness-secondary border-wellness-secondary/20 animate-pulse">
-              <Volume2 className="mr-1 h-3 w-3" />
-              Speaking
-            </Badge>
-          )}
-        </div>
+        <VoiceDebugHUD
+          isConnected={isConnected}
+          isListening={isListening}
+          isSpeaking={isSpeaking}
+          lastEvent={lastEvent}
+          lastToolCall={lastToolCall}
+          latency={latency}
+        />
       )}
+      
+      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3">
+        {/* Transcript Card */}
+        {isConnected && transcript.length > 0 && (
+          <Card className="w-80 max-h-60 overflow-y-auto shadow-lg border-wellness-primary/20">
+            <CardContent className="p-4 space-y-2">
+              {transcript.slice(-5).map((text, index) => (
+                <div 
+                  key={index} 
+                  className={`text-sm ${text.startsWith('Assistant: ') ? 'text-wellness-primary' : 'text-foreground'}`}
+                >
+                  {text}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Control Button */}
-      {!isConnected ? (
-        <Button 
-          onClick={startConversation}
-          size="lg"
-          className="bg-gradient-to-r from-wellness-primary to-wellness-secondary hover:opacity-90 text-white shadow-lg rounded-full w-16 h-16 p-0"
-        >
-          <Mic className="h-6 w-6" />
-        </Button>
-      ) : (
-        <Button 
-          onClick={endConversation}
-          size="lg"
-          variant="secondary"
-          className="shadow-lg rounded-full w-16 h-16 p-0"
-        >
-          <MicOff className="h-6 w-6" />
-        </Button>
-      )}
+        {/* Status Badges */}
+        {isConnected && (
+          <div className="flex gap-2">
+            {isListening && (
+              <Badge className="bg-wellness-primary/10 text-wellness-primary border-wellness-primary/20 animate-pulse">
+                <Mic className="mr-1 h-3 w-3" />
+                Listening
+              </Badge>
+            )}
+            {isSpeaking && (
+              <Badge className="bg-wellness-secondary/10 text-wellness-secondary border-wellness-secondary/20 animate-pulse">
+                <Volume2 className="mr-1 h-3 w-3" />
+                Speaking
+              </Badge>
+            )}
+          </div>
+        )}
 
-      {/* Wellness Note */}
-      {isConnected && (
-        <div className="text-xs text-muted-foreground bg-card/80 backdrop-blur-sm px-3 py-1 rounded-full border border-border/50">
-          <MessageSquare className="inline h-3 w-3 mr-1" />
-          Wellness chat on standby
-        </div>
-      )}
-    </div>
+        {/* Control Button */}
+        {!isConnected ? (
+          <Button 
+            onClick={startConversation}
+            size="lg"
+            className="bg-gradient-to-r from-wellness-primary to-wellness-secondary hover:opacity-90 text-white shadow-lg rounded-full w-16 h-16 p-0"
+          >
+            <Mic className="h-6 w-6" />
+          </Button>
+        ) : (
+          <Button 
+            onClick={endConversation}
+            size="lg"
+            variant="secondary"
+            className="shadow-lg rounded-full w-16 h-16 p-0"
+          >
+            <MicOff className="h-6 w-6" />
+          </Button>
+        )}
+
+        {/* Wellness Note */}
+        {isConnected && (
+          <div className="text-xs text-muted-foreground bg-card/80 backdrop-blur-sm px-3 py-1 rounded-full border border-border/50">
+            <MessageSquare className="inline h-3 w-3 mr-1" />
+            Wellness chat on standby
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
