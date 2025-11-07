@@ -230,7 +230,8 @@ export class VoiceAssistant {
 
       // Connect to OpenAI's Realtime API
       const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17";
+      // Use a supported realtime model version
+      const model = "gpt-4o-realtime-preview-2024-10-01";
       const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
         method: "POST",
         body: offer.sdp,
@@ -239,10 +240,16 @@ export class VoiceAssistant {
           "Content-Type": "application/sdp"
         },
       });
-
+      
+      const sdpText = await sdpResponse.text();
+      if (!sdpResponse.ok) {
+        console.error("Realtime API SDP error:", sdpResponse.status, sdpText);
+        throw new Error(`Realtime connect failed: ${sdpResponse.status}`);
+      }
+      
       const answer = {
         type: "answer" as RTCSdpType,
-        sdp: await sdpResponse.text(),
+        sdp: sdpText,
       };
       
       await this.pc.setRemoteDescription(answer);
