@@ -23,6 +23,10 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
   const [lastToolCall, setLastToolCall] = useState<{ name: string; args: any; timestamp: number } | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
   const [lastRequestTime, setLastRequestTime] = useState<number | null>(null);
+  const [eventLog, setEventLog] = useState<any[]>([]);
+  const [showDebugHUD, setShowDebugHUD] = useState<boolean>(() => {
+    try { return localStorage.getItem('voiceDebugHUD') !== 'off'; } catch { return true; }
+  });
   const assistantRef = useRef<VoiceAssistantClass | null>(null);
 
   const handleToolCall = async (toolName: string, args: any): Promise<any> => {
@@ -30,6 +34,7 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
     
     // Track tool call for debug HUD
     setLastToolCall({ name: toolName, args, timestamp: Date.now() });
+    setEventLog(prev => [...prev, { kind: 'tool', name: toolName, args, ts: Date.now() }].slice(-200));
     
     try {
       switch (toolName) {
@@ -129,6 +134,7 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
     
     // Update last event and calculate latency
     setLastEvent(event);
+    setEventLog(prev => [...prev, { kind: 'event', event, ts: Date.now() }].slice(-200));
     
     if (event.type === 'response.created' && lastRequestTime) {
       setLatency(Date.now() - lastRequestTime);
@@ -211,17 +217,54 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
       description: "Conversation ended. Wellness chat is available again.",
     });
   };
-
+  
+  const exportLogs = () => {
+    try {
+      const data = {
+        exportedAt: new Date().toISOString(),
+        isConnected,
+        isListening,
+        isSpeaking,
+        latency,
+        lastEvent,
+        lastToolCall,
+        transcript,
+        eventLog,
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `voice-diagnostics-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Logs exported", description: "Diagnostics JSON downloaded." });
+    } catch (e) {
+      console.error('Export logs error:', e);
+      toast({
+        title: "Export failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+  
   useEffect(() => {
     return () => {
       assistantRef.current?.disconnect();
     };
   }, []);
+  
+  useEffect(() => {
+    try { localStorage.setItem('voiceDebugHUD', showDebugHUD ? 'on' : 'off'); } catch {}
+  }, [showDebugHUD]);
 
   return (
     <>
       {/* Debug HUD */}
-      {isConnected && (
+      {isConnected && showDebugHUD && (
         <VoiceDebugHUD
           isConnected={isConnected}
           isListening={isListening}
@@ -266,7 +309,19 @@ const VoiceAssistant = ({ onWellnessStandby }: VoiceAssistantProps) => {
             )}
           </div>
         )}
-
+        
+        {/* Debug controls */}
+        {isConnected && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowDebugHUD((v) => !v)}>
+              {showDebugHUD ? 'Hide HUD' : 'Show HUD'}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={exportLogs}>
+              Export Logs
+            </Button>
+          </div>
+        )}
+        
         {/* Control Button */}
         {!isConnected ? (
           <Button 
