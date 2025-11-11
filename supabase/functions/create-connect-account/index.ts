@@ -12,27 +12,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CONNECT-ACCOUNT] ${step}${detailsStr}`);
 };
 
-// Validate US routing number (9 digits with ABA checksum)
-const validateRoutingNumber = (routing: string): boolean => {
-  if (!/^\d{9}$/.test(routing)) return false;
-  
-  const digits = routing.split('').map(Number);
-  const checksum = (3 * (digits[0] + digits[3] + digits[6]) +
-                   7 * (digits[1] + digits[4] + digits[7]) +
-                   (digits[2] + digits[5] + digits[8])) % 10;
-  return checksum === 0;
-};
-
-// Validate account number (8-17 digits for US banks)
-const validateAccountNumber = (account: string): boolean => {
-  return /^\d{8,17}$/.test(account);
-};
-
-// Sanitize account holder name
-const sanitizeAccountHolderName = (name: string): string => {
-  return name.trim().replace(/[^a-zA-Z0-9\s\-']/g, '').substring(0, 100);
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -61,43 +40,12 @@ serve(async (req) => {
     const { accountType, businessData } = await req.json();
     logStep("Request data received", { accountType });
 
-    // Validate banking information
-    if (!businessData.routing_number || !validateRoutingNumber(businessData.routing_number)) {
-      logStep("Invalid routing number provided");
-      return new Response(JSON.stringify({ 
-        error: "Invalid routing number format. Must be a valid 9-digit ABA routing number." 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
-    if (!businessData.account_number || !validateAccountNumber(businessData.account_number)) {
-      logStep("Invalid account number provided");
-      return new Response(JSON.stringify({ 
-        error: "Invalid account number format. Must be 8-17 digits." 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
-    const sanitizedHolderName = sanitizeAccountHolderName(businessData.account_holder_name || '');
-    if (!sanitizedHolderName || sanitizedHolderName.length < 2) {
-      logStep("Invalid account holder name provided");
-      return new Response(JSON.stringify({ 
-        error: "Invalid account holder name." 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
     // Create Stripe Connect account
+    // All banking details are securely managed by Stripe - we don't store them
     const account = await stripe.accounts.create({
       type: "express",
       country: "US",
@@ -106,7 +54,7 @@ serve(async (req) => {
         card_payments: { requested: true },
         transfers: { requested: true },
       },
-      business_type: "individual", // Can be updated based on business type
+      business_type: "individual",
       individual: {
         email: user.email,
         first_name: businessData.contact_name?.split(' ')[0] || 'Business',
@@ -120,15 +68,12 @@ serve(async (req) => {
 
     logStep("Stripe Connect account created", { accountId: account.id });
 
-    // Update the appropriate table with Stripe Connect account ID
+    // Update the appropriate table with Stripe Connect account ID only
     const tableName = accountType === 'business' ? 'business_applications' : 'driver_applications';
     const { error: updateError } = await supabaseClient
       .from(tableName)
       .update({ 
-        stripe_connect_account_id: account.id,
-        routing_number: businessData.routing_number,
-        account_number: businessData.account_number,
-        account_holder_name: sanitizedHolderName
+        stripe_connect_account_id: account.id
       })
       .eq('email', user.email);
 

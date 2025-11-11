@@ -49,8 +49,6 @@ export type Database = {
       }
       business_applications: {
         Row: {
-          account_holder_name: string | null
-          account_number: string | null
           address: string | null
           approved_at: string | null
           brand_partnership_date: string | null
@@ -73,7 +71,6 @@ export type Database = {
           monday_open: string | null
           payout_enabled: boolean | null
           phone: string | null
-          routing_number: string | null
           saturday_close: string | null
           saturday_open: string | null
           status: string | null
@@ -95,8 +92,6 @@ export type Database = {
           wednesday_open: string | null
         }
         Insert: {
-          account_holder_name?: string | null
-          account_number?: string | null
           address?: string | null
           approved_at?: string | null
           brand_partnership_date?: string | null
@@ -119,7 +114,6 @@ export type Database = {
           monday_open?: string | null
           payout_enabled?: boolean | null
           phone?: string | null
-          routing_number?: string | null
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
@@ -141,8 +135,6 @@ export type Database = {
           wednesday_open?: string | null
         }
         Update: {
-          account_holder_name?: string | null
-          account_number?: string | null
           address?: string | null
           approved_at?: string | null
           brand_partnership_date?: string | null
@@ -165,7 +157,6 @@ export type Database = {
           monday_open?: string | null
           payout_enabled?: boolean | null
           phone?: string | null
-          routing_number?: string | null
           saturday_close?: string | null
           saturday_open?: string | null
           status?: string | null
@@ -525,8 +516,6 @@ export type Database = {
       }
       driver_applications: {
         Row: {
-          account_holder_name: string | null
-          account_number: string | null
           address: string
           approved_at: string | null
           availability: string | null
@@ -546,7 +535,6 @@ export type Database = {
           license_number: string
           payout_enabled: boolean | null
           phone: string
-          routing_number: string | null
           secondary_id_url: string | null
           state: string | null
           status: string | null
@@ -559,8 +547,6 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
-          account_holder_name?: string | null
-          account_number?: string | null
           address: string
           approved_at?: string | null
           availability?: string | null
@@ -580,7 +566,6 @@ export type Database = {
           license_number: string
           payout_enabled?: boolean | null
           phone: string
-          routing_number?: string | null
           secondary_id_url?: string | null
           state?: string | null
           status?: string | null
@@ -593,8 +578,6 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
-          account_holder_name?: string | null
-          account_number?: string | null
           address?: string
           approved_at?: string | null
           availability?: string | null
@@ -614,7 +597,6 @@ export type Database = {
           license_number?: string
           payout_enabled?: boolean | null
           phone?: string
-          routing_number?: string | null
           secondary_id_url?: string | null
           state?: string | null
           status?: string | null

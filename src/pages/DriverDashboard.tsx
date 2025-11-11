@@ -35,9 +35,6 @@ interface DriverProfile {
   full_name: string;
   email: string;
   status: string;
-  routing_number?: string;
-  account_number?: string;
-  account_holder_name?: string;
   stripe_connect_account_id?: string;
   payout_enabled?: boolean;
 }
@@ -81,12 +78,6 @@ const DriverDashboard = () => {
   const [weeklyEarnings, setWeeklyEarnings] = useState(0);
   const [testingMode, setTestingMode] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [showBankingForm, setShowBankingForm] = useState(false);
-  const [bankingForm, setBankingForm] = useState({
-    routing_number: '',
-    account_number: '',
-    account_holder_name: ''
-  });
   const [currentOrderAction, setCurrentOrderAction] = useState<{
     orderId: string;
     action: 'pickup' | 'delivery';
@@ -671,52 +662,34 @@ const DriverDashboard = () => {
     setShowCamera(false);
   };
 
-  const handleBankingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!driver || !user) return;
+  const handleSetupStripeConnect = async () => {
+    if (!driver) return;
 
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account', {
         body: {
           accountType: 'driver',
           businessData: {
-            ...bankingForm,
             contact_name: driver.full_name,
-            business_name: `${driver.full_name} - Driver`
+            email: driver.email
           }
         }
       });
 
       if (error) throw error;
 
-      if (data.onboardingUrl) {
-        window.open(data.onboardingUrl, '_blank');
-        toast({ title: 'Redirecting to Stripe onboarding...' });
+      if (data?.onboardingUrl) {
+        window.location.href = data.onboardingUrl;
+        toast({ title: 'Redirecting to Stripe Connect onboarding...' });
       }
-
-      setShowBankingForm(false);
-      setBankingForm({
-        routing_number: '',
-        account_number: '',
-        account_holder_name: ''
-      });
     } catch (error) {
-      console.error('Error setting up banking:', error);
+      console.error('Error setting up Stripe Connect:', error);
       toast({ 
         title: 'Error', 
-        description: 'Failed to set up banking information. Please try again.',
+        description: 'Failed to set up payment account. Please try again.',
         variant: 'destructive' 
       });
     }
-  };
-
-  const cancelBankingForm = () => {
-    setShowBankingForm(false);
-    setBankingForm({
-      routing_number: '',
-      account_number: '',
-      account_holder_name: ''
-    });
   };
 
 
@@ -935,11 +908,11 @@ const DriverDashboard = () => {
                   <span className="text-yellow-700 font-medium">Banking setup required</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Set up your banking information to start receiving payments from deliveries.
+                  Set up Stripe Connect to start receiving payments from deliveries. All banking details are securely managed by Stripe.
                 </p>
-                <Button onClick={() => setShowBankingForm(true)}>
+                <Button onClick={handleSetupStripeConnect}>
                   <Building className="mr-2 h-4 w-4" />
-                  Set Up Banking Information
+                  Set Up Stripe Connect
                 </Button>
               </div>
             )}
@@ -1109,70 +1082,6 @@ const DriverDashboard = () => {
           onCapture={handlePhotoCapture}
           title={currentOrderAction?.action === 'pickup' ? 'Confirm Pickup' : 'Confirm Delivery'}
         />
-
-        {/* Banking Form Modal */}
-        {showBankingForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Banking Information Setup</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This information will be used to set up your Stripe Connect account for receiving payments.
-                </p>
-                <form onSubmit={handleBankingSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="account_holder_name">Account Holder Name</Label>
-                    <Input
-                      id="account_holder_name"
-                      value={bankingForm.account_holder_name}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, account_holder_name: e.target.value }))}
-                      placeholder="Full name on bank account"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="routing_number">Routing Number</Label>
-                    <Input
-                      id="routing_number"
-                      value={bankingForm.routing_number}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, routing_number: e.target.value }))}
-                      placeholder="9-digit routing number"
-                      maxLength={9}
-                      pattern="[0-9]{9}"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="account_number">Account Number</Label>
-                    <Input
-                      id="account_number"
-                      value={bankingForm.account_number}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, account_number: e.target.value }))}
-                      placeholder="Bank account number"
-                      required
-                    />
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Commission Structure</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• You receive 85% of each delivery payment</li>
-                      <li>• WHOSENXT takes 15% commission</li>
-                      <li>• Payments processed securely through Stripe</li>
-                    </ul>
-                  </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button type="button" variant="outline" onClick={cancelBankingForm}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Setup Banking
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -65,9 +65,6 @@ interface BusinessApplication {
   is_24_7: boolean;
   temporary_closure: boolean;
   closure_message: string | null;
-  routing_number: string | null;
-  account_number: string | null;
-  account_holder_name: string | null;
   stripe_connect_account_id: string | null;
   payout_enabled: boolean;
   store_primary_color: string | null;
@@ -87,7 +84,6 @@ const BusinessDashboard = () => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showStoreHours, setShowStoreHours] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [showBankingForm, setShowBankingForm] = useState(false);
   const [showCameraCapture, setShowCameraCapture] = useState(false);
   const [uploadMethod, setUploadMethod] = useState<'url' | 'upload' | 'camera'>('url');
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
@@ -97,11 +93,6 @@ const BusinessDashboard = () => {
     primary: '#8B5CF6',
     secondary: '#EC4899',
     accent: '#10B981'
-  });
-  const [bankingForm, setBankingForm] = useState({
-    routing_number: '',
-    account_number: '',
-    account_holder_name: ''
   });
   const [storeHoursForm, setStoreHoursForm] = useState({
     monday_open: '',
@@ -477,38 +468,29 @@ const BusinessDashboard = () => {
     });
   };
 
-  const handleBankingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!business || !user) return;
+  const handleSetupStripeConnect = async () => {
+    if (!business) return;
 
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account', {
         body: {
           accountType: 'business',
           businessData: {
-            ...bankingForm,
             contact_name: business.contact_name,
-            business_name: business.business_name
+            email: business.email
           }
         }
       });
 
       if (error) throw error;
 
-      if (data.onboardingUrl) {
-        window.open(data.onboardingUrl, '_blank');
-        toast({ title: 'Redirecting to Stripe onboarding...' });
+      if (data?.onboardingUrl) {
+        window.location.href = data.onboardingUrl;
+        toast({ title: 'Redirecting to Stripe Connect onboarding...' });
       }
-
-      setShowBankingForm(false);
-      setBankingForm({
-        routing_number: '',
-        account_number: '',
-        account_holder_name: ''
-      });
     } catch (error) {
-      console.error('Error setting up banking:', error);
-      toast({ title: 'Error setting up banking information', variant: 'destructive' });
+      console.error('Error setting up Stripe Connect:', error);
+      toast({ title: 'Error setting up payment account', variant: 'destructive' });
     }
   };
 
@@ -579,14 +561,6 @@ const BusinessDashboard = () => {
     }
   };
 
-  const cancelBankingForm = () => {
-    setShowBankingForm(false);
-    setBankingForm({
-      routing_number: '',
-      account_number: '',
-      account_holder_name: ''
-    });
-  };
 
   const handleDeleteBusiness = async () => {
     if (!business) return;
@@ -1066,11 +1040,11 @@ const BusinessDashboard = () => {
                       <span className="text-yellow-700 font-medium">Banking setup required</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Set up your banking information to start receiving payments from customers.
+                      Set up Stripe Connect to start receiving payments from customers. All banking details are securely managed by Stripe.
                     </p>
-                    <Button onClick={() => setShowBankingForm(true)} className="w-full">
+                    <Button onClick={handleSetupStripeConnect} className="w-full">
                       <Building className="mr-2 h-4 w-4" />
-                      Set Up Banking Information
+                      Set Up Stripe Connect
                     </Button>
                   </div>
                 )}
@@ -1127,70 +1101,6 @@ const BusinessDashboard = () => {
             {business && <ManageBusinessLocations businessId={business.id} />}
           </TabsContent>
         </Tabs>
-
-        {/* Banking Form Modal */}
-        {showBankingForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Banking Information Setup</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This information will be used to set up your Stripe Connect account for receiving payments.
-                </p>
-                <form onSubmit={handleBankingSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="account_holder_name">Account Holder Name</Label>
-                    <Input
-                      id="account_holder_name"
-                      value={bankingForm.account_holder_name}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, account_holder_name: e.target.value }))}
-                      placeholder="Full name on bank account"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="routing_number">Routing Number</Label>
-                    <Input
-                      id="routing_number"
-                      value={bankingForm.routing_number}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, routing_number: e.target.value }))}
-                      placeholder="9-digit routing number"
-                      maxLength={9}
-                      pattern="[0-9]{9}"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="account_number">Account Number</Label>
-                    <Input
-                      id="account_number"
-                      value={bankingForm.account_number}
-                      onChange={(e) => setBankingForm(prev => ({ ...prev, account_number: e.target.value }))}
-                      placeholder="Bank account number"
-                      required
-                    />
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Commission Structure</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• You receive 85% of each sale</li>
-                      <li>• WHOSENXT takes 15% commission</li>
-                      <li>• Payments processed securely through Stripe</li>
-                    </ul>
-                  </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button type="button" variant="outline" onClick={cancelBankingForm}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Setup Banking
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Product Form Modal */}
         {showAddProduct && (
