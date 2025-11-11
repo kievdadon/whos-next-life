@@ -327,7 +327,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Platform Features Section */}
       <section className="py-20 bg-gradient-to-r from-wellness-primary/5 to-wellness-secondary/5">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8 text-center">
@@ -336,16 +336,16 @@ const Index = () => {
               <div className="text-muted-foreground">AI Wellness Support</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-wellness-secondary">500+</div>
-              <div className="text-muted-foreground">Local Businesses</div>
+              <div className="text-4xl font-bold text-wellness-secondary">7</div>
+              <div className="text-muted-foreground">Integrated Features</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-wellness-accent">10k+</div>
-              <div className="text-muted-foreground">Active Users</div>
+              <div className="text-4xl font-bold text-wellness-accent">Real-Time</div>
+              <div className="text-muted-foreground">Messaging & Chat</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-wellness-warm">99%</div>
-              <div className="text-muted-foreground">Satisfaction Rate</div>
+              <div className="text-4xl font-bold text-wellness-warm">Voice AI</div>
+              <div className="text-muted-foreground">Assistant Enabled</div>
             </div>
           </div>
         </div>
